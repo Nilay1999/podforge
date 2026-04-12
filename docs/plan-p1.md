@@ -64,13 +64,13 @@ Phase 1 is **backend-only and learning-focused**. No React UI yet. The goal is t
 | Node | Physical/virtual machine in the cluster | Where pods actually run |
 
 **Hands-on tasks:**
-- [ ] Start Minikube: `minikube start`
-- [ ] Deploy nginx manually: `kubectl create deployment nginx --image=nginx`
-- [ ] Expose it: `kubectl expose deployment nginx --port=80 --type=NodePort`
-- [ ] Check pods: `kubectl get pods`
-- [ ] Check services: `kubectl get services`
-- [ ] Describe a pod: `kubectl describe pod <pod-name>`
-- [ ] Delete the deployment: `kubectl delete deployment nginx`
+- [&check;] Start Minikube: `minikube start`
+- [&check;] Deploy nginx manually: `kubectl create deployment nginx --image=nginx`
+- [&check;] Expose it: `kubectl expose deployment nginx --port=80 --type=NodePort`
+- [&check;] Check pods: `kubectl get pods`
+- [&check;] Check services: `kubectl get services`
+- [&check;] Describe a pod: `kubectl describe pod <pod-name>`
+- [&check;] Delete the deployment: `kubectl delete deployment nginx`
 
 **Resources:**
 - https://kubernetes.io/docs/concepts/
@@ -87,12 +87,12 @@ Phase 1 is **backend-only and learning-focused**. No React UI yet. The goal is t
 **Goal:** Write YAML manifests manually so you understand what Incubator will generate programmatically.
 
 **Tasks:**
-- [ ] Write a Pod manifest manually and apply it
-- [ ] Write a Deployment manifest with 2 replicas
-- [ ] Write a Service manifest (ClusterIP and NodePort)
-- [ ] Write a ConfigMap and mount it as env vars in a pod
-- [ ] Apply all of them: `kubectl apply -f <file>.yaml`
-- [ ] Delete them: `kubectl delete -f <file>.yaml`
+- [&check;] Write a Pod manifest manually and apply it
+- [&check;] Write a Deployment manifest with 2 replicas
+- [&check;] Write a Service manifest (ClusterIP and NodePort)
+- [&check;] Write a ConfigMap and mount it as env vars in a pod
+- [&check;] Apply all of them: `kubectl apply -f <file>.yaml`
+- [&check;] Delete them: `kubectl delete -f <file>.yaml`
 
 **Example to write by hand:**
 ```yaml
