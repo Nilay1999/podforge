@@ -1,7 +1,5 @@
 package types
 
-// ── Request / Response ───────────────────────────────────────────────────────
-
 type CreateDeploymentRequest struct {
 	// Core
 	Name      string `json:"name"      binding:"required"`
@@ -14,19 +12,19 @@ type CreateDeploymentRequest struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Primary container
-	Command         []string          `json:"command,omitempty"`
-	Args            []string          `json:"args,omitempty"`
-	WorkingDir      string            `json:"workingDir,omitempty"`
-	Ports           []ContainerPort   `json:"ports,omitempty"`
-	EnvVars         map[string]string `json:"envVars,omitempty"`
-	EnvFrom         []EnvFrom         `json:"envFrom,omitempty"`
-	ImagePullPolicy string            `json:"imagePullPolicy,omitempty"` // Always | IfNotPresent | Never
-	Resources       *ResourceRequirements `json:"resources,omitempty"`
-	VolumeMounts    []VolumeMount     `json:"volumeMounts,omitempty"`
-	LivenessProbe   *Probe            `json:"livenessProbe,omitempty"`
-	ReadinessProbe  *Probe            `json:"readinessProbe,omitempty"`
-	StartupProbe    *Probe            `json:"startupProbe,omitempty"`
-	Lifecycle       *Lifecycle        `json:"lifecycle,omitempty"`
+	Command                  []string                  `json:"command,omitempty"`
+	Args                     []string                  `json:"args,omitempty"`
+	WorkingDir               string                    `json:"workingDir,omitempty"`
+	Ports                    []ContainerPort           `json:"ports,omitempty"`
+	EnvVars                  map[string]string         `json:"envVars,omitempty"`
+	EnvFrom                  []EnvFrom                 `json:"envFrom,omitempty"`
+	ImagePullPolicy          string                    `json:"imagePullPolicy,omitempty"` // Always | IfNotPresent | Never
+	Resources                *ResourceRequirements     `json:"resources,omitempty"`
+	VolumeMounts             []VolumeMount             `json:"volumeMounts,omitempty"`
+	LivenessProbe            *Probe                    `json:"livenessProbe,omitempty"`
+	ReadinessProbe           *Probe                    `json:"readinessProbe,omitempty"`
+	StartupProbe             *Probe                    `json:"startupProbe,omitempty"`
+	Lifecycle                *Lifecycle                `json:"lifecycle,omitempty"`
 	ContainerSecurityContext *ContainerSecurityContext `json:"containerSecurityContext,omitempty"`
 
 	// Additional containers
@@ -34,19 +32,19 @@ type CreateDeploymentRequest struct {
 	InitContainers []SidecarContainer `json:"initContainers,omitempty"`
 
 	// Pod
-	Volumes                       []Volume               `json:"volumes,omitempty"`
-	ImagePullSecrets              []string               `json:"imagePullSecrets,omitempty"`
-	ServiceAccount                string                 `json:"serviceAccount,omitempty"`
-	NodeSelector                  map[string]string      `json:"nodeSelector,omitempty"`
-	NodeName                      string                 `json:"nodeName,omitempty"`
-	Tolerations                   []Toleration           `json:"tolerations,omitempty"`
-	Affinity                      *Affinity              `json:"affinity,omitempty"`
+	Volumes                       []Volume                   `json:"volumes,omitempty"`
+	ImagePullSecrets              []string                   `json:"imagePullSecrets,omitempty"`
+	ServiceAccount                string                     `json:"serviceAccount,omitempty"`
+	NodeSelector                  map[string]string          `json:"nodeSelector,omitempty"`
+	NodeName                      string                     `json:"nodeName,omitempty"`
+	Tolerations                   []Toleration               `json:"tolerations,omitempty"`
+	Affinity                      *Affinity                  `json:"affinity,omitempty"`
 	TopologySpreadConstraints     []TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
-	PodSecurityContext            *PodSecurityContext    `json:"podSecurityContext,omitempty"`
-	TerminationGracePeriodSeconds *int64                 `json:"terminationGracePeriodSeconds,omitempty"`
-	PriorityClassName             string                 `json:"priorityClassName,omitempty"`
-	RuntimeClassName              string                 `json:"runtimeClassName,omitempty"`
-	DNSPolicy                     string                 `json:"dnsPolicy,omitempty"` // ClusterFirst | ClusterFirstWithHostNet | Default | None
+	PodSecurityContext            *PodSecurityContext        `json:"podSecurityContext,omitempty"`
+	TerminationGracePeriodSeconds *int64                     `json:"terminationGracePeriodSeconds,omitempty"`
+	PriorityClassName             string                     `json:"priorityClassName,omitempty"`
+	RuntimeClassName              string                     `json:"runtimeClassName,omitempty"`
+	DNSPolicy                     string                     `json:"dnsPolicy,omitempty"` // ClusterFirst | ClusterFirstWithHostNet | Default | None
 
 	// Rollout
 	Strategy                *DeploymentStrategy `json:"strategy,omitempty"`
@@ -71,21 +69,21 @@ func (e *ValidationError) Unwrap() error { return e.Err }
 
 // SidecarContainer is used for both initContainers and additional sidecar containers.
 type SidecarContainer struct {
-	Name            string            `json:"name"  binding:"required"`
-	Image           string            `json:"image" binding:"required"`
-	Command         []string          `json:"command,omitempty"`
-	Args            []string          `json:"args,omitempty"`
-	WorkingDir      string            `json:"workingDir,omitempty"`
-	Ports           []ContainerPort   `json:"ports,omitempty"`
-	EnvVars         map[string]string `json:"envVars,omitempty"`
-	EnvFrom         []EnvFrom         `json:"envFrom,omitempty"`
-	ImagePullPolicy string            `json:"imagePullPolicy,omitempty"`
-	Resources       *ResourceRequirements `json:"resources,omitempty"`
-	VolumeMounts    []VolumeMount     `json:"volumeMounts,omitempty"`
-	LivenessProbe   *Probe            `json:"livenessProbe,omitempty"`
-	ReadinessProbe  *Probe            `json:"readinessProbe,omitempty"`
-	StartupProbe    *Probe            `json:"startupProbe,omitempty"`
-	Lifecycle       *Lifecycle        `json:"lifecycle,omitempty"`
+	Name            string                    `json:"name"  binding:"required"`
+	Image           string                    `json:"image" binding:"required"`
+	Command         []string                  `json:"command,omitempty"`
+	Args            []string                  `json:"args,omitempty"`
+	WorkingDir      string                    `json:"workingDir,omitempty"`
+	Ports           []ContainerPort           `json:"ports,omitempty"`
+	EnvVars         map[string]string         `json:"envVars,omitempty"`
+	EnvFrom         []EnvFrom                 `json:"envFrom,omitempty"`
+	ImagePullPolicy string                    `json:"imagePullPolicy,omitempty"`
+	Resources       *ResourceRequirements     `json:"resources,omitempty"`
+	VolumeMounts    []VolumeMount             `json:"volumeMounts,omitempty"`
+	LivenessProbe   *Probe                    `json:"livenessProbe,omitempty"`
+	ReadinessProbe  *Probe                    `json:"readinessProbe,omitempty"`
+	StartupProbe    *Probe                    `json:"startupProbe,omitempty"`
+	Lifecycle       *Lifecycle                `json:"lifecycle,omitempty"`
 	SecurityContext *ContainerSecurityContext `json:"securityContext,omitempty"`
 }
 

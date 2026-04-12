@@ -1,4 +1,4 @@
-.PHONY: run-backend build test tidy
+.PHONY: run-backend run-ui build test tidy
 
 BACKEND_DIR := backend
 BIN_DIR := $(BACKEND_DIR)/bin
@@ -16,3 +16,6 @@ test:
 
 tidy:
 	cd $(BACKEND_DIR) && go mod tidy
+
+run-ui:
+	cd ui && pnpm dev

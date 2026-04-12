@@ -1,11 +1,18 @@
-import React from 'react';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import { AppLayout } from "./components/common/AppLayout";
+import { DashboardPage } from "./pages/DashboardPage";
+import { DeploymentsPage } from "./pages/DeploymentsPage";
+import { PodsPage } from "./pages/PodsPage";
 
 function App() {
   return (
-    <div className="App">
-      <h1>Incubator</h1>
-    </div>
+    <AppLayout>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/deployments" element={<DeploymentsPage />} />
+        <Route path="/pods" element={<PodsPage />} />
+      </Routes>
+    </AppLayout>
   );
 }
 
