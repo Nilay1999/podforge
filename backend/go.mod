@@ -1,4 +1,4 @@
-module github.com/nilay/incubator/backend
+module github.com/nilay/k8s-orchestrator/backend
 
 go 1.25.5
 

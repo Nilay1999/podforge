@@ -53,19 +53,10 @@ type CreateDeploymentRequest struct {
 	ProgressDeadlineSeconds *int32              `json:"progressDeadlineSeconds,omitempty"`
 }
 
-type CreateDeploymentResponse struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Status    string `json:"status"`
-}
-
-// ValidationError wraps input-validation failures so the handler can return 400.
 type ValidationError struct{ Err error }
 
 func (e *ValidationError) Error() string { return e.Err.Error() }
 func (e *ValidationError) Unwrap() error { return e.Err }
-
-// ── Container ────────────────────────────────────────────────────────────────
 
 // SidecarContainer is used for both initContainers and additional sidecar containers.
 type SidecarContainer struct {
@@ -94,15 +85,11 @@ type ContainerPort struct {
 	HostPort      int32  `json:"hostPort,omitempty"`
 }
 
-// ── Env ──────────────────────────────────────────────────────────────────────
-
 type EnvFrom struct {
 	ConfigMapRef string `json:"configMapRef,omitempty"`
 	SecretRef    string `json:"secretRef,omitempty"`
 	Prefix       string `json:"prefix,omitempty"`
 }
-
-// ── Resources ────────────────────────────────────────────────────────────────
 
 type ResourceRequirements struct {
 	Requests *ResourceList `json:"requests,omitempty"`
@@ -114,8 +101,6 @@ type ResourceList struct {
 	Memory           string `json:"memory,omitempty"`
 	EphemeralStorage string `json:"ephemeralStorage,omitempty"`
 }
-
-// ── Probes ───────────────────────────────────────────────────────────────────
 
 // Probe supports httpGet, exec, and tcpSocket handlers.
 // Exactly one of HTTPGet, Exec, or TCPSocket must be set.
@@ -145,8 +130,6 @@ type TCPSocketAction struct {
 	Port int32 `json:"port"`
 }
 
-// ── Lifecycle ────────────────────────────────────────────────────────────────
-
 type Lifecycle struct {
 	PostStart *LifecycleHandler `json:"postStart,omitempty"`
 	PreStop   *LifecycleHandler `json:"preStop,omitempty"`
@@ -157,8 +140,6 @@ type LifecycleHandler struct {
 	HTTPGet *HTTPGetAction `json:"httpGet,omitempty"`
 }
 
-// ── Volumes ──────────────────────────────────────────────────────────────────
-
 type VolumeMount struct {
 	Name      string `json:"name"`
 	MountPath string `json:"mountPath"`
@@ -166,8 +147,6 @@ type VolumeMount struct {
 	ReadOnly  bool   `json:"readOnly,omitempty"`
 }
 
-// Volume supports the most common source types.
-// Exactly one source field should be set.
 type Volume struct {
 	Name                  string                 `json:"name"`
 	ConfigMap             *ConfigMapVolumeSource `json:"configMap,omitempty"`
@@ -212,8 +191,6 @@ type KeyToPath struct {
 	Mode *int32 `json:"mode,omitempty"`
 }
 
-// ── Security ─────────────────────────────────────────────────────────────────
-
 type PodSecurityContext struct {
 	RunAsUser    *int64 `json:"runAsUser,omitempty"`
 	RunAsGroup   *int64 `json:"runAsGroup,omitempty"`
@@ -235,8 +212,6 @@ type Capabilities struct {
 	Add  []string `json:"add,omitempty"`
 	Drop []string `json:"drop,omitempty"`
 }
-
-// ── Scheduling ───────────────────────────────────────────────────────────────
 
 type Toleration struct {
 	Key               string `json:"key,omitempty"`
@@ -305,8 +280,6 @@ type TopologySpreadConstraint struct {
 	WhenUnsatisfiable string            `json:"whenUnsatisfiable"` // DoNotSchedule | ScheduleAnyway
 	MatchLabels       map[string]string `json:"matchLabels,omitempty"`
 }
-
-// ── Rollout ───────────────────────────────────────────────────────────────────
 
 // DeploymentStrategy controls rollout behaviour.
 // Type: "RollingUpdate" (default) or "Recreate".

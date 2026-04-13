@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	k8ssvc "github.com/nilay/incubator/backend/internal/k8s"
-	"github.com/nilay/incubator/backend/internal/middleware/logger"
-	"github.com/nilay/incubator/backend/internal/routes"
+	k8ssvc "github.com/nilay/k8s-orchestrator/backend/internal/k8s"
+	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
+	"github.com/nilay/k8s-orchestrator/backend/internal/routes"
 	"go.uber.org/zap"
 )
 
