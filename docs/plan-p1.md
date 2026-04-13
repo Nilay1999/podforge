@@ -1,11 +1,11 @@
-# Incubator — Phase 1 Implementation Plan
-> **Goal:** Learn K8s concepts, explore the K8s API, and build core backend APIs for creating and applying manifests via Incubator.
+# k8s-orchestrator — Phase 1 Implementation Plan
+> **Goal:** Learn K8s concepts, explore the K8s API, and build core backend APIs for creating and applying manifests via k8s-orchestrator.
 
 ---
 
 ## Project Overview
 
-**Incubator** is a web-based Kubernetes resource manager that lets developers deploy containerized applications to a K8s cluster through a UI — without writing YAML manually.
+**k8s-orchestrator** is a web-based Kubernetes resource manager that lets developers deploy containerized applications to a K8s cluster through a UI — without writing YAML manually.
 
 **Stack:**
 - Frontend: React + TypeScript
@@ -84,7 +84,7 @@ Phase 1 is **backend-only and learning-focused**. No React UI yet. The goal is t
 **Estimate:** 1 day
 **Priority:** P0 — Understand before automating
 
-**Goal:** Write YAML manifests manually so you understand what Incubator will generate programmatically.
+**Goal:** Write YAML manifests manually so you understand what k8s-orchestrator will generate programmatically.
 
 **Tasks:**
 - [&check;] Write a Pod manifest manually and apply it
@@ -220,9 +220,9 @@ func main() {
 **Priority:** P0
 
 **Tasks:**
-- [ ] Create root folder `incubator/`
+- [ ] Create root folder `k8s-orchestrator/`
 - [ ] Create all subdirectories as per the agreed structure
-- [ ] Initialise Go module: `go mod init github.com/<username>/incubator/backend`
+- [ ] Initialise Go module: `go mod init github.com/<username>/k8s-orchestrator/backend`
 - [ ] Install all Go dependencies:
   - `github.com/gin-gonic/gin`
   - `k8s.io/client-go`
@@ -273,14 +273,14 @@ func main() {
 - [ ] Initialise Gin router
 - [ ] Add CORS middleware (React will call from port 5173)
 - [ ] Add request logger middleware (Gin default is fine)
-- [ ] Add `GET /health` endpoint returning `{ "status": "ok", "service": "incubator" }`
+- [ ] Add `GET /health` endpoint returning `{ "status": "ok", "service": "k8s-orchestrator" }`
 - [ ] Wire K8s client from INC-006 into main
 - [ ] Server listens on port `8080` (configurable via `PORT` env var)
 
 **Test:**
 ```bash
 curl http://localhost:8080/health
-# Expected: {"status":"ok","service":"incubator"}
+# Expected: {"status":"ok","service":"k8s-orchestrator"}
 ```
 
 ---
@@ -622,7 +622,7 @@ type APIError struct {
 ## Folder Structure (Phase 1)
 
 ```
-incubator/
+k8s-orchestrator/
 ├── backend/
 │   ├── cmd/
 │   │   └── server/
