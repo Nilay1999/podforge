@@ -1,5 +1,5 @@
 {
-  "name": "incubator-ui",
+  "name": "k8s-orchestrator-ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",

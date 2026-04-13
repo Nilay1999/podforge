@@ -52,9 +52,13 @@ export function AppLayout({ children }: AppLayoutProps) {
               hiddenFrom="sm"
               size="sm"
             />
-            <IconRocket size={28} stroke={1.5} />
+            <IconRocket
+              size={28}
+              stroke={1.5}
+              color="var(--mantine-color-cyan-5)"
+            />
             <Text size="xl" fw={700}>
-              Incubator
+              k8s-orchestrator
             </Text>
           </Group>
           <ActionIcon
@@ -77,6 +81,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <NavLink
             key={item.path}
             label={item.label}
+            fw={600}
             leftSection={<item.icon size={20} stroke={1.5} />}
             active={location.pathname === item.path}
             onClick={() => {
