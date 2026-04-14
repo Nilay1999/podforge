@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"k8s.io/client-go/kubernetes"
 
 	k8s "github.com/nilay/k8s-orchestrator/backend/internal/services"
@@ -11,26 +12,27 @@ import (
 	"github.com/nilay/k8s-orchestrator/backend/internal/util"
 )
 
-type ConfigmapHandler struct {
+type PodHandler struct {
 	clientset *kubernetes.Clientset
 }
 
-func NewConfigMap(clientset *kubernetes.Clientset) *ConfigmapHandler {
-	return &ConfigmapHandler{clientset: clientset}
+func NewPodHandler(clientset *kubernetes.Clientset) *PodHandler {
+	return &PodHandler{clientset: clientset}
 }
 
-func (h *ConfigmapHandler) Create(c *gin.Context) {
-	var req types.CreateConfigmapRequest
+func (h *PodHandler) Create(c *gin.Context) {
+	var req types.CreatePodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	result, err := k8s.CreateConfigmap(c.Request.Context(), h.clientset, req)
+	result, err := k8s.CreatePod(c.Request.Context(), h.clientset, req)
 	if err != nil {
 		util.CreateErrorResponse(c, err)
 		return
 	}
+
 	c.JSON(http.StatusCreated, types.CreateResponse{
 		Name:      result.Name,
 		Namespace: result.Namespace,
@@ -38,11 +40,11 @@ func (h *ConfigmapHandler) Create(c *gin.Context) {
 	})
 }
 
-func (h *ConfigmapHandler) Get(c *gin.Context) {
+func (h *PodHandler) Get(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	result, err := k8s.GetConfigmap(c.Request.Context(), h.clientset, namespace, name)
+	result, err := k8s.GetPod(c.Request.Context(), h.clientset, namespace, name)
 	if err != nil {
 		util.CreateErrorResponse(c, err)
 		return
@@ -50,10 +52,10 @@ func (h *ConfigmapHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *ConfigmapHandler) List(c *gin.Context) {
+func (h *PodHandler) List(c *gin.Context) {
 	namespace := c.Param("namespace")
 
-	result, err := k8s.ListConfigmaps(c.Request.Context(), h.clientset, namespace)
+	result, err := k8s.ListPods(c.Request.Context(), h.clientset, namespace)
 	if err != nil {
 		util.CreateErrorResponse(c, err)
 		return
@@ -61,8 +63,8 @@ func (h *ConfigmapHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *ConfigmapHandler) Update(c *gin.Context) {
-	var req types.CreateConfigmapRequest
+func (h *PodHandler) Update(c *gin.Context) {
+	var req types.CreatePodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -70,7 +72,7 @@ func (h *ConfigmapHandler) Update(c *gin.Context) {
 	req.Namespace = c.Param("namespace")
 	req.Name = c.Param("name")
 
-	result, err := k8s.UpdateConfigmap(c.Request.Context(), h.clientset, req)
+	result, err := k8s.UpdatePod(c.Request.Context(), h.clientset, req)
 	if err != nil {
 		util.CreateErrorResponse(c, err)
 		return
@@ -83,11 +85,11 @@ func (h *ConfigmapHandler) Update(c *gin.Context) {
 	})
 }
 
-func (h *ConfigmapHandler) Delete(c *gin.Context) {
+func (h *PodHandler) Delete(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	if err := k8s.DeleteConfigmap(c.Request.Context(), h.clientset, namespace, name); err != nil {
+	if err := k8s.DeletePod(c.Request.Context(), h.clientset, namespace, name); err != nil {
 		util.CreateErrorResponse(c, err)
 		return
 	}

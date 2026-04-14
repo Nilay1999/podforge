@@ -13,6 +13,7 @@ import (
 func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 	deploymentHandler := handlers.NewDeploymentHandler(clientset)
 	configMapHandler := handlers.NewConfigMap(clientset)
+	podHandler := handlers.NewPodHandler(clientset)
 
 	r.Use(logger.GinMiddleware(log))
 	r.SetTrustedProxies(nil)
@@ -26,12 +27,28 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 		deployment := v1.Group("deployment")
 		{
 			deployment.POST("/", deploymentHandler.Create)
+			deployment.GET("/:namespace", deploymentHandler.List)
+			deployment.GET("/:namespace/:name", deploymentHandler.Get)
+			deployment.PUT("/:namespace/:name", deploymentHandler.Update)
+			deployment.DELETE("/:namespace/:name", deploymentHandler.Delete)
 		}
-	}
-	{
-		deployment := v1.Group("config-map")
+
+		pod := v1.Group("pod")
 		{
-			deployment.POST("/", configMapHandler.Create)
+			pod.POST("/", podHandler.Create)
+			pod.GET("/:namespace", podHandler.List)
+			pod.GET("/:namespace/:name", podHandler.Get)
+			pod.PUT("/:namespace/:name", podHandler.Update)
+			pod.DELETE("/:namespace/:name", podHandler.Delete)
+		}
+
+		configMap := v1.Group("config-map")
+		{
+			configMap.POST("/", configMapHandler.Create)
+			configMap.GET("/:namespace", configMapHandler.List)
+			configMap.GET("/:namespace/:name", configMapHandler.Get)
+			configMap.PUT("/:namespace/:name", configMapHandler.Update)
+			configMap.DELETE("/:namespace/:name", configMapHandler.Delete)
 		}
 	}
 }
