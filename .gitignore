@@ -12,6 +12,13 @@ dist/
 vendor/
 coverage.out
 coverage.html
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
 
 # Node / UI
 node_modules/
@@ -42,3 +49,5 @@ kubeconfig
 *.log
 logs/
 .claude
+.turbo
+**/.turbo
