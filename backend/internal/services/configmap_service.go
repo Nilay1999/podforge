@@ -15,7 +15,16 @@ func GetConfigmap(ctx context.Context, clientset *kubernetes.Clientset, namespac
 }
 
 func ListConfigmaps(ctx context.Context, clientset *kubernetes.Clientset, namespace string) (*corev1.ConfigMapList, error) {
-	return clientset.CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{})
+	list, err := clientset.CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return &corev1.ConfigMapList{
+			Items: []corev1.ConfigMap{},
+		}, err
+	}
+	if list.Items == nil {
+		list.Items = []corev1.ConfigMap{}
+	}
+	return list, nil
 }
 
 func DeleteConfigmap(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) error {

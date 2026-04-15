@@ -15,7 +15,16 @@ func GetPod(ctx context.Context, clientset *kubernetes.Clientset, namespace, nam
 }
 
 func ListPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string) (*corev1.PodList, error) {
-	return clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	list, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return &corev1.PodList{
+			Items: []corev1.Pod{},
+		}, err
+	}
+	if list.Items == nil {
+		list.Items = []corev1.Pod{}
+	}
+	return list, nil
 }
 
 func DeletePod(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) error {

@@ -15,7 +15,16 @@ func GetDeployementByName(ctx context.Context, clientset *kubernetes.Clientset, 
 }
 
 func ListDeployments(ctx context.Context, clientset *kubernetes.Clientset, namespace string) (*appsv1.DeploymentList, error) {
-	return clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+	list, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return &appsv1.DeploymentList{
+			Items: []appsv1.Deployment{},
+		}, err
+	}
+	if list.Items == nil {
+		list.Items = []appsv1.Deployment{}
+	}
+	return list, nil
 }
 
 func DeleteDeployment(ctx context.Context, clientset *kubernetes.Clientset, namespace, name string) error {
