@@ -4,19 +4,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	handlers "github.com/nilay/k8s-orchestrator/backend/internal/handlers"
-	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/nilay/k8s-orchestrator/backend/internal/handlers"
+	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
+	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 )
 
 func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
-	deploymentHandler := handlers.NewDeploymentHandler(clientset)
-	configMapHandler := handlers.NewConfigMap(clientset)
-	podHandler := handlers.NewPodHandler(clientset)
-
+	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware(log))
 	r.SetTrustedProxies(nil)
+
+	deploySvc := services.NewDeploymentService(clientset)
+	podSvc := services.NewPodService(clientset)
+	configMapSvc := services.NewConfigmapService(clientset)
+
+	deploymentHandler := handlers.NewDeploymentHandler(deploySvc, log)
+	podHandler := handlers.NewPodHandler(podSvc, log)
+	configMapHandler := handlers.NewConfigMapHandler(configMapSvc, log)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

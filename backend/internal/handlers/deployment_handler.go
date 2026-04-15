@@ -4,19 +4,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"k8s.io/client-go/kubernetes"
+	"go.uber.org/zap"
 
-	k8s "github.com/nilay/k8s-orchestrator/backend/internal/services"
+	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
 	"github.com/nilay/k8s-orchestrator/backend/internal/util"
 )
 
 type DeploymentHandler struct {
-	clientset *kubernetes.Clientset
+	svc services.DeploymentService
+	log *zap.Logger
 }
 
-func NewDeploymentHandler(clientset *kubernetes.Clientset) *DeploymentHandler {
-	return &DeploymentHandler{clientset: clientset}
+func NewDeploymentHandler(svc services.DeploymentService, log *zap.Logger) *DeploymentHandler {
+	return &DeploymentHandler{svc: svc, log: log}
 }
 
 func (h *DeploymentHandler) Create(c *gin.Context) {
@@ -26,9 +27,9 @@ func (h *DeploymentHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := k8s.CreateDeployment(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Create(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 
@@ -40,25 +41,23 @@ func (h *DeploymentHandler) Create(c *gin.Context) {
 }
 
 func (h *DeploymentHandler) Get(c *gin.Context) {
-	req := types.GetDeployementByName{
+	req := types.GetDeploymentByName{
 		Namespace: c.Param("namespace"),
 		Name:      c.Param("name"),
 	}
 
-	result, err := k8s.GetDeployementByName(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Get(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
 }
 
 func (h *DeploymentHandler) List(c *gin.Context) {
-	namespace := c.Param("namespace")
-
-	result, err := k8s.ListDeployments(c.Request.Context(), h.clientset, namespace)
+	result, err := h.svc.List(c.Request.Context(), c.Param("namespace"))
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -73,9 +72,9 @@ func (h *DeploymentHandler) Update(c *gin.Context) {
 	req.Namespace = c.Param("namespace")
 	req.Name = c.Param("name")
 
-	result, err := k8s.UpdateDeployment(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Update(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 
@@ -90,8 +89,8 @@ func (h *DeploymentHandler) Delete(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	if err := k8s.DeleteDeployment(c.Request.Context(), h.clientset, namespace, name); err != nil {
-		util.CreateErrorResponse(c, err)
+	if err := h.svc.Delete(c.Request.Context(), namespace, name); err != nil {
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 

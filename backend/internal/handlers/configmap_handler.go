@@ -4,19 +4,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"k8s.io/client-go/kubernetes"
+	"go.uber.org/zap"
 
-	k8s "github.com/nilay/k8s-orchestrator/backend/internal/services"
+	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
 	"github.com/nilay/k8s-orchestrator/backend/internal/util"
 )
 
 type ConfigmapHandler struct {
-	clientset *kubernetes.Clientset
+	svc services.ConfigmapService
+	log *zap.Logger
 }
 
-func NewConfigMap(clientset *kubernetes.Clientset) *ConfigmapHandler {
-	return &ConfigmapHandler{clientset: clientset}
+func NewConfigMapHandler(svc services.ConfigmapService, log *zap.Logger) *ConfigmapHandler {
+	return &ConfigmapHandler{svc: svc, log: log}
 }
 
 func (h *ConfigmapHandler) Create(c *gin.Context) {
@@ -26,9 +27,9 @@ func (h *ConfigmapHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := k8s.CreateConfigmap(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Create(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusCreated, types.CreateResponse{
@@ -39,23 +40,18 @@ func (h *ConfigmapHandler) Create(c *gin.Context) {
 }
 
 func (h *ConfigmapHandler) Get(c *gin.Context) {
-	namespace := c.Param("namespace")
-	name := c.Param("name")
-
-	result, err := k8s.GetConfigmap(c.Request.Context(), h.clientset, namespace, name)
+	result, err := h.svc.Get(c.Request.Context(), c.Param("namespace"), c.Param("name"))
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
 }
 
 func (h *ConfigmapHandler) List(c *gin.Context) {
-	namespace := c.Param("namespace")
-
-	result, err := k8s.ListConfigmaps(c.Request.Context(), h.clientset, namespace)
+	result, err := h.svc.List(c.Request.Context(), c.Param("namespace"))
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -70,9 +66,9 @@ func (h *ConfigmapHandler) Update(c *gin.Context) {
 	req.Namespace = c.Param("namespace")
 	req.Name = c.Param("name")
 
-	result, err := k8s.UpdateConfigmap(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Update(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 
@@ -87,8 +83,8 @@ func (h *ConfigmapHandler) Delete(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	if err := k8s.DeleteConfigmap(c.Request.Context(), h.clientset, namespace, name); err != nil {
-		util.CreateErrorResponse(c, err)
+	if err := h.svc.Delete(c.Request.Context(), namespace, name); err != nil {
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 

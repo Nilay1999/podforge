@@ -6,10 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
+	"go.uber.org/zap"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func CreateErrorResponse(c *gin.Context, err error) {
+func CreateErrorResponse(c *gin.Context, log *zap.Logger, err error) {
 	var ve *types.ValidationError
 	switch {
 	case errors.As(err, &ve):
@@ -21,6 +22,7 @@ func CreateErrorResponse(c *gin.Context, err error) {
 	case k8serrors.IsInvalid(err):
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Error("internal server error", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 	}
 }

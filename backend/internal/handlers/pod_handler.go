@@ -4,20 +4,20 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
-	"k8s.io/client-go/kubernetes"
-
-	k8s "github.com/nilay/k8s-orchestrator/backend/internal/services"
+	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
 	"github.com/nilay/k8s-orchestrator/backend/internal/util"
 )
 
 type PodHandler struct {
-	clientset *kubernetes.Clientset
+	svc services.PodService
+	log *zap.Logger
 }
 
-func NewPodHandler(clientset *kubernetes.Clientset) *PodHandler {
-	return &PodHandler{clientset: clientset}
+func NewPodHandler(svc services.PodService, log *zap.Logger) *PodHandler {
+	return &PodHandler{svc: svc, log: log}
 }
 
 func (h *PodHandler) Create(c *gin.Context) {
@@ -27,9 +27,9 @@ func (h *PodHandler) Create(c *gin.Context) {
 		return
 	}
 
-	result, err := k8s.CreatePod(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Create(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 
@@ -41,23 +41,18 @@ func (h *PodHandler) Create(c *gin.Context) {
 }
 
 func (h *PodHandler) Get(c *gin.Context) {
-	namespace := c.Param("namespace")
-	name := c.Param("name")
-
-	result, err := k8s.GetPod(c.Request.Context(), h.clientset, namespace, name)
+	result, err := h.svc.Get(c.Request.Context(), c.Param("namespace"), c.Param("name"))
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
 }
 
 func (h *PodHandler) List(c *gin.Context) {
-	namespace := c.Param("namespace")
-
-	result, err := k8s.ListPods(c.Request.Context(), h.clientset, namespace)
+	result, err := h.svc.List(c.Request.Context(), c.Param("namespace"))
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -72,9 +67,9 @@ func (h *PodHandler) Update(c *gin.Context) {
 	req.Namespace = c.Param("namespace")
 	req.Name = c.Param("name")
 
-	result, err := k8s.UpdatePod(c.Request.Context(), h.clientset, req)
+	result, err := h.svc.Update(c.Request.Context(), req)
 	if err != nil {
-		util.CreateErrorResponse(c, err)
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 
@@ -89,8 +84,8 @@ func (h *PodHandler) Delete(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	if err := k8s.DeletePod(c.Request.Context(), h.clientset, namespace, name); err != nil {
-		util.CreateErrorResponse(c, err)
+	if err := h.svc.Delete(c.Request.Context(), namespace, name); err != nil {
+		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
 
