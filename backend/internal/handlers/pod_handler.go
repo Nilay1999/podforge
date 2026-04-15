@@ -11,17 +11,17 @@ import (
 	"github.com/nilay/k8s-orchestrator/backend/internal/util"
 )
 
-type ConfigmapHandler struct {
-	svc services.ConfigmapService
+type PodHandler struct {
+	svc services.PodService
 	log *zap.Logger
 }
 
-func NewConfigMapHandler(svc services.ConfigmapService, log *zap.Logger) *ConfigmapHandler {
-	return &ConfigmapHandler{svc: svc, log: log}
+func NewPodHandler(svc services.PodService, log *zap.Logger) *PodHandler {
+	return &PodHandler{svc: svc, log: log}
 }
 
-func (h *ConfigmapHandler) Create(c *gin.Context) {
-	var req types.CreateConfigmapRequest
+func (h *PodHandler) Create(c *gin.Context) {
+	var req types.CreatePodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -32,6 +32,7 @@ func (h *ConfigmapHandler) Create(c *gin.Context) {
 		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
+
 	c.JSON(http.StatusCreated, types.CreateResponse{
 		Name:      result.Name,
 		Namespace: result.Namespace,
@@ -39,7 +40,7 @@ func (h *ConfigmapHandler) Create(c *gin.Context) {
 	})
 }
 
-func (h *ConfigmapHandler) Get(c *gin.Context) {
+func (h *PodHandler) Get(c *gin.Context) {
 	result, err := h.svc.Get(c.Request.Context(), c.Param("namespace"), c.Param("name"))
 	if err != nil {
 		util.CreateErrorResponse(c, h.log, err)
@@ -48,7 +49,7 @@ func (h *ConfigmapHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *ConfigmapHandler) List(c *gin.Context) {
+func (h *PodHandler) List(c *gin.Context) {
 	result, err := h.svc.List(c.Request.Context(), c.Param("namespace"))
 	if err != nil {
 		util.CreateErrorResponse(c, h.log, err)
@@ -57,8 +58,8 @@ func (h *ConfigmapHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *ConfigmapHandler) Update(c *gin.Context) {
-	var req types.CreateConfigmapRequest
+func (h *PodHandler) Update(c *gin.Context) {
+	var req types.CreatePodRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -79,7 +80,7 @@ func (h *ConfigmapHandler) Update(c *gin.Context) {
 	})
 }
 
-func (h *ConfigmapHandler) Delete(c *gin.Context) {
+func (h *PodHandler) Delete(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 

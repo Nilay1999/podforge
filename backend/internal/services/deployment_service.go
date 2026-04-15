@@ -2,87 +2,68 @@ package services
 
 import (
 	"context"
-	"fmt"
-	"maps"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/services/builders"
+	"github.com/nilay/k8s-orchestrator/backend/internal/builders"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateDeployment(ctx context.Context, clientset *kubernetes.Clientset, req types.CreateDeploymentRequest) (*appsv1.Deployment, error) {
-	replicas := req.Replicas
-	labels := map[string]string{"app": req.Name}
-	maps.Copy(labels, req.Labels)
+type DeploymentService interface {
+	Create(ctx context.Context, req types.CreateDeploymentRequest) (*appsv1.Deployment, error)
+	Get(ctx context.Context, req types.GetDeploymentByName) (*appsv1.Deployment, error)
+	List(ctx context.Context, namespace string) (*appsv1.DeploymentList, error)
+	Update(ctx context.Context, req types.CreateDeploymentRequest) (*appsv1.Deployment, error)
+	Delete(ctx context.Context, namespace, name string) error
+}
 
-	mainContainer, err := builders.BuildMainContainer(req)
+type deploymentService struct {
+	clientset *kubernetes.Clientset
+}
+
+func NewDeploymentService(clientset *kubernetes.Clientset) DeploymentService {
+	return &deploymentService{clientset: clientset}
+}
+
+func (s *deploymentService) Get(ctx context.Context, req types.GetDeploymentByName) (*appsv1.Deployment, error) {
+	return s.clientset.AppsV1().Deployments(req.Namespace).Get(ctx, req.Name, metav1.GetOptions{})
+}
+
+func (s *deploymentService) List(ctx context.Context, namespace string) (*appsv1.DeploymentList, error) {
+	list, err := s.clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, &types.ValidationError{Err: err}
+		return &appsv1.DeploymentList{Items: []appsv1.Deployment{}}, err
 	}
+	if list.Items == nil {
+		list.Items = []appsv1.Deployment{}
+	}
+	return list, nil
+}
 
-	sidecars, err := builders.BuildSidecarContainers(req.Sidecars)
+func (s *deploymentService) Delete(ctx context.Context, namespace, name string) error {
+	return s.clientset.AppsV1().Deployments(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+}
+
+func (s *deploymentService) Create(ctx context.Context, req types.CreateDeploymentRequest) (*appsv1.Deployment, error) {
+	deployment, err := builders.BuildDeployment(req)
 	if err != nil {
-		return nil, &types.ValidationError{Err: fmt.Errorf("sidecars: %w", err)}
+		return nil, err
 	}
+	return s.clientset.AppsV1().Deployments(req.Namespace).Create(ctx, deployment, metav1.CreateOptions{})
+}
 
-	initContainers, err := builders.BuildSidecarContainers(req.InitContainers)
+func (s *deploymentService) Update(ctx context.Context, req types.CreateDeploymentRequest) (*appsv1.Deployment, error) {
+	existing, err := s.clientset.AppsV1().Deployments(req.Namespace).Get(ctx, req.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, &types.ValidationError{Err: fmt.Errorf("initContainers: %w", err)}
+		return nil, err
 	}
 
-	volumes, err := builders.BuildVolumes(req.Volumes)
+	deployment, err := builders.BuildDeployment(req)
 	if err != nil {
-		return nil, &types.ValidationError{Err: err}
+		return nil, err
 	}
+	deployment.ResourceVersion = existing.ResourceVersion
 
-	podSpec := corev1.PodSpec{
-		Containers:                    append([]corev1.Container{mainContainer}, sidecars...),
-		InitContainers:                initContainers,
-		Volumes:                       volumes,
-		ImagePullSecrets:              builders.BuildImagePullSecrets(req.ImagePullSecrets),
-		ServiceAccountName:            req.ServiceAccount,
-		NodeSelector:                  req.NodeSelector,
-		NodeName:                      req.NodeName,
-		Tolerations:                   builders.BuildTolerations(req.Tolerations),
-		Affinity:                      builders.BuildAffinity(req.Affinity),
-		TopologySpreadConstraints:     builders.BuildTopologySpreadConstraints(req.TopologySpreadConstraints),
-		SecurityContext:               builders.BuildPodSecurityContext(req.PodSecurityContext),
-		TerminationGracePeriodSeconds: req.TerminationGracePeriodSeconds,
-		PriorityClassName:             req.PriorityClassName,
-		DNSPolicy:                     builders.BuildDNSPolicy(req.DNSPolicy),
-	}
-	if req.RuntimeClassName != "" {
-		podSpec.RuntimeClassName = &req.RuntimeClassName
-	}
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        req.Name,
-			Namespace:   req.Namespace,
-			Labels:      labels,
-			Annotations: req.Annotations,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas:                &replicas,
-			Strategy:                builders.BuildStrategy(req.Strategy),
-			MinReadySeconds:         req.MinReadySeconds,
-			RevisionHistoryLimit:    req.RevisionHistoryLimit,
-			ProgressDeadlineSeconds: req.ProgressDeadlineSeconds,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": req.Name},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
-					Annotations: req.Annotations,
-				},
-				Spec: podSpec,
-			},
-		},
-	}
-
-	return clientset.AppsV1().Deployments(req.Namespace).Create(ctx, deployment, metav1.CreateOptions{})
+	return s.clientset.AppsV1().Deployments(req.Namespace).Update(ctx, deployment, metav1.UpdateOptions{})
 }

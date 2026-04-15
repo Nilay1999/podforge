@@ -2,87 +2,68 @@ package services
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/services/builders"
+	"github.com/nilay/k8s-orchestrator/backend/internal/builders"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreatePod(ctx context.Context, clientset *kubernetes.Clientset, req types.CreatePodRequest) (*corev1.Pod, error) {
-	containers, err := builders.BuildSidecarContainers(req.Containers)
+type PodService interface {
+	Create(ctx context.Context, req types.CreatePodRequest) (*corev1.Pod, error)
+	Get(ctx context.Context, namespace, name string) (*corev1.Pod, error)
+	List(ctx context.Context, namespace string) (*corev1.PodList, error)
+	Update(ctx context.Context, req types.CreatePodRequest) (*corev1.Pod, error)
+	Delete(ctx context.Context, namespace, name string) error
+}
+
+type podService struct {
+	clientset *kubernetes.Clientset
+}
+
+func NewPodService(clientset *kubernetes.Clientset) PodService {
+	return &podService{clientset: clientset}
+}
+
+func (s *podService) Get(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	return s.clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (s *podService) List(ctx context.Context, namespace string) (*corev1.PodList, error) {
+	list, err := s.clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, &types.ValidationError{Err: fmt.Errorf("containers: %w", err)}
+		return &corev1.PodList{Items: []corev1.Pod{}}, err
 	}
-	if len(containers) == 0 {
-		return nil, &types.ValidationError{Err: fmt.Errorf("at least one container is required")}
+	if list.Items == nil {
+		list.Items = []corev1.Pod{}
 	}
+	return list, nil
+}
 
-	initContainers, err := builders.BuildSidecarContainers(req.InitContainers)
+func (s *podService) Delete(ctx context.Context, namespace, name string) error {
+	return s.clientset.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+}
+
+func (s *podService) Create(ctx context.Context, req types.CreatePodRequest) (*corev1.Pod, error) {
+	pod, err := builders.BuildPod(req)
 	if err != nil {
-		return nil, &types.ValidationError{Err: fmt.Errorf("initContainers: %w", err)}
+		return nil, err
 	}
+	return s.clientset.CoreV1().Pods(req.Namespace).Create(ctx, pod, metav1.CreateOptions{})
+}
 
-	volumes, err := builders.BuildVolumes(req.Volumes)
+func (s *podService) Update(ctx context.Context, req types.CreatePodRequest) (*corev1.Pod, error) {
+	existing, err := s.clientset.CoreV1().Pods(req.Namespace).Get(ctx, req.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, &types.ValidationError{Err: err}
+		return nil, err
 	}
 
-	overhead, err := builders.BuildOverhead(req.Overhead)
+	pod, err := builders.BuildPod(req)
 	if err != nil {
-		return nil, &types.ValidationError{Err: fmt.Errorf("overhead: %w", err)}
+		return nil, err
 	}
+	pod.ResourceVersion = existing.ResourceVersion
 
-	podSpec := corev1.PodSpec{
-		Containers:                    containers,
-		InitContainers:                initContainers,
-		Volumes:                       volumes,
-		ImagePullSecrets:              builders.BuildImagePullSecrets(req.ImagePullSecrets),
-		ServiceAccountName:            req.ServiceAccount,
-		AutomountServiceAccountToken:  req.AutomountServiceAccountToken,
-		NodeSelector:                  req.NodeSelector,
-		NodeName:                      req.NodeName,
-		Tolerations:                   builders.BuildTolerations(req.Tolerations),
-		Affinity:                      builders.BuildAffinity(req.Affinity),
-		TopologySpreadConstraints:     builders.BuildTopologySpreadConstraints(req.TopologySpreadConstraints),
-		SecurityContext:               builders.BuildPodSecurityContext(req.SecurityContext),
-		TerminationGracePeriodSeconds: req.TerminationGracePeriodSeconds,
-		ActiveDeadlineSeconds:         req.ActiveDeadlineSeconds,
-		RestartPolicy:                 corev1.RestartPolicy(req.RestartPolicy),
-		PriorityClassName:             req.PriorityClassName,
-		Priority:                      req.Priority,
-		SchedulerName:                 req.SchedulerName,
-		DNSPolicy:                     builders.BuildDNSPolicy(req.DNSPolicy),
-		DNSConfig:                     builders.BuildDNSConfig(req.DNSConfig),
-		HostNetwork:                   req.HostNetwork,
-		HostPID:                       req.HostPID,
-		HostIPC:                       req.HostIPC,
-		Hostname:                      req.Hostname,
-		Subdomain:                     req.Subdomain,
-		HostAliases:                   builders.BuildHostAliases(req.HostAliases),
-		ReadinessGates:                builders.BuildReadinessGates(req.ReadinessGates),
-		Overhead:                      overhead,
-		EnableServiceLinks:            req.EnableServiceLinks,
-	}
-	if req.RuntimeClassName != "" {
-		podSpec.RuntimeClassName = &req.RuntimeClassName
-	}
-	if req.PreemptionPolicy != "" {
-		pp := corev1.PreemptionPolicy(req.PreemptionPolicy)
-		podSpec.PreemptionPolicy = &pp
-	}
-
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        req.Name,
-			Namespace:   req.Namespace,
-			Labels:      req.Labels,
-			Annotations: req.Annotations,
-		},
-		Spec: podSpec,
-	}
-
-	return clientset.CoreV1().Pods(req.Namespace).Create(ctx, pod, metav1.CreateOptions{})
+	return s.clientset.CoreV1().Pods(req.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
 }

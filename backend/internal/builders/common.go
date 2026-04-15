@@ -160,8 +160,6 @@ func BuildResourceList(rl *types.ResourceList) (corev1.ResourceList, error) {
 	return list, nil
 }
 
-// ── Probes ───────────────────────────────────────────────────────────────────
-
 func BuildProbe(p *types.Probe) (*corev1.Probe, error) {
 	if p == nil {
 		return nil, nil
@@ -197,8 +195,6 @@ func BuildProbe(p *types.Probe) (*corev1.Probe, error) {
 	}, nil
 }
 
-// ── Lifecycle ────────────────────────────────────────────────────────────────
-
 func BuildLifecycle(l *types.Lifecycle) *corev1.Lifecycle {
 	if l == nil {
 		return nil
@@ -230,8 +226,6 @@ func BuildLifecycleHandler(h *types.LifecycleHandler) *corev1.LifecycleHandler {
 	}
 	return out
 }
-
-// ── Volumes ──────────────────────────────────────────────────────────────────
 
 func BuildVolumeMounts(mounts []types.VolumeMount) []corev1.VolumeMount {
 	out := make([]corev1.VolumeMount, len(mounts))
@@ -302,8 +296,6 @@ func BuildVolumes(volumes []types.Volume) ([]corev1.Volume, error) {
 	return out, nil
 }
 
-// ── Security ─────────────────────────────────────────────────────────────────
-
 func BuildPodSecurityContext(sc *types.PodSecurityContext) *corev1.PodSecurityContext {
 	if sc == nil {
 		return nil
@@ -340,8 +332,6 @@ func BuildContainerSecurityContext(sc *types.ContainerSecurityContext) *corev1.S
 	}
 	return out
 }
-
-// ── Scheduling ───────────────────────────────────────────────────────────────
 
 func BuildImagePullSecrets(secrets []string) []corev1.LocalObjectReference {
 	out := make([]corev1.LocalObjectReference, len(secrets))

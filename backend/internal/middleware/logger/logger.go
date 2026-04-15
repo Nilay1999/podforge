@@ -1,28 +1,28 @@
 package logger
 
 import (
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nilay/k8s-orchestrator/backend/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func New() *zap.Logger {
-	level := parseLevel(os.Getenv("LOG_LEVEL"))
+func New(cfg config.Config) *zap.Logger {
+	level := parseLevel(cfg.LogLevel)
 
-	var cfg zap.Config
-	if os.Getenv("APP_ENV") == "production" {
-		cfg = zap.NewProductionConfig()
+	var c zap.Config
+	if cfg.AppEnv == "production" {
+		c = zap.NewProductionConfig()
 	} else {
-		cfg = zap.NewDevelopmentConfig()
-		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		c = zap.NewDevelopmentConfig()
+		c.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
-	cfg.Level = zap.NewAtomicLevelAt(level)
+	c.Level = zap.NewAtomicLevelAt(level)
 
-	log, err := cfg.Build(zap.AddCallerSkip(0))
+	log, err := c.Build(zap.AddCallerSkip(0))
 	if err != nil {
 		panic("logger init failed: " + err.Error())
 	}

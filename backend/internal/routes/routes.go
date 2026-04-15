@@ -4,18 +4,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	handlers "github.com/nilay/k8s-orchestrator/backend/internal/handlers"
-	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/nilay/k8s-orchestrator/backend/internal/handlers"
+	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
+	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 )
 
 func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
-	deploymentHandler := handlers.NewDeploymentHandler(clientset)
-	configMapHandler := handlers.NewConfigMap(clientset)
-
+	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware(log))
 	r.SetTrustedProxies(nil)
+
+	deploySvc := services.NewDeploymentService(clientset)
+	podSvc := services.NewPodService(clientset)
+	configMapSvc := services.NewConfigmapService(clientset)
+
+	deploymentHandler := handlers.NewDeploymentHandler(deploySvc, log)
+	podHandler := handlers.NewPodHandler(podSvc, log)
+	configMapHandler := handlers.NewConfigMapHandler(configMapSvc, log)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -26,12 +34,28 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 		deployment := v1.Group("deployment")
 		{
 			deployment.POST("/", deploymentHandler.Create)
+			deployment.GET("/:namespace", deploymentHandler.List)
+			deployment.GET("/:namespace/:name", deploymentHandler.Get)
+			deployment.PUT("/:namespace/:name", deploymentHandler.Update)
+			deployment.DELETE("/:namespace/:name", deploymentHandler.Delete)
 		}
-	}
-	{
-		deployment := v1.Group("config-map")
+
+		pod := v1.Group("pod")
 		{
-			deployment.POST("/", configMapHandler.Create)
+			pod.POST("/", podHandler.Create)
+			pod.GET("/:namespace", podHandler.List)
+			pod.GET("/:namespace/:name", podHandler.Get)
+			pod.PUT("/:namespace/:name", podHandler.Update)
+			pod.DELETE("/:namespace/:name", podHandler.Delete)
+		}
+
+		configMap := v1.Group("config-map")
+		{
+			configMap.POST("/", configMapHandler.Create)
+			configMap.GET("/:namespace", configMapHandler.List)
+			configMap.GET("/:namespace/:name", configMapHandler.Get)
+			configMap.PUT("/:namespace/:name", configMapHandler.Update)
+			configMap.DELETE("/:namespace/:name", configMapHandler.Delete)
 		}
 	}
 }
