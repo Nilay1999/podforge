@@ -15,12 +15,14 @@ import {
   IconBox,
   IconSun,
   IconMoon,
+  IconFileText,
 } from "@tabler/icons-react";
 
 const navItems = [
   { label: "Dashboard", icon: IconDashboard, path: "/" },
   { label: "Deployments", icon: IconRocket, path: "/deployments" },
   { label: "Pods", icon: IconBox, path: "/pods" },
+  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" },
 ];
 
 interface AppLayoutProps {
@@ -55,7 +57,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <IconRocket
               size={28}
               stroke={1.5}
-              color="var(--mantine-color-cyan-5)"
+              color="var(--mantine-color-steelBlue-5)"
             />
             <Text size="xl" fw={700}>
               k8s-orchestrator

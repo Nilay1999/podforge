@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-query";
 import type { MutationResponse } from "../types";
 
-// Generic CRUD contract that every resource API module satisfies.
 export interface ResourceApi<TItem, TList, TCreate> {
   list: (namespace: string) => Promise<TList>;
   get: (namespace: string, name: string) => Promise<TItem>;
@@ -38,7 +37,7 @@ export function createResourceHooks<TItem, TList, TCreate>(
     useQuery<TList, Error>({
       queryKey: keys.list(namespace),
       queryFn: () => api.list(namespace),
-      refetchInterval: 5000,
+      refetchInterval: 15000,
       ...options,
     });
 

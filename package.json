@@ -1,0 +1,22 @@
+{
+  "name": "k8s-orchestrator",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "run:backend": "cd backend && pnpm dev",
+    "run:ui": "cd ui && pnpm dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
