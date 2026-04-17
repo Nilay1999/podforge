@@ -5,32 +5,32 @@ import {
   mergeMantineTheme,
 } from "@mantine/core";
 
-// Cyan — primary brand color
-const cyan: MantineColorsTuple = [
-  "#ecfeff",
-  "#cffafe",
-  "#a5f3fc",
-  "#67e8f9",
-  "#22d3ee",
-  "#06b6d4", // [5] — base cyan
-  "#0891b2",
-  "#0e7490",
-  "#155e75",
-  "#164e63",
+// Steel Blue — primary brand color (desaturated, calm on dark backgrounds)
+const steelBlue: MantineColorsTuple = [
+  "#eff4fe",
+  "#dce8fd",
+  "#b5cefb",
+  "#89b2f8",
+  "#6b9bf5",
+  "#5b8def", // [5] — base steel blue
+  "#4a7de8",
+  "#3a6dd8",
+  "#2d5dbf",
+  "#1e4aa3",
 ];
 
-// Sky accent for secondary actions
-const sky: MantineColorsTuple = [
-  "#f0f9ff",
-  "#e0f2fe",
-  "#bae6fd",
-  "#7dd3fc",
-  "#38bdf8",
-  "#0ea5e9", // [5]
-  "#0284c7",
-  "#0369a1",
-  "#075985",
-  "#0c4a6e",
+// Slate accent for secondary actions
+const slate: MantineColorsTuple = [
+  "#f1f5fd",
+  "#e2eafb",
+  "#c2d3f7",
+  "#99b5f2",
+  "#7a9ced",
+  "#6389e6", // [5]
+  "#4f75d8",
+  "#3d61c6",
+  "#2e4fa8",
+  "#1f3a88",
 ];
 
 // Green for success / running states
@@ -76,14 +76,13 @@ const danger: MantineColorsTuple = [
 ];
 
 const themeOverride = createTheme({
-  primaryColor: "cyan",
+  primaryColor: "steelBlue",
   colors: {
-    cyan,
-    sky,
+    steelBlue,
+    slate,
     success,
     warning,
     danger,
-    // Softened dark backgrounds using Zinc scale
     dark: [
       "#FAFAFA", // [0] text on dark bg
       "#D4D4D8", // [1] secondary text

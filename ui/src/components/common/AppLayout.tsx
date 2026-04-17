@@ -57,7 +57,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <IconRocket
               size={28}
               stroke={1.5}
-              color="var(--mantine-color-cyan-5)"
+              color="var(--mantine-color-steelBlue-5)"
             />
             <Text size="xl" fw={700}>
               k8s-orchestrator

@@ -4,6 +4,8 @@
   "packageManager": "pnpm@10.11.0",
   "scripts": {
     "dev": "turbo dev",
+    "run:backend": "cd backend && pnpm dev",
+    "run:ui": "cd ui && pnpm dev",
     "build": "turbo build",
     "test": "turbo test",
     "lint": "turbo lint",
@@ -13,6 +15,8 @@
     "turbo": "^2.5.4"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

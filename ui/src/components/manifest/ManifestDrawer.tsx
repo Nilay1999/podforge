@@ -8,24 +8,15 @@ import {
   Text,
   ThemeIcon,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { IconCode, IconForms } from "@tabler/icons-react";
 import type { ResourceKind } from "../../types";
+import { ManifestForm } from "../forms/ManifestForm";
 
 interface ManifestDrawerProps {
   opened: boolean;
   onClose: () => void;
   kind: ResourceKind;
-}
-
-// Placeholder tabs — form and editor content will be dropped in here next
-function FormTab() {
-  return (
-    <Box p="md">
-      <Text c="dimmed" size="sm">
-        Form fields for the resource will appear here.
-      </Text>
-    </Box>
-  );
 }
 
 function YamlTab() {
@@ -39,6 +30,8 @@ function YamlTab() {
 }
 
 export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
+  const formId = "manifest-drawer-form";
+
   return (
     <Drawer
       opened={opened}
@@ -96,7 +89,18 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
         </Tabs.List>
 
         <Tabs.Panel value="form">
-          <FormTab />
+          <ManifestForm
+            kind={kind}
+            formId={formId}
+            onSubmit={(values) => {
+              notifications.show({
+                title: `${kind} ready`,
+                message: `Form submitted for "${values.name || "unnamed"}"`,
+                color: "teal",
+              });
+              onClose();
+            }}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="yaml">
@@ -107,10 +111,12 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
       {/* Footer */}
       <Divider />
       <Group px="lg" py="md" justify="flex-start">
-        <Button variant="subtle" color="gray" onClick={onClose}>
+        <Button variant="subtle" color="gray" onClick={onClose} type="button">
           Cancel
         </Button>
-        <Button>Apply</Button>
+        <Button type="submit" form={formId}>
+          Apply
+        </Button>
       </Group>
     </Drawer>
   );
