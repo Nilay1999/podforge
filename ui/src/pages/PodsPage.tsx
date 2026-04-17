@@ -8,10 +8,12 @@ import {
   Stack,
   Table,
   TextInput,
-  Title,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { IconRefresh, IconTrash } from "@tabler/icons-react";
+import { ResourcePageHeader } from "../components/common/ResourcePageHeader";
+import { ManifestDrawer } from "../components/manifest/ManifestDrawer";
 import { useDeletePod, usePods } from "../hooks/usePods";
 
 const phaseColor = (phase?: string) => {
@@ -30,6 +32,9 @@ const phaseColor = (phase?: string) => {
 
 export function PodsPage() {
   const [namespace, setNamespace] = useState("default");
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
+
   const { data, isLoading, error, refetch, isFetching } = usePods(namespace);
   const deleteMutation = useDeletePod(namespace);
 
@@ -52,25 +57,30 @@ export function PodsPage() {
 
   return (
     <Stack>
-      <Group justify="space-between">
-        <Title order={2}>Pods</Title>
-        <Group>
-          <TextInput
-            label="Namespace"
-            value={namespace}
-            onChange={(e) => setNamespace(e.currentTarget.value)}
-            size="xs"
-          />
-          <ActionIcon
-            variant="light"
-            onClick={() => refetch()}
-            loading={isFetching}
-            size="lg"
-            mt="lg"
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Group>
+      <ResourcePageHeader title="Pod" onCreateClick={openDrawer} />
+
+      <ManifestDrawer
+        opened={drawerOpened}
+        onClose={closeDrawer}
+        kind="Pod"
+      />
+
+      <Group>
+        <TextInput
+          label="Namespace"
+          value={namespace}
+          onChange={(e) => setNamespace(e.currentTarget.value)}
+          size="xs"
+        />
+        <ActionIcon
+          variant="light"
+          onClick={() => refetch()}
+          loading={isFetching}
+          size="lg"
+          mt="lg"
+        >
+          <IconRefresh size={18} />
+        </ActionIcon>
       </Group>
 
       {isLoading && <Loader />}

@@ -15,12 +15,14 @@ import {
   IconBox,
   IconSun,
   IconMoon,
+  IconFileText,
 } from "@tabler/icons-react";
 
 const navItems = [
   { label: "Dashboard", icon: IconDashboard, path: "/" },
   { label: "Deployments", icon: IconRocket, path: "/deployments" },
   { label: "Pods", icon: IconBox, path: "/pods" },
+  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" },
 ];
 
 interface AppLayoutProps {

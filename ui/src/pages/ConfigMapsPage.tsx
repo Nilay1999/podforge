@@ -3,21 +3,21 @@ import { useDisclosure } from "@mantine/hooks";
 import { ResourcePageHeader } from "../components/common/ResourcePageHeader";
 import { ManifestDrawer } from "../components/manifest/ManifestDrawer";
 
-export function DeploymentsPage() {
+export function ConfigMapsPage() {
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
 
   return (
     <Stack>
-      <ResourcePageHeader title="Deployment" onCreateClick={openDrawer} />
+      <ResourcePageHeader title="ConfigMap" onCreateClick={openDrawer} />
 
       <ManifestDrawer
         opened={drawerOpened}
         onClose={closeDrawer}
-        kind="Deployment"
+        kind="ConfigMap"
       />
 
-      {/* Deployment list table will be built here */}
+      {/* ConfigMap list table will be built here */}
     </Stack>
   );
 }
