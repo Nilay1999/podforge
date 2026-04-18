@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, NumberInput, Paper, Stack, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import type { CreatePodRequest } from "../../types";
+import type { CreatePodRequest } from "@src/types";
 import {
   type KeyValuePair,
   pairsToRecord,

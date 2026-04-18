@@ -4,7 +4,7 @@ import type {
   MutationResponse,
   Pod,
   PodList,
-} from "../types";
+} from "@src/types";
 
 export const listPods = (namespace: string) =>
   apiClient.get<PodList>(`/pod/${namespace}`).then((r) => r.data);
@@ -18,7 +18,7 @@ export const createPod = (payload: CreatePodRequest) =>
 export const updatePod = (
   namespace: string,
   name: string,
-  payload: CreatePodRequest
+  payload: CreatePodRequest,
 ) =>
   apiClient
     .put<MutationResponse>(`/pod/${namespace}/${name}`, payload)

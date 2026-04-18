@@ -23,7 +23,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
-import type { Pod } from "../../types";
+import type { Pod } from "@src/types";
 
 function phaseColor(phase?: string) {
   if (phase === "Running") return "success";
@@ -35,7 +35,7 @@ function phaseColor(phase?: string) {
 function podAge(creationTimestamp?: string): string {
   if (!creationTimestamp) return "–";
   const seconds = Math.floor(
-    (Date.now() - new Date(creationTimestamp).getTime()) / 1000
+    (Date.now() - new Date(creationTimestamp).getTime()) / 1000,
   );
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
@@ -46,15 +46,33 @@ function podAge(creationTimestamp?: string): string {
 const MOCK_EVENTS = [
   { type: "Normal", reason: "Started", msg: "Started container", t: "2m ago" },
   { type: "Normal", reason: "Created", msg: "Created container", t: "2m ago" },
-  { type: "Normal", reason: "Pulled", msg: "Successfully pulled image", t: "2m ago" },
-  { type: "Normal", reason: "Scheduled", msg: "Pod assigned to node", t: "2m ago" },
+  {
+    type: "Normal",
+    reason: "Pulled",
+    msg: "Successfully pulled image",
+    t: "2m ago",
+  },
+  {
+    type: "Normal",
+    reason: "Scheduled",
+    msg: "Pod assigned to node",
+    t: "2m ago",
+  },
 ];
 
 const MOCK_LOGS = [
   { t: "13:42:11", lvl: "info", msg: "Listening on :8080" },
-  { t: "13:42:11", lvl: "info", msg: "Connected to postgres://db.prod:5432/app" },
+  {
+    t: "13:42:11",
+    lvl: "info",
+    msg: "Connected to postgres://db.prod:5432/app",
+  },
   { t: "13:42:14", lvl: "info", msg: "GET /healthz 200 1.4ms" },
-  { t: "13:42:16", lvl: "warn", msg: "slow query (312ms): SELECT * FROM users WHERE ..." },
+  {
+    t: "13:42:16",
+    lvl: "warn",
+    msg: "slow query (312ms): SELECT * FROM users WHERE ...",
+  },
   { t: "13:42:18", lvl: "info", msg: "GET /api/v1/jobs 200 8.3ms" },
   { t: "13:42:20", lvl: "error", msg: "upstream timeout: billing-api:8080" },
 ];
@@ -89,7 +107,7 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
           spec: pod.spec,
           status: pod.status,
         },
-        { lineWidth: -1 }
+        { lineWidth: -1 },
       )
     : "";
 
@@ -110,7 +128,12 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
       size={760}
       withCloseButton={false}
       styles={{
-        body: { display: "flex", flexDirection: "column", height: "100%", padding: 0 },
+        body: {
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          padding: 0,
+        },
         content: { display: "flex", flexDirection: "column" },
       }}
     >
@@ -118,13 +141,26 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
       <Box
         px="lg"
         py="md"
-        style={{ borderBottom: "1px solid var(--mantine-color-default-border)", background: "var(--mantine-color-default-hover)" }}
+        style={{
+          borderBottom: "1px solid var(--mantine-color-default-border)",
+          background: "var(--mantine-color-default-hover)",
+        }}
       >
         <Group gap="xs" mb={8}>
-          <Text fw={600} size="md" ff="monospace" style={{ flex: 1, wordBreak: "break-all" }}>
+          <Text
+            fw={600}
+            size="md"
+            ff="monospace"
+            style={{ flex: 1, wordBreak: "break-all" }}
+          >
             {pod?.metadata.name}
           </Text>
-          <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={onClose}
+            aria-label="Close"
+          >
             <IconX size={16} />
           </ActionIcon>
         </Group>
@@ -134,19 +170,37 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
           </Badge>
           <Text size="xs" c="dimmed">
             {pod?.metadata.namespace ?? "default"} · {age}
-            {restarts > 0 && ` · ${restarts} restart${restarts !== 1 ? "s" : ""}`}
+            {restarts > 0 &&
+              ` · ${restarts} restart${restarts !== 1 ? "s" : ""}`}
           </Text>
           <Box style={{ flex: 1 }} />
-          <Button variant="default" size="xs" leftSection={<IconCode size={12} />}>
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconCode size={12} />}
+          >
             Logs
           </Button>
-          <Button variant="default" size="xs" leftSection={<IconTerminal size={12} />}>
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconTerminal size={12} />}
+          >
             Exec
           </Button>
-          <Button variant="default" size="xs" leftSection={<IconEdit size={12} />}>
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconEdit size={12} />}
+          >
             Edit
           </Button>
-          <Button variant="outline" color="danger" size="xs" leftSection={<IconTrash size={12} />}>
+          <Button
+            variant="outline"
+            color="danger"
+            size="xs"
+            leftSection={<IconTrash size={12} />}
+          >
             Delete
           </Button>
         </Group>
@@ -156,7 +210,12 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
       <Tabs
         value={tab}
         onChange={setTab}
-        style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
         styles={{ panel: { flex: 1, overflowY: "auto" } }}
       >
         <Tabs.List px="lg">
@@ -177,7 +236,14 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
         <Tabs.Panel value="overview" p="lg">
           <Stack gap="lg">
             <section>
-              <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: "0.06em" }} mb="sm">
+              <Text
+                size="xs"
+                fw={700}
+                tt="uppercase"
+                c="dimmed"
+                style={{ letterSpacing: "0.06em" }}
+                mb="sm"
+              >
                 Metadata
               </Text>
               <Box
@@ -198,12 +264,19 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
                   ["Image", pod?.spec?.containers?.[0]?.image ?? "–"],
                   [
                     "Containers",
-                    totalContainers > 0 ? `${readyCount}/${totalContainers}` : "–",
+                    totalContainers > 0
+                      ? `${readyCount}/${totalContainers}`
+                      : "–",
                   ],
                   ["Age", age],
                 ].map(([label, value]) => (
                   <>
-                    <Text component="dt" size="sm" c="dimmed" key={`dt-${label}`}>
+                    <Text
+                      component="dt"
+                      size="sm"
+                      c="dimmed"
+                      key={`dt-${label}`}
+                    >
                       {label}
                     </Text>
                     <Text
@@ -222,7 +295,14 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
 
             {Object.keys(labels).length > 0 && (
               <section>
-                <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: "0.06em" }} mb="sm">
+                <Text
+                  size="xs"
+                  fw={700}
+                  tt="uppercase"
+                  c="dimmed"
+                  style={{ letterSpacing: "0.06em" }}
+                  mb="sm"
+                >
                   Labels
                 </Text>
                 <Group gap="xs" wrap="wrap">
@@ -238,7 +318,14 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
             )}
 
             <section>
-              <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: "0.06em" }} mb="sm">
+              <Text
+                size="xs"
+                fw={700}
+                tt="uppercase"
+                c="dimmed"
+                style={{ letterSpacing: "0.06em" }}
+                mb="sm"
+              >
                 Conditions
               </Text>
               <Stack gap="xs">
@@ -250,9 +337,15 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
                   return (
                     <Group key={cond} gap="xs">
                       {ok ? (
-                        <IconCheck size={14} color="var(--mantine-color-success-6)" />
+                        <IconCheck
+                          size={14}
+                          color="var(--mantine-color-success-6)"
+                        />
                       ) : (
-                        <IconAlertTriangle size={14} color="var(--mantine-color-warning-6)" />
+                        <IconAlertTriangle
+                          size={14}
+                          color="var(--mantine-color-warning-6)"
+                        />
                       )}
                       <Text size="sm" ff="monospace">
                         {cond}
@@ -300,18 +393,26 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
               {MOCK_EVENTS.map((e, i) => (
                 <Table.Tr key={i}>
                   <Table.Td>
-                    <Badge size="xs" color={e.type === "Normal" ? "gray" : "warning"} variant="light">
+                    <Badge
+                      size="xs"
+                      color={e.type === "Normal" ? "gray" : "warning"}
+                      variant="light"
+                    >
                       {e.type}
                     </Badge>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" ff="monospace">{e.reason}</Text>
+                    <Text size="sm" ff="monospace">
+                      {e.reason}
+                    </Text>
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">{e.msg}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" c="dimmed" ff="monospace">{e.t}</Text>
+                    <Text size="sm" c="dimmed" ff="monospace">
+                      {e.t}
+                    </Text>
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -334,7 +435,9 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
           >
             {MOCK_LOGS.map((l, i) => (
               <div key={i}>
-                <span style={{ color: "var(--mantine-color-dark-2, #a1a1aa)" }}>{l.t}</span>{" "}
+                <span style={{ color: "var(--mantine-color-dark-2, #a1a1aa)" }}>
+                  {l.t}
+                </span>{" "}
                 <span
                   style={{
                     color: logLevelColor[l.lvl],

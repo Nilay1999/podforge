@@ -5,7 +5,7 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
-import type { MutationResponse } from "../types";
+import type { MutationResponse } from "@src/types";
 
 export interface ResourceApi<TItem, TList, TCreate> {
   list: (namespace: string) => Promise<TList>;

@@ -26,7 +26,7 @@ import type {
   ImagePullPolicy,
   Probe,
   Toleration,
-} from "../../types";
+} from "@src/types";
 import {
   type KeyValuePair,
   KeyValuePairsField,

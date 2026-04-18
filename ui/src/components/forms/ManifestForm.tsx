@@ -4,7 +4,7 @@ import type {
   CreateDeploymentRequest,
   CreatePodRequest,
   ResourceKind,
-} from "../../types";
+} from "@src/types";
 import { ConfigMapManifestForm } from "./ConfigMapManifestForm";
 import { DeploymentManifestForm } from "./DeploymentManifestForm";
 import { PodManifestForm } from "./PodManifestForm";
@@ -36,8 +36,14 @@ export function ManifestForm<K extends ResourceKind>({
         <DeploymentManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreateDeploymentRequest) => void}
-          onPayloadChange={onPayloadChange as ((p: CreateDeploymentRequest) => void) | undefined}
-          defaultPayload={defaultPayload as Partial<CreateDeploymentRequest> | undefined}
+          onPayloadChange={
+            onPayloadChange as
+              | ((p: CreateDeploymentRequest) => void)
+              | undefined
+          }
+          defaultPayload={
+            defaultPayload as Partial<CreateDeploymentRequest> | undefined
+          }
         />
       );
     case "ConfigMap":
@@ -45,8 +51,12 @@ export function ManifestForm<K extends ResourceKind>({
         <ConfigMapManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreateConfigMapRequest) => void}
-          onPayloadChange={onPayloadChange as ((p: CreateConfigMapRequest) => void) | undefined}
-          defaultPayload={defaultPayload as Partial<CreateConfigMapRequest> | undefined}
+          onPayloadChange={
+            onPayloadChange as ((p: CreateConfigMapRequest) => void) | undefined
+          }
+          defaultPayload={
+            defaultPayload as Partial<CreateConfigMapRequest> | undefined
+          }
         />
       );
     case "Pod":

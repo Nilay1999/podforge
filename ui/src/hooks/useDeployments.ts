@@ -1,9 +1,9 @@
-import * as deploymentApi from "../api/deployments";
+import * as deploymentApi from "@src/api/deployments";
 import type {
   CreateDeploymentRequest,
   Deployment,
   DeploymentList,
-} from "../types";
+} from "@src/types";
 import { createResourceHooks } from "./createResourceHooks";
 
 const hooks = createResourceHooks<

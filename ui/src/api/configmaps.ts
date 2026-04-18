@@ -4,12 +4,10 @@ import type {
   ConfigMapList,
   CreateConfigMapRequest,
   MutationResponse,
-} from "../types";
+} from "@src/types";
 
 export const listConfigMaps = (namespace: string) =>
-  apiClient
-    .get<ConfigMapList>(`/config-map/${namespace}`)
-    .then((r) => r.data);
+  apiClient.get<ConfigMapList>(`/config-map/${namespace}`).then((r) => r.data);
 
 export const getConfigMap = (namespace: string, name: string) =>
   apiClient
@@ -22,7 +20,7 @@ export const createConfigMap = (payload: CreateConfigMapRequest) =>
 export const updateConfigMap = (
   namespace: string,
   name: string,
-  payload: CreateConfigMapRequest
+  payload: CreateConfigMapRequest,
 ) =>
   apiClient
     .put<MutationResponse>(`/config-map/${namespace}/${name}`, payload)

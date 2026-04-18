@@ -1,5 +1,5 @@
-import * as podApi from "../api/pods";
-import type { CreatePodRequest, Pod, PodList } from "../types";
+import * as podApi from "@src/api/pods";
+import type { CreatePodRequest, Pod, PodList } from "@src/types";
 import { createResourceHooks } from "./createResourceHooks";
 
 const hooks = createResourceHooks<Pod, PodList, CreatePodRequest>("pods", {

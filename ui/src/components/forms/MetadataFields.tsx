@@ -7,7 +7,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import type { UseFormReturnType } from "@mantine/form";
-import { DEFAULT_NAMESPACES } from "../../utils/constants";
+import { DEFAULT_NAMESPACES } from "@src/utils/constants";
 import { KeyValuePairsField, type KeyValuePair } from "./KeyValuePairsField";
 
 interface MetadataFieldsProps<T extends { name: string; namespace: string }> {

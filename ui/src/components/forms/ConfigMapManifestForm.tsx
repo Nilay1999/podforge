@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Checkbox, Paper, Stack, Text, Tooltip } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconInfoCircle } from "@tabler/icons-react";
-import type { CreateConfigMapRequest } from "../../types";
+import type { CreateConfigMapRequest } from "@src/types";
 import {
   type KeyValuePair,
   KeyValuePairsField,
@@ -12,7 +12,9 @@ import {
 import { MetadataFields } from "./MetadataFields";
 
 function recordToPairs(record?: Record<string, string>): KeyValuePair[] {
-  return record ? Object.entries(record).map(([key, value]) => ({ key, value })) : [];
+  return record
+    ? Object.entries(record).map(([key, value]) => ({ key, value }))
+    : [];
 }
 
 export function ConfigMapManifestForm({
@@ -66,7 +68,15 @@ export function ConfigMapManifestForm({
       data: pairsToRecord(dataPairs),
       binaryData: pairsToRecord(binaryDataPairs),
     });
-  }, [form.values.name, form.values.namespace, form.values.immutable, labelPairs, annotationPairs, dataPairs, binaryDataPairs]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    form.values.name,
+    form.values.namespace,
+    form.values.immutable,
+    labelPairs,
+    annotationPairs,
+    dataPairs,
+    binaryDataPairs,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,7 +86,13 @@ export function ConfigMapManifestForm({
     const dataError = validatePairs(dataPairs, "Data");
     const binaryDataError = validatePairs(binaryDataPairs, "Binary data");
 
-    if (formResult.hasErrors || labelsError || annotationsError || dataError || binaryDataError) {
+    if (
+      formResult.hasErrors ||
+      labelsError ||
+      annotationsError ||
+      dataError ||
+      binaryDataError
+    ) {
       setPairErrors({
         labels: labelsError,
         annotations: annotationsError,

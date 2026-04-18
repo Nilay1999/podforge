@@ -13,8 +13,8 @@ import {
 import { notifications } from "@mantine/notifications";
 import { IconCode, IconForms, IconX } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
-import type { ResourceKind } from "../../types";
-import { ManifestForm } from "../forms/ManifestForm";
+import type { ResourceKind } from "@src/types";
+import { ManifestForm } from "@src/components/forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
 import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
 
@@ -30,14 +30,18 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
 
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
-  const [formPayload, setFormPayload] = useState<AnyPayload>(() => strategy.initialPayload);
+  const [formPayload, setFormPayload] = useState<AnyPayload>(
+    () => strategy.initialPayload,
+  );
   const [formKey, setFormKey] = useState(0);
 
   const handleTabChange = (tab: string | null) => {
     if (!tab || tab === activeTab) return;
 
     if (tab === "yaml") {
-      setEditorValue(jsYaml.dump(strategy.toManifest(formPayload), { lineWidth: -1 }));
+      setEditorValue(
+        jsYaml.dump(strategy.toManifest(formPayload), { lineWidth: -1 }),
+      );
     } else if (tab === "form") {
       try {
         const parsed = jsYaml.load(editorValue);
@@ -79,11 +83,20 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
             <IconForms size={16} />
           </ThemeIcon>
           <Stack gap={0}>
-            <Text fw={600} size="md">Create {kind}</Text>
-            <Text size="xs" c="dimmed">Fill the form or edit YAML directly. Changes sync both ways.</Text>
+            <Text fw={600} size="md">
+              Create {kind}
+            </Text>
+            <Text size="xs" c="dimmed">
+              Fill the form or edit YAML directly. Changes sync both ways.
+            </Text>
           </Stack>
         </Group>
-        <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close drawer">
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          onClick={onClose}
+          aria-label="Close drawer"
+        >
           <IconX size={16} />
         </ActionIcon>
       </Group>

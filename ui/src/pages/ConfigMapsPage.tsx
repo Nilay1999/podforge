@@ -1,7 +1,7 @@
 import { Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { ResourcePageHeader } from "../components/common/ResourcePageHeader";
-import { ManifestDrawer } from "../components/manifest/ManifestDrawer";
+import { ResourcePageHeader } from "@src/components/common/ResourcePageHeader";
+import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
 
 export function ConfigMapsPage() {
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =

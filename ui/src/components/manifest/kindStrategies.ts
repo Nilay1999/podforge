@@ -3,7 +3,7 @@ import type {
   CreateDeploymentRequest,
   CreatePodRequest,
   ResourceKind,
-} from "../../types";
+} from "@src/types";
 
 export type AnyPayload =
   | CreateConfigMapRequest
@@ -69,7 +69,10 @@ function deploymentToManifest(p: CreateDeploymentRequest): object {
   if (p.workingDir) container.workingDir = p.workingDir;
   if (p.ports?.length) container.ports = p.ports;
   if (p.envVars && Object.keys(p.envVars).length)
-    container.env = Object.entries(p.envVars).map(([name, value]) => ({ name, value }));
+    container.env = Object.entries(p.envVars).map(([name, value]) => ({
+      name,
+      value,
+    }));
   if (p.envFrom?.length)
     container.envFrom = p.envFrom.map((e) => ({
       ...(e.configMapRef ? { configMapRef: { name: e.configMapRef } } : {}),
@@ -80,7 +83,8 @@ function deploymentToManifest(p: CreateDeploymentRequest): object {
   if (p.livenessProbe) container.livenessProbe = p.livenessProbe;
   if (p.readinessProbe) container.readinessProbe = p.readinessProbe;
   if (p.startupProbe) container.startupProbe = p.startupProbe;
-  if (p.containerSecurityContext) container.securityContext = p.containerSecurityContext;
+  if (p.containerSecurityContext)
+    container.securityContext = p.containerSecurityContext;
 
   const podSpec: Record<string, unknown> = { containers: [container] };
   if (p.serviceAccount) podSpec.serviceAccountName = p.serviceAccount;
@@ -118,8 +122,10 @@ function deploymentToManifest(p: CreateDeploymentRequest): object {
     };
   }
   if (p.minReadySeconds) spec.minReadySeconds = p.minReadySeconds;
-  if (p.revisionHistoryLimit != null) spec.revisionHistoryLimit = p.revisionHistoryLimit;
-  if (p.progressDeadlineSeconds) spec.progressDeadlineSeconds = p.progressDeadlineSeconds;
+  if (p.revisionHistoryLimit != null)
+    spec.revisionHistoryLimit = p.revisionHistoryLimit;
+  if (p.progressDeadlineSeconds)
+    spec.progressDeadlineSeconds = p.progressDeadlineSeconds;
 
   return { apiVersion: "apps/v1", kind: "Deployment", metadata, spec };
 }

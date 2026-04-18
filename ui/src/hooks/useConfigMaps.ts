@@ -1,9 +1,9 @@
-import * as configMapApi from "../api/configmaps";
+import * as configMapApi from "@src/api/configmaps";
 import type {
   ConfigMap,
   ConfigMapList,
   CreateConfigMapRequest,
-} from "../types";
+} from "@src/types";
 import { createResourceHooks } from "./createResourceHooks";
 
 const hooks = createResourceHooks<

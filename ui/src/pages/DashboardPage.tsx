@@ -22,12 +22,12 @@ import {
   IconServer,
   IconAlertTriangle,
 } from "@tabler/icons-react";
-import { ManifestDrawer } from "../components/manifest/ManifestDrawer";
-import type { ResourceKind } from "../types";
-import { useDeployments } from "../hooks/useDeployments";
-import { usePods } from "../hooks/usePods";
-import { useConfigMaps } from "../hooks/useConfigMaps";
-import type { Pod } from "../types";
+import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
+import type { ResourceKind } from "@src/types";
+import { useDeployments } from "@src/hooks/useDeployments";
+import { usePods } from "@src/hooks/usePods";
+import { useConfigMaps } from "@src/hooks/useConfigMaps";
+import type { Pod } from "@src/types";
 
 function PhaseDonut({
   running,
@@ -54,8 +54,17 @@ function PhaseDonut({
           flexShrink: 0,
         }}
       >
-        <Text fw={700} fz={22} lh={1}>0</Text>
-        <Text fz={10} c="dimmed" tt="uppercase" style={{ letterSpacing: "0.06em", marginTop: 3 }}>pods</Text>
+        <Text fw={700} fz={22} lh={1}>
+          0
+        </Text>
+        <Text
+          fz={10}
+          c="dimmed"
+          tt="uppercase"
+          style={{ letterSpacing: "0.06em", marginTop: 3 }}
+        >
+          pods
+        </Text>
       </div>
     );
   }
@@ -67,8 +76,12 @@ function PhaseDonut({
     var(--mantine-color-danger-5) ${rPct + pPct}% 100%
   )`;
   return (
-    <div style={{ position: "relative", width: 110, height: 110, flexShrink: 0 }}>
-      <div style={{ width: 110, height: 110, borderRadius: "50%", background: bg }} />
+    <div
+      style={{ position: "relative", width: 110, height: 110, flexShrink: 0 }}
+    >
+      <div
+        style={{ width: 110, height: 110, borderRadius: "50%", background: bg }}
+      />
       <div
         style={{
           position: "absolute",
@@ -81,8 +94,17 @@ function PhaseDonut({
           justifyContent: "center",
         }}
       >
-        <Text fw={700} fz={22} lh={1}>{total}</Text>
-        <Text fz={10} c="dimmed" tt="uppercase" style={{ letterSpacing: "0.06em", marginTop: 3 }}>pods</Text>
+        <Text fw={700} fz={22} lh={1}>
+          {total}
+        </Text>
+        <Text
+          fz={10}
+          c="dimmed"
+          tt="uppercase"
+          style={{ letterSpacing: "0.06em", marginTop: 3 }}
+        >
+          pods
+        </Text>
       </div>
     </div>
   );
@@ -106,7 +128,13 @@ function SummaryCard({
           <Icon size={20} />
         </ThemeIcon>
         <Box style={{ flex: 1 }}>
-          <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: "0.06em" }}>
+          <Text
+            size="xs"
+            c="dimmed"
+            tt="uppercase"
+            fw={700}
+            style={{ letterSpacing: "0.06em" }}
+          >
             {label}
           </Text>
           <Text size="xl" fw={700} mt={2} lh={1}>
@@ -222,7 +250,8 @@ function EventsFeed() {
 
 export function DashboardPage() {
   const [drawerKind, setDrawerKind] = useState<ResourceKind>("Deployment");
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
 
   const { data: pods } = usePods("default");
   const { data: deployments } = useDeployments("default");
@@ -233,7 +262,9 @@ export function DashboardPage() {
     running: podItems.filter((p) => p.status?.phase === "Running").length,
     pending: podItems.filter((p) => p.status?.phase === "Pending").length,
     failed: podItems.filter(
-      (p) => p.status?.phase === "Failed" || (p.status?.phase as string) === "CrashLoopBackOff"
+      (p) =>
+        p.status?.phase === "Failed" ||
+        (p.status?.phase as string) === "CrashLoopBackOff",
     ).length,
   };
 
@@ -244,7 +275,11 @@ export function DashboardPage() {
 
   return (
     <>
-      <ManifestDrawer opened={drawerOpened} onClose={closeDrawer} kind={drawerKind} />
+      <ManifestDrawer
+        opened={drawerOpened}
+        onClose={closeDrawer}
+        kind={drawerKind}
+      />
 
       <Stack gap="lg">
         {/* Page header */}
@@ -323,7 +358,14 @@ export function DashboardPage() {
         {/* Phase chart + events */}
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <Paper withBorder p="md" radius="md">
-            <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: "0.06em" }} mb="md">
+            <Text
+              size="xs"
+              fw={700}
+              tt="uppercase"
+              c="dimmed"
+              style={{ letterSpacing: "0.06em" }}
+              mb="md"
+            >
               Pod phase
             </Text>
             <Group gap="lg" align="center">
@@ -334,14 +376,38 @@ export function DashboardPage() {
               />
               <Stack gap="xs" style={{ flex: 1 }}>
                 {[
-                  { label: "Running", count: podCounts.running, color: "var(--mantine-color-success-5)" },
-                  { label: "Pending", count: podCounts.pending, color: "var(--mantine-color-warning-5)" },
-                  { label: "Failed", count: podCounts.failed, color: "var(--mantine-color-danger-5)" },
+                  {
+                    label: "Running",
+                    count: podCounts.running,
+                    color: "var(--mantine-color-success-5)",
+                  },
+                  {
+                    label: "Pending",
+                    count: podCounts.pending,
+                    color: "var(--mantine-color-warning-5)",
+                  },
+                  {
+                    label: "Failed",
+                    count: podCounts.failed,
+                    color: "var(--mantine-color-danger-5)",
+                  },
                 ].map(({ label, count, color }) => (
                   <Group key={label} gap="xs">
-                    <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-                    <Text size="sm" style={{ flex: 1 }}>{label}</Text>
-                    <Text size="sm" fw={600} ff="monospace">{count}</Text>
+                    <div
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 2,
+                        background: color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Text size="sm" style={{ flex: 1 }}>
+                      {label}
+                    </Text>
+                    <Text size="sm" fw={600} ff="monospace">
+                      {count}
+                    </Text>
                   </Group>
                 ))}
               </Stack>
@@ -351,11 +417,19 @@ export function DashboardPage() {
           <Paper withBorder p="md" radius="md">
             <Group gap="xs" mb={4}>
               <IconActivity size={14} color="var(--mantine-color-dimmed)" />
-              <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: "0.06em" }}>
+              <Text
+                size="xs"
+                fw={700}
+                tt="uppercase"
+                c="dimmed"
+                style={{ letterSpacing: "0.06em" }}
+              >
                 Recent events
               </Text>
               <Box style={{ flex: 1 }} />
-              <Text size="xs" c="dimmed">last 1h</Text>
+              <Text size="xs" c="dimmed">
+                last 1h
+              </Text>
             </Group>
             <EventsFeed />
           </Paper>

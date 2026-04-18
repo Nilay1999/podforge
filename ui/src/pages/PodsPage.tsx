@@ -29,10 +29,10 @@ import {
   IconTerminal,
   IconTrash,
 } from "@tabler/icons-react";
-import { ManifestDrawer } from "../components/manifest/ManifestDrawer";
-import { PodDetailDrawer } from "../components/pods/PodDetailDrawer";
-import { useDeletePod, usePods } from "../hooks/usePods";
-import type { Pod } from "../types";
+import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
+import { PodDetailDrawer } from "@src/components/pods/PodDetailDrawer";
+import { useDeletePod, usePods } from "@src/hooks/usePods";
+import type { Pod } from "@src/types";
 
 const NAMESPACES = [
   "default",
@@ -60,7 +60,7 @@ function phaseColor(phase?: string): string {
 function podAge(creationTimestamp?: string): string {
   if (!creationTimestamp) return "–";
   const seconds = Math.floor(
-    (Date.now() - new Date(creationTimestamp).getTime()) / 1000
+    (Date.now() - new Date(creationTimestamp).getTime()) / 1000,
   );
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
@@ -175,10 +175,10 @@ export function PodsPage() {
       failed: allPods.filter(
         (p) =>
           p.status?.phase === "Failed" ||
-          (p.status?.phase as string) === "CrashLoopBackOff"
+          (p.status?.phase as string) === "CrashLoopBackOff",
       ).length,
     }),
-    [allPods]
+    [allPods],
   );
 
   const filtered = useMemo(() => {
@@ -354,7 +354,7 @@ export function PodsPage() {
                         setSelected(
                           allSelected
                             ? new Set()
-                            : new Set(filtered.map((p) => p.metadata.name))
+                            : new Set(filtered.map((p) => p.metadata.name)),
                         )
                       }
                     />
@@ -372,13 +372,14 @@ export function PodsPage() {
               <Table.Tbody>
                 {filtered.map((pod) => {
                   const containerStatuses = pod.status?.containerStatuses ?? [];
-                  const readyCount = containerStatuses.filter((c) => c.ready).length;
+                  const readyCount = containerStatuses.filter(
+                    (c) => c.ready,
+                  ).length;
                   const totalContainers =
-                    pod.spec?.containers?.length ??
-                    containerStatuses.length;
+                    pod.spec?.containers?.length ?? containerStatuses.length;
                   const restarts = containerStatuses.reduce(
                     (s, c) => s + c.restartCount,
-                    0
+                    0,
                   );
                   const age = podAge(pod.metadata.creationTimestamp);
                   const tint = rowTint(pod.status?.phase);
@@ -486,12 +487,17 @@ export function PodsPage() {
                 })}
                 {filtered.length === 0 && (
                   <Table.Tr>
-                    <Table.Td colSpan={9} style={{ textAlign: "center", padding: 40 }}>
+                    <Table.Td
+                      colSpan={9}
+                      style={{ textAlign: "center", padding: 40 }}
+                    >
                       <Text c="dimmed" size="sm">
                         {search
                           ? `No pods match "${search}" in `
                           : `No pods in namespace `}
-                        <Text span ff="monospace">{namespace}</Text>
+                        <Text span ff="monospace">
+                          {namespace}
+                        </Text>
                       </Text>
                     </Table.Td>
                   </Table.Tr>
