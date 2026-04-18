@@ -36,6 +36,8 @@ export function ManifestForm<K extends ResourceKind>({
         <DeploymentManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreateDeploymentRequest) => void}
+          onPayloadChange={onPayloadChange as ((p: CreateDeploymentRequest) => void) | undefined}
+          defaultPayload={defaultPayload as Partial<CreateDeploymentRequest> | undefined}
         />
       );
     case "ConfigMap":

@@ -11,9 +11,10 @@ import {
 import { notifications } from "@mantine/notifications";
 import { IconCode, IconForms } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
-import type { CreateConfigMapRequest, ResourceKind } from "../../types";
+import type { ResourceKind } from "../../types";
 import { ManifestForm } from "../forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
+import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
 
 interface ManifestDrawerProps {
   opened: boolean;
@@ -21,58 +22,24 @@ interface ManifestDrawerProps {
   kind: ResourceKind;
 }
 
-function buildConfigMapManifest(p: CreateConfigMapRequest): object {
-  const metadata: Record<string, unknown> = {
-    name: p.name || "",
-    namespace: p.namespace || "default",
-  };
-  if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
-  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
-
-  const manifest: Record<string, unknown> = {
-    apiVersion: "v1",
-    kind: "ConfigMap",
-    metadata,
-  };
-  if (p.data && Object.keys(p.data).length) manifest.data = p.data;
-  if (p.binaryData && Object.keys(p.binaryData).length) manifest.binaryData = p.binaryData;
-  if (p.immutable) manifest.immutable = p.immutable;
-
-  return manifest;
-}
-
-function parseConfigMapManifest(raw: unknown): CreateConfigMapRequest {
-  const m = raw as Record<string, any>;
-  return {
-    name: m?.metadata?.name ?? "",
-    namespace: m?.metadata?.namespace ?? "default",
-    labels: m?.metadata?.labels,
-    annotations: m?.metadata?.annotations,
-    data: m?.data,
-    binaryData: m?.binaryData,
-    immutable: m?.immutable,
-  };
-}
-
 export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
   const formId = "manifest-drawer-form";
+  const strategy = KIND_STRATEGIES[kind];
+
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
-  const [configMapPayload, setConfigMapPayload] = useState<CreateConfigMapRequest>({
-    name: "",
-    namespace: "default",
-  });
+  const [formPayload, setFormPayload] = useState<AnyPayload>(() => strategy.initialPayload);
   const [formKey, setFormKey] = useState(0);
 
   const handleTabChange = (tab: string | null) => {
     if (!tab || tab === activeTab) return;
 
-    if (tab === "yaml" && kind === "ConfigMap") {
-      setEditorValue(jsYaml.dump(buildConfigMapManifest(configMapPayload), { lineWidth: -1 }));
-    } else if (tab === "form" && kind === "ConfigMap") {
+    if (tab === "yaml") {
+      setEditorValue(jsYaml.dump(strategy.toManifest(formPayload), { lineWidth: -1 }));
+    } else if (tab === "form") {
       try {
         const parsed = jsYaml.load(editorValue);
-        setConfigMapPayload(parseConfigMapManifest(parsed));
+        setFormPayload(strategy.fromManifest(parsed));
         setFormKey((k) => k + 1);
       } catch {
         notifications.show({
@@ -104,7 +71,6 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
         content: { display: "flex", flexDirection: "column" },
       }}
     >
-      {/* Header */}
       <Group px="lg" py="md" justify="space-between">
         <Group gap="xs">
           <ThemeIcon variant="light" size="md">
@@ -121,7 +87,6 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
 
       <Divider />
 
-      {/* Tabs */}
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
@@ -157,8 +122,8 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
               });
               onClose();
             }}
-            onPayloadChange={kind === "ConfigMap" ? (setConfigMapPayload as (p: typeof configMapPayload) => void) : undefined}
-            defaultPayload={kind === "ConfigMap" ? configMapPayload : undefined}
+            onPayloadChange={setFormPayload as (p: AnyPayload) => void}
+            defaultPayload={formPayload}
           />
         </Tabs.Panel>
 
@@ -167,7 +132,6 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
         </Tabs.Panel>
       </Tabs>
 
-      {/* Footer */}
       <Divider />
       <Group px="lg" py="md" justify="flex-start">
         <Button variant="subtle" color="gray" onClick={onClose} type="button">
