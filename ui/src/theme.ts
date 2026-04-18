@@ -84,14 +84,14 @@ const themeOverride = createTheme({
     warning,
     danger,
     dark: [
-      "#FAFAFA", // [0] text on dark bg
+      "#FAFAFA", // [0] fg-default
       "#D4D4D8", // [1] secondary text
-      "#A1A1AA", // [2] dimmed text
+      "#A1A1AA", // [2] fg-dimmed
       "#71717A", // [3] muted text
-      "#3f3f46", // [4] borders
-      "#27272a", // [5] surface/card bg
-      "#1e1e22", // [6] navbar/sidebar bg
-      "#141416", // [7] body bg
+      "#3f3f46", // [4] border-default
+      "#1e1e22", // [5] bg-navbar
+      "#27272a", // [6] bg-surface — Paper/Card use this index
+      "#141416", // [7] bg-body
       "#0f0f11", // [8] deepest bg
       "#09090b", // [9]
     ],

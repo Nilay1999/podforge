@@ -50,13 +50,21 @@ export function AppLayout({ children }: AppLayoutProps) {
         collapsed: { mobile: !opened },
       }}
       padding="md"
+      styles={{
+        header: { background: "var(--mantine-color-dark-5)" },
+        navbar: { background: "var(--mantine-color-dark-5)" },
+      }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" gap="xs">
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
           <Group gap="xs" mr="xs">
-            <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-5)" />
+            <IconRocket
+              size={26}
+              stroke={1.5}
+              color="var(--mantine-color-steelBlue-5)"
+            />
             <Text size="lg" fw={700} style={{ letterSpacing: "-0.01em" }}>
               k8s-orchestrator
             </Text>
@@ -78,7 +86,6 @@ export function AppLayout({ children }: AppLayoutProps) {
             leftSection={<IconServer size={14} />}
             rightSection={<IconChevronDown size={12} />}
             visibleFrom="sm"
-            styles={{ label: { fontFamily: "var(--mantine-font-monospace, monospace)" } }}
           >
             production
           </Button>
@@ -90,20 +97,9 @@ export function AppLayout({ children }: AppLayoutProps) {
             rightSection={<IconChevronDown size={12} />}
             visibleFrom="sm"
           >
-            ns:{" "}
-            <Text
-              span
-              ff="monospace"
-              fw={500}
-              c="var(--mantine-color-text)"
-              ml={2}
-            >
-              default
-            </Text>
+            ns: default
           </Button>
-
           <Box style={{ flex: 1 }} />
-
           <Button
             variant="default"
             size="xs"
@@ -137,12 +133,19 @@ export function AppLayout({ children }: AppLayoutProps) {
             onClick={() => toggleColorScheme()}
             aria-label="Toggle color scheme"
           >
-            {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
+            {colorScheme === "dark" ? (
+              <IconSun size={18} />
+            ) : (
+              <IconMoon size={18} />
+            )}
           </ActionIcon>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
+      <AppShell.Navbar
+        p="sm"
+        style={{ display: "flex", flexDirection: "column" }}
+      >
         {navItems.map((item) => (
           <NavLink
             key={item.path}

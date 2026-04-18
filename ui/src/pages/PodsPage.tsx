@@ -7,7 +7,6 @@ import {
   Button,
   Checkbox,
   Group,
-  Kbd,
   Loader,
   Menu,
   Paper,
@@ -24,6 +23,7 @@ import {
   IconDots,
   IconEdit,
   IconInfoCircle,
+  IconPlus,
   IconRefresh,
   IconSearch,
   IconTerminal,
@@ -214,26 +214,21 @@ export function PodsPage() {
       <PodDetailDrawer pod={activePod} onClose={() => setActivePod(null)} />
 
       <Stack gap="md">
-        {/* Page header */}
         <Group justify="space-between" align="center">
           <Group gap="xs" align="center">
             <Title order={2}>Pods</Title>
-            <Badge color="steelBlue" variant="light" size="md">
+            <Badge color="steelBlue" variant="light" size="lg">
               {filtered.length}
               {filtered.length !== allPods.length && ` / ${allPods.length}`}
             </Badge>
           </Group>
           <Group gap="xs">
-            <Text size="xs" c="dimmed">
-              Press <Kbd size="xs">N</Kbd> to create
-            </Text>
-            <Button leftSection={<IconSearch size={14} />} onClick={openDrawer}>
+            <Button leftSection={<IconPlus size={14} />} onClick={openDrawer}>
               Create Pod
             </Button>
           </Group>
         </Group>
 
-        {/* Filter bar */}
         <Group gap="xs" align="flex-end" wrap="wrap">
           <Select
             label="Namespace"

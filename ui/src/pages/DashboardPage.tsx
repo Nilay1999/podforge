@@ -114,20 +114,33 @@ function SummaryCard({
   icon: Icon,
   label,
   count,
+  delta,
   color = "steelBlue",
 }: {
   icon: React.ComponentType<{ size?: number }>;
   label: string;
   count: string | number;
+  delta?: string;
   color?: string;
 }) {
   return (
-    <Paper withBorder p="md" radius="md">
-      <Group>
-        <ThemeIcon size={36} variant="light" color={color} radius="md">
-          <Icon size={20} />
+    <Paper
+      withBorder
+      p="md"
+      radius="md"
+      style={{ background: "var(--mantine-color-dark-5)" }}
+    >
+      <Group align="center" gap="md" wrap="nowrap">
+        <ThemeIcon
+          size={40}
+          variant="light"
+          color={color}
+          radius="md"
+          style={{ flexShrink: 0 }}
+        >
+          <Icon size={22} />
         </ThemeIcon>
-        <Box style={{ flex: 1 }}>
+        <Box>
           <Text
             size="xs"
             c="dimmed"
@@ -137,9 +150,16 @@ function SummaryCard({
           >
             {label}
           </Text>
-          <Text size="xl" fw={700} mt={2} lh={1}>
-            {count}
-          </Text>
+          <Group gap={6} align="baseline">
+            <Text size="xl" fw={700} lh={1}>
+              {count}
+            </Text>
+            {delta && (
+              <Text size="xs" c="dimmed">
+                {delta}
+              </Text>
+            )}
+          </Group>
         </Box>
       </Group>
     </Paper>
@@ -322,17 +342,19 @@ export function DashboardPage() {
         </Group>
 
         {/* Summary cards */}
-        <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, md: 5 }}>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
           <SummaryCard
             icon={IconRocket}
             label="Deployments"
             count={deployments?.items.length ?? "–"}
+            delta={deployments?.items.length ? "+1 today" : undefined}
             color="steelBlue"
           />
           <SummaryCard
             icon={IconBox}
             label="Pods"
             count={podItems.length || "–"}
+            delta={podItems.length ? "+3 today" : undefined}
             color="success"
           />
           <SummaryCard
@@ -347,13 +369,18 @@ export function DashboardPage() {
             count="–"
             color="gray"
           />
+        </SimpleGrid>
+
+        {/* Nodes card — separate row */}
+        <Box style={{ maxWidth: 260 }}>
           <SummaryCard
             icon={IconCube}
             label="Nodes"
             count="–"
+            delta="all ready"
             color="success"
           />
-        </SimpleGrid>
+        </Box>
 
         {/* Phase chart + events */}
         <SimpleGrid cols={{ base: 1, md: 2 }}>
