@@ -1,7 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   AppShell,
+  Box,
   Burger,
+  Button,
   Group,
   NavLink,
   Text,
@@ -16,6 +18,10 @@ import {
   IconSun,
   IconMoon,
   IconFileText,
+  IconSearch,
+  IconServer,
+  IconTag,
+  IconChevronDown,
 } from "@tabler/icons-react";
 
 const navItems = [
@@ -46,39 +52,97 @@ export function AppLayout({ children }: AppLayoutProps) {
       padding="md"
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Burger
-              opened={opened}
-              onClick={toggle}
-              hiddenFrom="sm"
-              size="sm"
-            />
-            <IconRocket
-              size={28}
-              stroke={1.5}
-              color="var(--mantine-color-steelBlue-5)"
-            />
-            <Text size="xl" fw={700}>
+        <Group h="100%" px="md" gap="xs">
+          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+
+          <Group gap="xs" mr="xs">
+            <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-5)" />
+            <Text size="lg" fw={700} style={{ letterSpacing: "-0.01em" }}>
               k8s-orchestrator
             </Text>
           </Group>
+
+          <Box
+            style={{
+              width: 1,
+              height: 24,
+              background: "var(--mantine-color-default-border)",
+              marginInline: 4,
+            }}
+            visibleFrom="sm"
+          />
+
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconServer size={14} />}
+            rightSection={<IconChevronDown size={12} />}
+            visibleFrom="sm"
+            styles={{ label: { fontFamily: "var(--mantine-font-monospace, monospace)" } }}
+          >
+            production
+          </Button>
+
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconTag size={14} />}
+            rightSection={<IconChevronDown size={12} />}
+            visibleFrom="sm"
+          >
+            ns:{" "}
+            <Text
+              span
+              ff="monospace"
+              fw={500}
+              c="var(--mantine-color-text)"
+              ml={2}
+            >
+              default
+            </Text>
+          </Button>
+
+          <Box style={{ flex: 1 }} />
+
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconSearch size={14} />}
+            rightSection={
+              <Text
+                span
+                size="xs"
+                c="dimmed"
+                ff="monospace"
+                style={{
+                  padding: "0 5px",
+                  borderRadius: 3,
+                  background: "var(--mantine-color-default-hover)",
+                  border: "1px solid var(--mantine-color-default-border)",
+                }}
+              >
+                ⌘K
+              </Text>
+            }
+            visibleFrom="sm"
+            styles={{ root: { minWidth: 180 }, label: { flex: 1 } }}
+            c="dimmed"
+          >
+            Search resources…
+          </Button>
+
           <ActionIcon
             variant="default"
             size="lg"
             onClick={() => toggleColorScheme()}
             aria-label="Toggle color scheme"
           >
-            {colorScheme === "dark" ? (
-              <IconSun size={18} />
-            ) : (
-              <IconMoon size={18} />
-            )}
+            {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
           </ActionIcon>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="sm">
+      <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -93,6 +157,27 @@ export function AppLayout({ children }: AppLayoutProps) {
             variant="filled"
           />
         ))}
+
+        <Box
+          mt="auto"
+          pt="xs"
+          style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}
+        >
+          <Group gap="xs" px={4} py={4}>
+            <div
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "var(--mantine-color-success-5)",
+                flexShrink: 0,
+              }}
+            />
+            <Text size="xs" c="dimmed">
+              Connected · v1.28.4
+            </Text>
+          </Group>
+        </Box>
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>

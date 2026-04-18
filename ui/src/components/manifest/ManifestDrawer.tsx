@@ -1,15 +1,17 @@
 import { useState } from "react";
 import {
+  ActionIcon,
   Button,
   Divider,
   Drawer,
   Group,
+  Stack,
   Tabs,
   Text,
   ThemeIcon,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCode, IconForms } from "@tabler/icons-react";
+import { IconCode, IconForms, IconX } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
 import type { ResourceKind } from "../../types";
 import { ManifestForm } from "../forms/ManifestForm";
@@ -72,17 +74,18 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
       }}
     >
       <Group px="lg" py="md" justify="space-between">
-        <Group gap="xs">
-          <ThemeIcon variant="light" size="md">
+        <Group gap="sm">
+          <ThemeIcon variant="light" size="md" color="steelBlue">
             <IconForms size={16} />
           </ThemeIcon>
-          <Text fw={600} size="lg">
-            Create {kind}
-          </Text>
+          <Stack gap={0}>
+            <Text fw={600} size="md">Create {kind}</Text>
+            <Text size="xs" c="dimmed">Fill the form or edit YAML directly. Changes sync both ways.</Text>
+          </Stack>
         </Group>
-        <Button variant="subtle" color="gray" size="xs" onClick={onClose}>
-          ✕ Close
-        </Button>
+        <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close drawer">
+          <IconX size={16} />
+        </ActionIcon>
       </Group>
 
       <Divider />
