@@ -14,7 +14,7 @@ export const pairsToRecord = (pairs: KeyValuePair[]) => {
   const record: Record<string, string> = {};
   for (const { key, value } of pairs) {
     const k = key.trim();
-    const v = value.trim();
+    const v = typeof value === "string" ? value.trim() : value;
     if (!k || !v) continue;
     record[k] = v;
   }
@@ -25,7 +25,7 @@ export const validatePairs = (pairs: KeyValuePair[], label: string) => {
   const keys = new Set<string>();
   for (const { key, value } of pairs) {
     const k = key.trim();
-    const v = value.trim();
+    const v = typeof value === "string" ? value.trim() : value;
     if (!k && !v) continue;
     if (!k || !v) return `${label}: fill both key and value`;
     if (keys.has(k)) return `${label}: duplicate key "${k}"`;

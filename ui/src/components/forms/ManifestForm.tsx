@@ -19,12 +19,16 @@ interface ManifestFormProps<K extends ResourceKind> {
   kind: K;
   formId?: string;
   onSubmit?: (payload: PayloadByKind[K]) => void;
+  onPayloadChange?: (payload: PayloadByKind[K]) => void;
+  defaultPayload?: Partial<PayloadByKind[K]>;
 }
 
 export function ManifestForm<K extends ResourceKind>({
   kind,
   formId,
   onSubmit,
+  onPayloadChange,
+  defaultPayload,
 }: ManifestFormProps<K>): ReactElement {
   switch (kind) {
     case "Deployment":
@@ -39,6 +43,8 @@ export function ManifestForm<K extends ResourceKind>({
         <ConfigMapManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreateConfigMapRequest) => void}
+          onPayloadChange={onPayloadChange as ((p: CreateConfigMapRequest) => void) | undefined}
+          defaultPayload={defaultPayload as Partial<CreateConfigMapRequest> | undefined}
         />
       );
     case "Pod":

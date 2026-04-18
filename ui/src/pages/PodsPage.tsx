@@ -59,13 +59,9 @@ export function PodsPage() {
     <Stack>
       <ResourcePageHeader title="Pod" onCreateClick={openDrawer} />
 
-      <ManifestDrawer
-        opened={drawerOpened}
-        onClose={closeDrawer}
-        kind="Pod"
-      />
+      <ManifestDrawer opened={drawerOpened} onClose={closeDrawer} kind="Pod" />
 
-      <Group>
+      <Group align="flex-end">
         <TextInput
           label="Namespace"
           value={namespace}
@@ -79,7 +75,7 @@ export function PodsPage() {
           size="lg"
           mt="lg"
         >
-          <IconRefresh size={18} />
+          <IconRefresh size={20} />
         </ActionIcon>
       </Group>
 
