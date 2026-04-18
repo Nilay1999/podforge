@@ -1,23 +1,68 @@
-import { Stack } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { ResourcePageHeader } from "@src/components/common/ResourcePageHeader";
-import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
+import { Badge, Text } from "@mantine/core";
+import {
+  ResourceListPage,
+  formatAge,
+  type Column,
+} from "@src/components/common/ResourceListPage";
+import { useConfigMaps, useDeleteConfigMap } from "@src/hooks/useConfigMaps";
+import type { ConfigMap } from "@src/types";
+
+const columns: Column<ConfigMap>[] = [
+  {
+    header: "Name",
+    render: (c) => (
+      <Text size="sm" ff="monospace" fw={500}>
+        {c.metadata.name}
+      </Text>
+    ),
+  },
+  {
+    header: "Data keys",
+    render: (c) => (
+      <Text size="sm" ff="monospace">
+        {Object.keys(c.data ?? {}).length}
+      </Text>
+    ),
+  },
+  {
+    header: "Binary keys",
+    render: (c) => (
+      <Text size="sm" ff="monospace" c="dimmed">
+        {Object.keys(c.binaryData ?? {}).length}
+      </Text>
+    ),
+  },
+  {
+    header: "Immutable",
+    render: (c) =>
+      c.immutable ? (
+        <Badge color="steelBlue" variant="light" size="sm">
+          Yes
+        </Badge>
+      ) : (
+        <Text size="sm" c="dimmed">
+          No
+        </Text>
+      ),
+  },
+  {
+    header: "Age",
+    render: (c) => (
+      <Text size="sm" ff="monospace" c="dimmed">
+        {formatAge(c.metadata.creationTimestamp)}
+      </Text>
+    ),
+  },
+];
 
 export function ConfigMapsPage() {
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
-
   return (
-    <Stack>
-      <ResourcePageHeader title="ConfigMap" onCreateClick={openDrawer} />
-
-      <ManifestDrawer
-        opened={drawerOpened}
-        onClose={closeDrawer}
-        kind="ConfigMap"
-      />
-
-      {/* ConfigMap list table will be built here */}
-    </Stack>
+    <ResourceListPage<ConfigMap>
+      kind="ConfigMap"
+      pluralTitle="ConfigMaps"
+      useList={useConfigMaps}
+      useDelete={useDeleteConfigMap}
+      columns={columns}
+    />
   );
 }
