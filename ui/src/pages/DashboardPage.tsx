@@ -124,12 +124,7 @@ function SummaryCard({
   color?: string;
 }) {
   return (
-    <Paper
-      withBorder
-      p="md"
-      radius="md"
-      style={{ background: "var(--mantine-color-dark-5)" }}
-    >
+    <Paper withBorder p="md" radius="md">
       <Group align="center" gap="md" wrap="nowrap">
         <ThemeIcon
           size={40}

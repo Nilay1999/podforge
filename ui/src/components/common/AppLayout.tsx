@@ -51,8 +51,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       }}
       padding="md"
       styles={{
-        header: { background: "var(--mantine-color-dark-5)" },
-        navbar: { background: "var(--mantine-color-dark-5)" },
+        header: {
+          background:
+            "light-dark(var(--mantine-color-white), var(--mantine-color-dark-5))",
+        },
+        navbar: {
+          background:
+            "light-dark(var(--mantine-color-white), var(--mantine-color-dark-5))",
+        },
       }}
     >
       <AppShell.Header>

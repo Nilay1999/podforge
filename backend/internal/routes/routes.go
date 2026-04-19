@@ -20,10 +20,12 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 	deploySvc := services.NewDeploymentService(clientset)
 	podSvc := services.NewPodService(clientset)
 	configMapSvc := services.NewConfigmapService(clientset)
+	serviceSvc := services.NewKubernetesService(clientset)
 
 	deploymentHandler := handlers.NewDeploymentHandler(deploySvc, log)
 	podHandler := handlers.NewPodHandler(podSvc, log)
 	configMapHandler := handlers.NewConfigMapHandler(configMapSvc, log)
+	serviceHandler := handlers.NewServiceHandler(serviceSvc, log)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -56,6 +58,11 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 			configMap.GET("/:namespace/:name", configMapHandler.Get)
 			configMap.PUT("/:namespace/:name", configMapHandler.Update)
 			configMap.DELETE("/:namespace/:name", configMapHandler.Delete)
+		}
+
+		service := v1.Group("service")
+		{
+			service.POST("/", serviceHandler.Create)
 		}
 	}
 }
