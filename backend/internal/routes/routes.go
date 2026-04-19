@@ -21,11 +21,13 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 	podSvc := services.NewPodService(clientset)
 	configMapSvc := services.NewConfigmapService(clientset)
 	serviceSvc := services.NewKubernetesService(clientset)
+	secretSvc := services.NewSecretService(clientset)
 
 	deploymentHandler := handlers.NewDeploymentHandler(deploySvc, log)
 	podHandler := handlers.NewPodHandler(podSvc, log)
 	configMapHandler := handlers.NewConfigMapHandler(configMapSvc, log)
 	serviceHandler := handlers.NewServiceHandler(serviceSvc, log)
+	secretHandler := handlers.NewSecretHandler(secretSvc, log)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -63,6 +65,19 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 		service := v1.Group("service")
 		{
 			service.POST("/", serviceHandler.Create)
+			service.GET("/:namespace", serviceHandler.List)
+			service.GET("/:namespace/:name", serviceHandler.Get)
+			service.PUT("/:namespace/:name", serviceHandler.Update)
+			service.DELETE("/:namespace/:name", serviceHandler.Delete)
+		}
+
+		secret := v1.Group("secret")
+		{
+			secret.POST("/", secretHandler.Create)
+			secret.GET("/:namespace", secretHandler.List)
+			secret.GET("/:namespace/:name", secretHandler.Get)
+			secret.PUT("/:namespace/:name", secretHandler.Update)
+			secret.DELETE("/:namespace/:name", secretHandler.Delete)
 		}
 	}
 }

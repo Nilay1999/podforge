@@ -47,7 +47,19 @@ func (s *kubernetesService) Create(ctx context.Context, req types.CreateServiceR
 }
 
 func (s *kubernetesService) Update(ctx context.Context, req types.CreateServiceRequest) (*corev1.Service, error) {
-	panic("unimplemented")
+	existing, err := s.clientset.CoreV1().Services(req.Namespace).Get(ctx, req.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	service := builders.BuildService(req)
+	service.ResourceVersion = existing.ResourceVersion
+	// ClusterIP is immutable; preserve the one the apiserver allocated.
+	if service.Spec.ClusterIP == "" {
+		service.Spec.ClusterIP = existing.Spec.ClusterIP
+	}
+
+	return s.clientset.CoreV1().Services(req.Namespace).Update(ctx, service, metav1.UpdateOptions{})
 }
 
 func (s *kubernetesService) Delete(ctx context.Context, namespace string, name string) error {

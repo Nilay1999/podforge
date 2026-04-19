@@ -4,23 +4,24 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 	"github.com/nilay/k8s-orchestrator/backend/internal/types"
 	"github.com/nilay/k8s-orchestrator/backend/internal/util"
-	"go.uber.org/zap"
 )
 
-type ServiceHandler struct {
-	svc services.KubernetesService
+type SecretHandler struct {
+	svc services.SecretService
 	log *zap.Logger
 }
 
-func NewServiceHandler(svc services.KubernetesService, log *zap.Logger) *ServiceHandler {
-	return &ServiceHandler{svc: svc, log: log}
+func NewSecretHandler(svc services.SecretService, log *zap.Logger) *SecretHandler {
+	return &SecretHandler{svc: svc, log: log}
 }
 
-func (h *ServiceHandler) Create(c *gin.Context) {
-	var req types.CreateServiceRequest
+func (h *SecretHandler) Create(c *gin.Context) {
+	var req types.CreateSecretRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -31,7 +32,6 @@ func (h *ServiceHandler) Create(c *gin.Context) {
 		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
-
 	c.JSON(http.StatusCreated, types.CreateResponse{
 		Name:      result.Name,
 		Namespace: result.Namespace,
@@ -39,8 +39,8 @@ func (h *ServiceHandler) Create(c *gin.Context) {
 	})
 }
 
-func (h *ServiceHandler) Get(c *gin.Context) {
-	result, err := h.svc.Get(c, c.Param("namespace"), c.Param("name"))
+func (h *SecretHandler) Get(c *gin.Context) {
+	result, err := h.svc.Get(c.Request.Context(), c.Param("namespace"), c.Param("name"))
 	if err != nil {
 		util.CreateErrorResponse(c, h.log, err)
 		return
@@ -48,8 +48,8 @@ func (h *ServiceHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *ServiceHandler) List(c *gin.Context) {
-	result, err := h.svc.List(c, c.Param("namespace"))
+func (h *SecretHandler) List(c *gin.Context) {
+	result, err := h.svc.List(c.Request.Context(), c.Param("namespace"))
 	if err != nil {
 		util.CreateErrorResponse(c, h.log, err)
 		return
@@ -57,8 +57,8 @@ func (h *ServiceHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (h *ServiceHandler) Update(c *gin.Context) {
-	var req types.CreateServiceRequest
+func (h *SecretHandler) Update(c *gin.Context) {
+	var req types.CreateSecretRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -79,7 +79,7 @@ func (h *ServiceHandler) Update(c *gin.Context) {
 	})
 }
 
-func (h *ServiceHandler) Delete(c *gin.Context) {
+func (h *SecretHandler) Delete(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
