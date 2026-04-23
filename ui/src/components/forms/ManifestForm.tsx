@@ -19,7 +19,7 @@ interface ManifestFormProps<K extends ResourceKind> {
   kind: K;
   formId?: string;
   onSubmit?: (payload: PayloadByKind[K]) => void;
-  onPayloadChange?: (payload: PayloadByKind[K]) => void;
+  registerGetPayload?: (fn: (() => PayloadByKind[K]) | null) => void;
   defaultPayload?: Partial<PayloadByKind[K]>;
 }
 
@@ -27,7 +27,7 @@ export function ManifestForm<K extends ResourceKind>({
   kind,
   formId,
   onSubmit,
-  onPayloadChange,
+  registerGetPayload,
   defaultPayload,
 }: ManifestFormProps<K>): ReactElement {
   switch (kind) {
@@ -36,9 +36,9 @@ export function ManifestForm<K extends ResourceKind>({
         <DeploymentManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreateDeploymentRequest) => void}
-          onPayloadChange={
-            onPayloadChange as
-              | ((p: CreateDeploymentRequest) => void)
+          registerGetPayload={
+            registerGetPayload as
+              | ((fn: (() => CreateDeploymentRequest) | null) => void)
               | undefined
           }
           defaultPayload={
@@ -51,8 +51,10 @@ export function ManifestForm<K extends ResourceKind>({
         <ConfigMapManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreateConfigMapRequest) => void}
-          onPayloadChange={
-            onPayloadChange as ((p: CreateConfigMapRequest) => void) | undefined
+          registerGetPayload={
+            registerGetPayload as
+              | ((fn: (() => CreateConfigMapRequest) | null) => void)
+              | undefined
           }
           defaultPayload={
             defaultPayload as Partial<CreateConfigMapRequest> | undefined
@@ -64,6 +66,14 @@ export function ManifestForm<K extends ResourceKind>({
         <PodManifestForm
           formId={formId}
           onSubmit={onSubmit as (p: CreatePodRequest) => void}
+          registerGetPayload={
+            registerGetPayload as
+              | ((fn: (() => CreatePodRequest) | null) => void)
+              | undefined
+          }
+          defaultPayload={
+            defaultPayload as Partial<CreatePodRequest> | undefined
+          }
         />
       );
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Box,
@@ -29,8 +29,8 @@ import type {
 } from "@src/types";
 import {
   type KeyValuePair,
-  KeyValuePairsField,
   pairsToRecord,
+  UncontrolledKeyValuePairs,
   validatePairs,
 } from "./KeyValuePairsField";
 import { MetadataFields } from "./MetadataFields";
@@ -283,27 +283,50 @@ const TOLERATION_EFFECT_OPTIONS = [
 export function DeploymentManifestForm({
   formId,
   onSubmit,
-  onPayloadChange,
+  registerGetPayload,
   defaultPayload,
 }: {
   formId?: string;
   onSubmit?: (payload: CreateDeploymentRequest) => void;
-  onPayloadChange?: (payload: CreateDeploymentRequest) => void;
+  registerGetPayload?: (fn: (() => CreateDeploymentRequest) | null) => void;
   defaultPayload?: Partial<CreateDeploymentRequest>;
 }) {
   const d = defaultPayload;
 
-  const [labelPairs, setLabelPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(d?.labels),
+  const initialLabels = recordToPairs(d?.labels);
+  const initialAnnotations = recordToPairs(d?.annotations);
+  const initialEnvVars = recordToPairs(d?.envVars);
+  const initialNodeSelector = recordToPairs(d?.nodeSelector);
+
+  const emptyPairs = useRef<() => KeyValuePair[]>(() => []).current;
+  const labelsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+  const annotationsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+  const envVarsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+  const nodeSelectGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+
+  const registerLabels = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      labelsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
   );
-  const [annotationPairs, setAnnotationPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(d?.annotations),
+  const registerAnnotations = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      annotationsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
   );
-  const [envVarPairs, setEnvVarPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(d?.envVars),
+  const registerEnvVars = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      envVarsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
   );
-  const [nodeSelectPairs, setNodeSelectPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(d?.nodeSelector),
+  const registerNodeSelect = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      nodeSelectGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
   );
   const [ports, setPorts] = useState<ContainerPort[]>(
     () => d?.ports ?? [{ containerPort: 80, protocol: "TCP" }],
@@ -328,7 +351,12 @@ export function DeploymentManifestForm({
     annotations?: string;
   }>({});
 
+  const [strategyType, setStrategyType] = useState<
+    "RollingUpdate" | "Recreate"
+  >(d?.strategy?.type ?? "RollingUpdate");
+
   const form = useForm({
+    mode: "uncontrolled",
     initialValues: {
       name: d?.name ?? "",
       namespace: d?.namespace ?? "default",
@@ -383,11 +411,11 @@ export function DeploymentManifestForm({
   });
 
   function buildPayload(): CreateDeploymentRequest {
-    const v = form.values;
-    const labels = pairsToRecord(labelPairs);
-    const annotations = pairsToRecord(annotationPairs);
-    const envVars = pairsToRecord(envVarPairs);
-    const nodeSelector = pairsToRecord(nodeSelectPairs);
+    const v = form.getValues();
+    const labels = pairsToRecord(labelsGetter.current());
+    const annotations = pairsToRecord(annotationsGetter.current());
+    const envVars = pairsToRecord(envVarsGetter.current());
+    const nodeSelector = pairsToRecord(nodeSelectGetter.current());
 
     const payload: CreateDeploymentRequest = {
       name: v.name,
@@ -498,28 +526,22 @@ export function DeploymentManifestForm({
     return payload;
   }
 
+  const buildPayloadRef = useRef(buildPayload);
+  buildPayloadRef.current = buildPayload;
+
   useEffect(() => {
-    onPayloadChange?.(buildPayload());
-  }, [
-    // eslint-disable-line react-hooks/exhaustive-deps
-    form.values,
-    labelPairs,
-    annotationPairs,
-    envVarPairs,
-    nodeSelectPairs,
-    ports,
-    envFromEntries,
-    tolerations,
-    livenessState,
-    readinessState,
-    startupState,
-  ]);
+    registerGetPayload?.(() => buildPayloadRef.current());
+    return () => registerGetPayload?.(null);
+  }, [registerGetPayload]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formResult = form.validate();
-    const labelsError = validatePairs(labelPairs, "Labels");
-    const annotationsError = validatePairs(annotationPairs, "Annotations");
+    const labelsError = validatePairs(labelsGetter.current(), "Labels");
+    const annotationsError = validatePairs(
+      annotationsGetter.current(),
+      "Annotations",
+    );
     if (formResult.hasErrors || labelsError || annotationsError) {
       setPairErrors({ labels: labelsError, annotations: annotationsError });
       return;
@@ -528,23 +550,15 @@ export function DeploymentManifestForm({
     onSubmit?.(buildPayload());
   };
 
-  const v = form.values;
-
   return (
     <Box component="form" id={formId} onSubmit={handleSubmit} px="lg" py="md">
       <Stack gap="md">
         <MetadataFields
           form={form as any}
-          labelPairs={labelPairs}
-          annotationPairs={annotationPairs}
-          onLabelsChange={(pairs) => {
-            setLabelPairs(pairs);
-            setPairErrors((prev) => ({ ...prev, labels: undefined }));
-          }}
-          onAnnotationsChange={(pairs) => {
-            setAnnotationPairs(pairs);
-            setPairErrors((prev) => ({ ...prev, annotations: undefined }));
-          }}
+          initialLabels={initialLabels}
+          initialAnnotations={initialAnnotations}
+          registerLabels={registerLabels}
+          registerAnnotations={registerAnnotations}
           labelError={pairErrors.labels}
           annotationError={pairErrors.annotations}
           namePlaceholder="my-deployment"
@@ -718,11 +732,11 @@ export function DeploymentManifestForm({
         <Paper withBorder p="md" radius="md">
           <Stack gap="sm">
             <Text fw={600}>Environment</Text>
-            <KeyValuePairsField
+            <UncontrolledKeyValuePairs
               label="Environment Variables"
               description="Plain key/value pairs set directly on the container"
-              pairs={envVarPairs}
-              onChange={setEnvVarPairs}
+              initial={initialEnvVars}
+              register={registerEnvVars}
               keyPlaceholder="MY_VAR"
               valuePlaceholder="value"
             />
@@ -900,9 +914,16 @@ export function DeploymentManifestForm({
                 ]}
                 key={form.key("strategyType")}
                 {...form.getInputProps("strategyType")}
+                onChange={(value) => {
+                  const next = (value ?? "RollingUpdate") as
+                    | "RollingUpdate"
+                    | "Recreate";
+                  form.setFieldValue("strategyType", next);
+                  setStrategyType(next);
+                }}
               />
             </SimpleGrid>
-            {v.strategyType === "RollingUpdate" && (
+            {strategyType === "RollingUpdate" && (
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <TextInput
                   label="Max Surge"
@@ -966,10 +987,10 @@ export function DeploymentManifestForm({
               key={form.key("nodeName")}
               {...form.getInputProps("nodeName")}
             />
-            <KeyValuePairsField
+            <UncontrolledKeyValuePairs
               label="Node Selector"
-              pairs={nodeSelectPairs}
-              onChange={setNodeSelectPairs}
+              initial={initialNodeSelector}
+              register={registerNodeSelect}
               keyPlaceholder="kubernetes.io/arch"
               valuePlaceholder="amd64"
             />

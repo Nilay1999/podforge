@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActionIcon,
   Button,
@@ -14,6 +14,9 @@ import { notifications } from "@mantine/notifications";
 import { IconCode, IconForms, IconX } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
 import type { ResourceKind } from "@src/types";
+import { useCreateConfigMap } from "@src/hooks/useConfigMaps";
+import { useCreateDeployment } from "@src/hooks/useDeployments";
+import { useCreatePod } from "@src/hooks/usePods";
 import { ManifestForm } from "@src/components/forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
 import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
@@ -28,24 +31,48 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
   const formId = "manifest-drawer-form";
   const strategy = KIND_STRATEGIES[kind];
 
+  const createConfigMap = useCreateConfigMap();
+  const createDeployment = useCreateDeployment();
+  const createPod = useCreatePod();
+
+  const isPending = createConfigMap.isPending || createDeployment.isPending || createPod.isPending;
+
+  const handleCreate = (
+    payload: AnyPayload,
+    opts: { onSuccess: () => void; onError: (err: Error) => void },
+  ) => {
+    if (kind === "ConfigMap")
+      createConfigMap.mutate(payload as Parameters<typeof createConfigMap.mutate>[0], opts);
+    else if (kind === "Deployment")
+      createDeployment.mutate(payload as Parameters<typeof createDeployment.mutate>[0], opts);
+    else
+      createPod.mutate(payload as Parameters<typeof createPod.mutate>[0], opts);
+  };
+
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
-  const [formPayload, setFormPayload] = useState<AnyPayload>(
+  const [pendingPayload, setPendingPayload] = useState<AnyPayload>(
     () => strategy.initialPayload,
   );
   const [formKey, setFormKey] = useState(0);
+  const getPayloadRef = useRef<(() => AnyPayload) | null>(null);
+
+  const registerGetPayload = useCallback((fn: (() => AnyPayload) | null) => {
+    getPayloadRef.current = fn;
+  }, []);
 
   const handleTabChange = (tab: string | null) => {
     if (!tab || tab === activeTab) return;
 
     if (tab === "yaml") {
+      const payload = getPayloadRef.current?.() ?? pendingPayload;
       setEditorValue(
-        jsYaml.dump(strategy.toManifest(formPayload), { lineWidth: -1 }),
+        jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }),
       );
     } else if (tab === "form") {
       try {
         const parsed = jsYaml.load(editorValue);
-        setFormPayload(strategy.fromManifest(parsed));
+        setPendingPayload(strategy.fromManifest(parsed));
         setFormKey((k) => k + 1);
       } catch {
         notifications.show({
@@ -131,15 +158,30 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
             kind={kind}
             formId={formId}
             onSubmit={(values) => {
-              notifications.show({
-                title: `${kind} ready`,
-                message: `Form submitted for "${values.name || "unnamed"}"`,
-                color: "teal",
+              handleCreate(values, {
+                onSuccess: () => {
+                  notifications.show({
+                    title: `${kind} created`,
+                    message: `"${values.name}" was created successfully.`,
+                    color: "teal",
+                  });
+                  onClose();
+                },
+                onError: (err) => {
+                  notifications.show({
+                    title: `Failed to create ${kind}`,
+                    message: err.message,
+                    color: "red",
+                  });
+                },
               });
-              onClose();
             }}
-            onPayloadChange={setFormPayload as (p: AnyPayload) => void}
-            defaultPayload={formPayload}
+            registerGetPayload={
+              registerGetPayload as (
+                fn: (() => AnyPayload) | null,
+              ) => void
+            }
+            defaultPayload={pendingPayload}
           />
         </Tabs.Panel>
 
@@ -153,7 +195,7 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
         <Button variant="subtle" color="gray" onClick={onClose} type="button">
           Cancel
         </Button>
-        <Button type="submit" form={formId}>
+        <Button type="submit" form={formId} loading={isPending}>
           Apply
         </Button>
       </Group>

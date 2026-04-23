@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Checkbox, Paper, Stack, Text, Tooltip } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconInfoCircle } from "@tabler/icons-react";
@@ -20,20 +20,31 @@ function recordToPairs(record?: Record<string, string>): KeyValuePair[] {
 export function ConfigMapManifestForm({
   formId,
   onSubmit,
-  onPayloadChange,
+  registerGetPayload,
   defaultPayload,
 }: {
   formId?: string;
   onSubmit: (payload: CreateConfigMapRequest) => void;
-  onPayloadChange?: (payload: CreateConfigMapRequest) => void;
+  registerGetPayload?: (fn: (() => CreateConfigMapRequest) | null) => void;
   defaultPayload?: Partial<CreateConfigMapRequest>;
 }) {
-  const [labelPairs, setLabelPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(defaultPayload?.labels),
+  const emptyPairs = useRef<() => KeyValuePair[]>(() => []).current;
+  const labelsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+  const annotationsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+
+  const registerLabels = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      labelsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
   );
-  const [annotationPairs, setAnnotationPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(defaultPayload?.annotations),
+  const registerAnnotations = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      annotationsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
   );
+
   const [dataPairs, setDataPairs] = useState<KeyValuePair[]>(() =>
     recordToPairs(defaultPayload?.data),
   );
@@ -48,6 +59,7 @@ export function ConfigMapManifestForm({
   }>({});
 
   const form = useForm<CreateConfigMapRequest>({
+    mode: "uncontrolled",
     initialValues: {
       name: defaultPayload?.name ?? "",
       namespace: defaultPayload?.namespace ?? "default",
@@ -60,29 +72,27 @@ export function ConfigMapManifestForm({
     },
   });
 
+  const buildPayload = (): CreateConfigMapRequest => ({
+    ...form.getValues(),
+    labels: pairsToRecord(labelsGetter.current()),
+    annotations: pairsToRecord(annotationsGetter.current()),
+    data: pairsToRecord(dataPairs),
+    binaryData: pairsToRecord(binaryDataPairs),
+  });
+
+  const buildPayloadRef = useRef(buildPayload);
+  buildPayloadRef.current = buildPayload;
+
   useEffect(() => {
-    onPayloadChange?.({
-      ...form.values,
-      labels: pairsToRecord(labelPairs),
-      annotations: pairsToRecord(annotationPairs),
-      data: pairsToRecord(dataPairs),
-      binaryData: pairsToRecord(binaryDataPairs),
-    });
-  }, [
-    form.values.name,
-    form.values.namespace,
-    form.values.immutable,
-    labelPairs,
-    annotationPairs,
-    dataPairs,
-    binaryDataPairs,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+    registerGetPayload?.(() => buildPayloadRef.current());
+    return () => registerGetPayload?.(null);
+  }, [registerGetPayload]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formResult = form.validate();
-    const labelsError = validatePairs(labelPairs, "Labels");
-    const annotationsError = validatePairs(annotationPairs, "Annotations");
+    const labelsError = validatePairs(labelsGetter.current(), "Labels");
+    const annotationsError = validatePairs(annotationsGetter.current(), "Annotations");
     const dataError = validatePairs(dataPairs, "Data");
     const binaryDataError = validatePairs(binaryDataPairs, "Binary data");
 
@@ -104,8 +114,8 @@ export function ConfigMapManifestForm({
     setPairErrors({});
     onSubmit({
       ...form.getValues(),
-      labels: pairsToRecord(labelPairs),
-      annotations: pairsToRecord(annotationPairs),
+      labels: pairsToRecord(labelsGetter.current()),
+      annotations: pairsToRecord(annotationsGetter.current()),
       data: pairsToRecord(dataPairs),
       binaryData: pairsToRecord(binaryDataPairs),
     });
@@ -116,16 +126,10 @@ export function ConfigMapManifestForm({
       <Stack gap="md">
         <MetadataFields
           form={form}
-          labelPairs={labelPairs}
-          annotationPairs={annotationPairs}
-          onLabelsChange={(pairs) => {
-            setLabelPairs(pairs);
-            setPairErrors((prev) => ({ ...prev, labels: undefined }));
-          }}
-          onAnnotationsChange={(pairs) => {
-            setAnnotationPairs(pairs);
-            setPairErrors((prev) => ({ ...prev, annotations: undefined }));
-          }}
+          initialLabels={recordToPairs(defaultPayload?.labels)}
+          initialAnnotations={recordToPairs(defaultPayload?.annotations)}
+          registerLabels={registerLabels}
+          registerAnnotations={registerAnnotations}
           labelError={pairErrors.labels}
           annotationError={pairErrors.annotations}
           namePlaceholder="my-config"

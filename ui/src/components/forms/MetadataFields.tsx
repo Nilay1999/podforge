@@ -8,14 +8,17 @@ import {
 } from "@mantine/core";
 import type { UseFormReturnType } from "@mantine/form";
 import { DEFAULT_NAMESPACES } from "@src/utils/constants";
-import { KeyValuePairsField, type KeyValuePair } from "./KeyValuePairsField";
+import {
+  type KeyValuePair,
+  UncontrolledKeyValuePairs,
+} from "./KeyValuePairsField";
 
 interface MetadataFieldsProps<T extends { name: string; namespace: string }> {
   form: UseFormReturnType<T>;
-  labelPairs: KeyValuePair[];
-  annotationPairs: KeyValuePair[];
-  onLabelsChange: (pairs: KeyValuePair[]) => void;
-  onAnnotationsChange: (pairs: KeyValuePair[]) => void;
+  initialLabels?: KeyValuePair[];
+  initialAnnotations?: KeyValuePair[];
+  registerLabels: (fn: (() => KeyValuePair[]) | null) => void;
+  registerAnnotations: (fn: (() => KeyValuePair[]) | null) => void;
   labelError?: string;
   annotationError?: string;
   namePlaceholder?: string;
@@ -23,10 +26,10 @@ interface MetadataFieldsProps<T extends { name: string; namespace: string }> {
 
 export function MetadataFields<T extends { name: string; namespace: string }>({
   form,
-  labelPairs,
-  annotationPairs,
-  onLabelsChange,
-  onAnnotationsChange,
+  initialLabels,
+  initialAnnotations,
+  registerLabels,
+  registerAnnotations,
   labelError,
   annotationError,
   namePlaceholder = "my-resource",
@@ -54,21 +57,21 @@ export function MetadataFields<T extends { name: string; namespace: string }>({
           />
         </SimpleGrid>
 
-        <KeyValuePairsField
+        <UncontrolledKeyValuePairs
           label="Labels"
           description="Key/value pairs"
-          pairs={labelPairs}
-          onChange={onLabelsChange}
+          initial={initialLabels}
+          register={registerLabels}
           error={labelError}
           keyPlaceholder="app"
           valuePlaceholder="myapp"
         />
 
-        <KeyValuePairsField
+        <UncontrolledKeyValuePairs
           label="Annotations"
           description="Key/value pairs"
-          pairs={annotationPairs}
-          onChange={onAnnotationsChange}
+          initial={initialAnnotations}
+          register={registerAnnotations}
           error={annotationError}
           keyPlaceholder="example.com/foo"
           valuePlaceholder="bar"

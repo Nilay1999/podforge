@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Button,
@@ -135,5 +136,44 @@ export function KeyValuePairsField({
         </Stack>
       )}
     </Stack>
+  );
+}
+
+export function UncontrolledKeyValuePairs({
+  label,
+  description,
+  initial,
+  register,
+  error,
+  keyPlaceholder,
+  valuePlaceholder,
+}: {
+  label: string;
+  description?: string;
+  initial?: KeyValuePair[];
+  register: (fn: (() => KeyValuePair[]) | null) => void;
+  error?: string;
+  keyPlaceholder?: string;
+  valuePlaceholder?: string;
+}) {
+  const [pairs, setPairs] = useState<KeyValuePair[]>(() => initial ?? []);
+  const pairsRef = useRef(pairs);
+  pairsRef.current = pairs;
+
+  useEffect(() => {
+    register(() => pairsRef.current);
+    return () => register(null);
+  }, [register]);
+
+  return (
+    <KeyValuePairsField
+      label={label}
+      description={description}
+      pairs={pairs}
+      onChange={setPairs}
+      error={error}
+      keyPlaceholder={keyPlaceholder}
+      valuePlaceholder={valuePlaceholder}
+    />
   );
 }
