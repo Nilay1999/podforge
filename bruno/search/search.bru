@@ -1,0 +1,16 @@
+meta {
+  name: Search Resources
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/search
+  body: none
+  auth: none
+}
+
+params:query {
+  q: nginx
+  namespace: default
+}

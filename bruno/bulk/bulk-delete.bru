@@ -1,0 +1,25 @@
+meta {
+  name: Bulk Delete
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/bulk/delete
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "kind": "pod",
+    "targets": [
+      { "namespace": "default", "name": "nginx-pod" },
+      { "namespace": "default", "name": "old-pod" }
+    ]
+  }
+}

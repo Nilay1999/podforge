@@ -1,0 +1,30 @@
+meta {
+  name: Create ConfigMap
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/config-map/
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "app-config",
+    "namespace": "default",
+    "labels": {
+      "app": "nginx"
+    },
+    "data": {
+      "APP_ENV": "development",
+      "LOG_LEVEL": "debug",
+      "config.yaml": "host: localhost\nport: 8080\n"
+    }
+  }
+}

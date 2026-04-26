@@ -1,0 +1,11 @@
+meta {
+  name: Delete ConfigMap
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/config-map/{{namespace}}/{{configMapName}}
+  body: none
+  auth: none
+}

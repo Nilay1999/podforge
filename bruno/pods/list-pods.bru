@@ -1,0 +1,11 @@
+meta {
+  name: List Pods
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/pod/{{namespace}}
+  body: none
+  auth: none
+}

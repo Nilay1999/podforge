@@ -1,0 +1,11 @@
+meta {
+  name: Get Deployment Overview
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/deployment/{{namespace}}/{{deploymentName}}/overview
+  body: none
+  auth: none
+}
