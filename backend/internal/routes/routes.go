@@ -6,13 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/nilay/k8s-orchestrator/backend/internal/handlers"
 	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
 	"github.com/nilay/k8s-orchestrator/backend/internal/services"
 )
 
-func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
+func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Config, log *zap.Logger) {
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware(log))
 	r.SetTrustedProxies(nil)
@@ -26,7 +27,11 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, log *zap.Logger) {
 	overviewSvc := services.NewOverviewService(clientset)
 	logSvc := services.NewLogService(clientset)
 	watchSvc := services.NewWatchService(clientset)
-	bulkSvc := services.NewBulkService(serviceSvc, deploySvc, podSvc)
+	applySvc, err := services.NewApplyService(restConfig)
+	if err != nil {
+		log.Fatal("Failed to create apply service", zap.Error(err))
+	}
+	bulkSvc := services.NewBulkService(serviceSvc, deploySvc, podSvc, applySvc)
 	searchSvc := services.NewSearchService(clientset)
 
 	deploymentHandler := handlers.NewDeploymentHandler(deploySvc, log)

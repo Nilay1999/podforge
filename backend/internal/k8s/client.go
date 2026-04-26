@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewClient(kubeconfig string) (*kubernetes.Clientset, error) {
+func NewClient(kubeconfig string) (*kubernetes.Clientset, *rest.Config, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		if kubeconfig == "" {
@@ -17,14 +17,14 @@ func NewClient(kubeconfig string) (*kubernetes.Clientset, error) {
 		}
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
-			return nil, fmt.Errorf("failed to build k8s config: %w", err)
+			return nil, nil, fmt.Errorf("failed to build k8s config: %w", err)
 		}
 	}
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create k8s client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create k8s client: %w", err)
 	}
 
-	return client, nil
+	return client, config, nil
 }
