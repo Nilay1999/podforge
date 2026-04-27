@@ -226,6 +226,8 @@ function podFromManifest(raw: unknown): CreatePodRequest {
   };
 }
 
+export { configMapFromManifest, deploymentFromManifest, podFromManifest };
+
 export const KIND_STRATEGIES: Record<ResourceKind, KindStrategy> = {
   ConfigMap: {
     initialPayload: { name: "", namespace: "default" },
@@ -233,13 +235,7 @@ export const KIND_STRATEGIES: Record<ResourceKind, KindStrategy> = {
     fromManifest: configMapFromManifest,
   },
   Deployment: {
-    initialPayload: {
-      name: "",
-      namespace: "default",
-      image: "",
-      replicas: 1,
-      containers: [],
-    },
+    initialPayload: { name: "", namespace: "default", image: "", replicas: 1 },
     toManifest: deploymentToManifest as KindStrategy["toManifest"],
     fromManifest: deploymentFromManifest,
   },

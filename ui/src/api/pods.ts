@@ -4,6 +4,7 @@ import type {
   MutationResponse,
   Pod,
   PodList,
+  PodOverview,
 } from "@src/types";
 
 export const listPods = (namespace: string) =>
@@ -27,4 +28,9 @@ export const updatePod = (
 export const deletePod = (namespace: string, name: string) =>
   apiClient
     .delete<MutationResponse>(`/pod/${namespace}/${name}`)
+    .then((r) => r.data);
+
+export const getPodOverview = (namespace: string, name: string) =>
+  apiClient
+    .get<PodOverview>(`/pod/${namespace}/${name}/overview`)
     .then((r) => r.data);

@@ -1,11 +1,20 @@
+import { useState } from "react";
 import { Text } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ResourceListPage,
   formatAge,
   type Column,
 } from "@src/components/common/ResourceListPage";
 import { useDeleteDeployment, useDeployments } from "@src/hooks/useDeployments";
-import type { Deployment } from "@src/types";
+import { updateDeployment } from "@src/api/deployments";
+import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
+import {
+  KIND_STRATEGIES,
+  type AnyPayload,
+} from "@src/components/manifest/kindStrategies";
+import type { CreateDeploymentRequest, Deployment } from "@src/types";
 
 const columns: Column<Deployment>[] = [
   {
@@ -63,13 +72,55 @@ const columns: Column<Deployment>[] = [
 ];
 
 export function DeploymentsPage() {
+  const qc = useQueryClient();
+  const [editingDeployment, setEditingDeployment] =
+    useState<Deployment | null>(null);
+  const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] =
+    useDisclosure(false);
+
+  const handleEditItem = (d: Deployment) => {
+    setEditingDeployment(d);
+    openEditDrawer();
+  };
+
+  const handleEditApply = (
+    payload: AnyPayload,
+    opts: { onSuccess: () => void; onError: (err: Error) => void },
+  ) => {
+    if (!editingDeployment) return;
+    const { namespace = "default", name } = editingDeployment.metadata;
+    updateDeployment(namespace, name, payload as CreateDeploymentRequest)
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["deployments"] });
+        opts.onSuccess();
+      })
+      .catch(opts.onError);
+  };
+
+  const editInitialPayload = editingDeployment
+    ? (KIND_STRATEGIES["Deployment"].fromManifest(
+        editingDeployment,
+      ) as CreateDeploymentRequest)
+    : undefined;
+
   return (
-    <ResourceListPage<Deployment>
-      kind="Deployment"
-      pluralTitle="Deployments"
-      useList={useDeployments}
-      useDelete={useDeleteDeployment}
-      columns={columns}
-    />
+    <>
+      <ManifestDrawer
+        opened={editDrawerOpened}
+        onClose={closeEditDrawer}
+        kind="Deployment"
+        initialPayload={editInitialPayload}
+        onApply={handleEditApply}
+      />
+
+      <ResourceListPage<Deployment>
+        kind="Deployment"
+        pluralTitle="Deployments"
+        useList={useDeployments}
+        useDelete={useDeleteDeployment}
+        columns={columns}
+        onEditItem={handleEditItem}
+      />
+    </>
   );
 }

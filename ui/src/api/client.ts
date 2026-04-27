@@ -9,7 +9,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const message =
-      error.response?.data?.error ??
+      error.response?.data?.message ??
       error.message ??
       "Unknown error";
     return Promise.reject(new Error(message));

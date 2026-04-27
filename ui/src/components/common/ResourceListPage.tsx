@@ -28,15 +28,7 @@ import {
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import type { MutationResponse, ObjectMeta, ResourceKind } from "@src/types";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
-
-const NAMESPACES = [
-  "default",
-  "kube-system",
-  "kube-public",
-  "production",
-  "staging",
-  "monitoring",
-];
+import { DEFAULT_NAMESPACES } from "@src/utils/constants";
 
 export interface Column<T> {
   header: string;
@@ -56,6 +48,8 @@ interface ResourceListPageProps<T extends { metadata: ObjectMeta }> {
     namespace: string,
   ) => UseMutationResult<MutationResponse, Error, string>;
   columns: Column<T>[];
+  onRowClick?: (item: T) => void;
+  onEditItem?: (item: T) => void;
 }
 
 export function formatAge(creationTimestamp?: string): string {
@@ -75,6 +69,8 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
   useList,
   useDelete,
   columns,
+  onRowClick,
+  onEditItem,
 }: ResourceListPageProps<T>) {
   const [namespace, setNamespace] = useState("default");
   const [search, setSearch] = useState("");
@@ -138,7 +134,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
             label="Namespace"
             value={namespace}
             onChange={(v) => v && setNamespace(v)}
-            data={NAMESPACES}
+            data={DEFAULT_NAMESPACES}
             size="xs"
             style={{ minWidth: 140 }}
           />
@@ -194,7 +190,11 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
               </Table.Thead>
               <Table.Tbody>
                 {filtered.map((item) => (
-                  <Table.Tr key={item.metadata.name}>
+                  <Table.Tr
+                    key={item.metadata.name}
+                    onClick={() => onRowClick?.(item)}
+                    style={{ cursor: onRowClick ? "pointer" : undefined }}
+                  >
                     {columns.map((col) => (
                       <Table.Td key={col.header}>{col.render(item)}</Table.Td>
                     ))}
@@ -206,7 +206,11 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
                           </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>
-                          <Menu.Item leftSection={<IconEdit size={14} />}>
+                          <Menu.Item
+                            leftSection={<IconEdit size={14} />}
+                            onClick={() => onEditItem?.(item)}
+                            disabled={!onEditItem}
+                          >
                             Edit manifest
                           </Menu.Item>
                           <Menu.Divider />

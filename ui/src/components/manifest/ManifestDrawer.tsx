@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Button,
@@ -25,26 +25,47 @@ interface ManifestDrawerProps {
   opened: boolean;
   onClose: () => void;
   kind: ResourceKind;
+  initialPayload?: AnyPayload;
+  onApply?: (
+    payload: AnyPayload,
+    opts: { onSuccess: () => void; onError: (err: Error) => void },
+  ) => void;
 }
 
-export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
+export function ManifestDrawer({
+  opened,
+  onClose,
+  kind,
+  initialPayload,
+  onApply,
+}: ManifestDrawerProps) {
   const formId = "manifest-drawer-form";
   const strategy = KIND_STRATEGIES[kind];
+  const isEditMode = Boolean(onApply);
 
   const createConfigMap = useCreateConfigMap();
   const createDeployment = useCreateDeployment();
   const createPod = useCreatePod();
 
-  const isPending = createConfigMap.isPending || createDeployment.isPending || createPod.isPending;
+  const isPending =
+    createConfigMap.isPending ||
+    createDeployment.isPending ||
+    createPod.isPending;
 
   const handleCreate = (
     payload: AnyPayload,
     opts: { onSuccess: () => void; onError: (err: Error) => void },
   ) => {
     if (kind === "ConfigMap")
-      createConfigMap.mutate(payload as Parameters<typeof createConfigMap.mutate>[0], opts);
+      createConfigMap.mutate(
+        payload as Parameters<typeof createConfigMap.mutate>[0],
+        opts,
+      );
     else if (kind === "Deployment")
-      createDeployment.mutate(payload as Parameters<typeof createDeployment.mutate>[0], opts);
+      createDeployment.mutate(
+        payload as Parameters<typeof createDeployment.mutate>[0],
+        opts,
+      );
     else
       createPod.mutate(payload as Parameters<typeof createPod.mutate>[0], opts);
   };
@@ -52,14 +73,64 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
   const [pendingPayload, setPendingPayload] = useState<AnyPayload>(
-    () => strategy.initialPayload,
+    () => initialPayload ?? strategy.initialPayload,
   );
   const [formKey, setFormKey] = useState(0);
   const getPayloadRef = useRef<(() => AnyPayload) | null>(null);
 
+  useEffect(() => {
+    if (!opened) return;
+    const payload = initialPayload ?? strategy.initialPayload;
+    setPendingPayload(payload);
+    setEditorValue(jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }));
+    setActiveTab("form");
+    setFormKey((k) => k + 1);
+  }, [opened]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const registerGetPayload = useCallback((fn: (() => AnyPayload) | null) => {
     getPayloadRef.current = fn;
   }, []);
+
+  const applyPayload = (payload: AnyPayload) => {
+    const apply = onApply ?? handleCreate;
+    apply(payload, {
+      onSuccess: () => {
+        notifications.show({
+          title: isEditMode ? `${kind} updated` : `${kind} created`,
+          message: `"${(payload as { name?: string }).name}" was ${isEditMode ? "updated" : "created"} successfully.`,
+          color: "teal",
+        });
+        onClose();
+      },
+      onError: (err) => {
+        notifications.show({
+          title: `Failed to ${isEditMode ? "update" : "create"} ${kind}`,
+          message: err.message,
+          color: "red",
+        });
+      },
+    });
+  };
+
+  const handleApplyClick = () => {
+    if (activeTab === "yaml") {
+      let parsed: unknown;
+      try {
+        parsed = jsYaml.load(editorValue);
+      } catch {
+        notifications.show({
+          title: "Invalid YAML",
+          message: "Fix syntax errors before applying.",
+          color: "red",
+        });
+        return;
+      }
+      applyPayload(strategy.fromManifest(parsed));
+    } else {
+      const formEl = document.getElementById(formId) as HTMLFormElement | null;
+      formEl?.requestSubmit();
+    }
+  };
 
   const handleTabChange = (tab: string | null) => {
     if (!tab || tab === activeTab) return;
@@ -111,7 +182,7 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
           </ThemeIcon>
           <Stack gap={0}>
             <Text fw={600} size="md">
-              Create {kind}
+              {isEditMode ? "Edit" : "Create"} {kind}
             </Text>
             <Text size="xs" c="dimmed">
               Fill the form or edit YAML directly. Changes sync both ways.
@@ -157,25 +228,7 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
             key={formKey}
             kind={kind}
             formId={formId}
-            onSubmit={(values) => {
-              handleCreate(values, {
-                onSuccess: () => {
-                  notifications.show({
-                    title: `${kind} created`,
-                    message: `"${values.name}" was created successfully.`,
-                    color: "teal",
-                  });
-                  onClose();
-                },
-                onError: (err) => {
-                  notifications.show({
-                    title: `Failed to create ${kind}`,
-                    message: err.message,
-                    color: "red",
-                  });
-                },
-              });
-            }}
+            onSubmit={(values) => applyPayload(values)}
             registerGetPayload={
               registerGetPayload as (
                 fn: (() => AnyPayload) | null,
@@ -195,8 +248,12 @@ export function ManifestDrawer({ opened, onClose, kind }: ManifestDrawerProps) {
         <Button variant="subtle" color="gray" onClick={onClose} type="button">
           Cancel
         </Button>
-        <Button type="submit" form={formId} loading={isPending}>
-          Apply
+        <Button
+          type="button"
+          onClick={handleApplyClick}
+          loading={isPending}
+        >
+          {isEditMode ? "Save changes" : "Apply"}
         </Button>
       </Group>
     </Drawer>

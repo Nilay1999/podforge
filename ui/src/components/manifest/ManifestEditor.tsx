@@ -1,6 +1,7 @@
 import CodeMirror from "@uiw/react-codemirror";
 import { yaml } from "@codemirror/lang-yaml";
-import { appEditorTheme } from "./editorTheme";
+import { useMantineColorScheme } from "@mantine/core";
+import { appEditorThemeDark, appEditorThemeLight } from "./editorTheme";
 
 interface ManifestEditorProps {
   value: string;
@@ -8,11 +9,15 @@ interface ManifestEditorProps {
 }
 
 export function ManifestEditor({ value, onChange }: ManifestEditorProps) {
+  const { colorScheme } = useMantineColorScheme();
+  const editorTheme =
+    colorScheme === "dark" ? appEditorThemeDark : appEditorThemeLight;
+
   return (
     <CodeMirror
       value={value}
       height="100%"
-      theme={appEditorTheme}
+      theme={editorTheme}
       extensions={[yaml()]}
       onChange={onChange}
       style={{ height: "100%", fontSize: 13 }}

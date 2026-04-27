@@ -69,12 +69,19 @@ export function createResourceHooks<TItem, TList, TCreate>(
 
   const useUpdate = (
     namespace: string,
-    name: string,
-    options?: UseMutationOptions<MutationResponse, Error, TCreate>,
+    options?: UseMutationOptions<
+      MutationResponse,
+      Error,
+      { name: string; payload: TCreate }
+    >,
   ) => {
     const qc = useQueryClient();
-    return useMutation<MutationResponse, Error, TCreate>({
-      mutationFn: (payload) => api.update(namespace, name, payload),
+    return useMutation<
+      MutationResponse,
+      Error,
+      { name: string; payload: TCreate }
+    >({
+      mutationFn: ({ name, payload }) => api.update(namespace, name, payload),
       ...options,
       onSuccess: (...args) => {
         qc.invalidateQueries({ queryKey: keys.all });
@@ -92,7 +99,7 @@ export function createResourceHooks<TItem, TList, TCreate>(
       mutationFn: (name) => api.remove(namespace, name),
       ...options,
       onSuccess: (...args) => {
-        qc.invalidateQueries({ queryKey: keys.list(namespace) });
+        qc.invalidateQueries({ queryKey: keys.all });
         options?.onSuccess?.(...args);
       },
     });

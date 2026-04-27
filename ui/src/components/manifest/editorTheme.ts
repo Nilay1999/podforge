@@ -1,7 +1,7 @@
 import { createTheme } from "@uiw/codemirror-themes";
 import { tags as t } from "@lezer/highlight";
 
-export const appEditorTheme = createTheme({
+export const appEditorThemeDark = createTheme({
   theme: "dark",
   settings: {
     background: "#1e1e22",
@@ -27,5 +27,34 @@ export const appEditorTheme = createTheme({
     { tag: t.operator, color: "#6389e6" },
     { tag: t.comment, color: "#71717A", fontStyle: "italic" },
     { tag: t.invalid, color: "#ef4444" },
+  ],
+});
+
+export const appEditorThemeLight = createTheme({
+  theme: "light",
+  settings: {
+    background: "#f8f9fa",
+    backgroundImage: "none",
+    foreground: "#1e293b",
+    caret: "#1e293b",
+    selection: "#5b8def33",
+    selectionMatch: "#5b8def22",
+    lineHighlight: "#f1f5f9",
+    gutterBackground: "#f1f5f9",
+    gutterForeground: "#64748b",
+    gutterBorder: "#e2e8f0",
+  },
+  styles: [
+    { tag: t.propertyName, color: "#2563eb", fontWeight: "600" },
+    { tag: t.string, color: "#16a34a" },
+    { tag: t.number, color: "#d97706" },
+    { tag: t.bool, color: "#2563eb" },
+    { tag: t.null, color: "#64748b" },
+    { tag: t.bracket, color: "#1e293b" },
+    { tag: t.punctuation, color: "#64748b" },
+    { tag: t.keyword, color: "#2563eb" },
+    { tag: t.operator, color: "#4f75d8" },
+    { tag: t.comment, color: "#64748b", fontStyle: "italic" },
+    { tag: t.invalid, color: "#dc2626" },
   ],
 });

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
+  Alert,
   Badge,
   Box,
   Button,
   Drawer,
   Group,
+  Loader,
   Stack,
   Table,
   Tabs,
@@ -22,8 +24,10 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import jsYaml from "js-yaml";
 import type { Pod } from "@src/types";
+import { getPodOverview } from "@src/api/pods";
 
 function phaseColor(phase?: string) {
   if (phase === "Running") return "success";
@@ -43,53 +47,22 @@ function podAge(creationTimestamp?: string): string {
   return `${Math.floor(seconds / 86400)}d`;
 }
 
-const MOCK_EVENTS = [
-  { type: "Normal", reason: "Started", msg: "Started container", t: "2m ago" },
-  { type: "Normal", reason: "Created", msg: "Created container", t: "2m ago" },
-  {
-    type: "Normal",
-    reason: "Pulled",
-    msg: "Successfully pulled image",
-    t: "2m ago",
-  },
-  {
-    type: "Normal",
-    reason: "Scheduled",
-    msg: "Pod assigned to node",
-    t: "2m ago",
-  },
-];
-
-const MOCK_LOGS = [
-  { t: "13:42:11", lvl: "info", msg: "Listening on :8080" },
-  {
-    t: "13:42:11",
-    lvl: "info",
-    msg: "Connected to postgres://db.prod:5432/app",
-  },
-  { t: "13:42:14", lvl: "info", msg: "GET /healthz 200 1.4ms" },
-  {
-    t: "13:42:16",
-    lvl: "warn",
-    msg: "slow query (312ms): SELECT * FROM users WHERE ...",
-  },
-  { t: "13:42:18", lvl: "info", msg: "GET /api/v1/jobs 200 8.3ms" },
-  { t: "13:42:20", lvl: "error", msg: "upstream timeout: billing-api:8080" },
-];
-
-const logLevelColor: Record<string, string> = {
-  info: "var(--mantine-color-dimmed)",
-  warn: "var(--mantine-color-warning-6)",
-  error: "var(--mantine-color-danger-6)",
-};
-
 interface PodDetailDrawerProps {
   pod: Pod | null;
   onClose: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
 }
 
-export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
+export function PodDetailDrawer({
+  pod,
+  onClose,
+  onDelete,
+  onEdit,
+}: PodDetailDrawerProps) {
   const [tab, setTab] = useState<string | null>("overview");
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const logScrollRef = useRef<HTMLDivElement>(null);
 
   const phase = pod?.status?.phase;
   const containerStatuses = pod?.status?.containerStatuses ?? [];
@@ -97,6 +70,44 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
   const totalContainers = containerStatuses.length;
   const restarts = containerStatuses.reduce((s, c) => s + c.restartCount, 0);
   const age = podAge(pod?.metadata.creationTimestamp);
+
+  const { data: overview, isLoading: overviewLoading } = useQuery({
+    queryKey: [
+      "pod-overview",
+      pod?.metadata.namespace,
+      pod?.metadata.name,
+    ],
+    queryFn: () =>
+      getPodOverview(pod!.metadata.namespace!, pod!.metadata.name),
+    enabled: !!pod,
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (!pod) {
+      setLogLines([]);
+      return;
+    }
+    if (tab !== "logs") return;
+
+    const ns = pod.metadata.namespace ?? "default";
+    const name = pod.metadata.name;
+    setLogLines([]);
+
+    const es = new EventSource(`/api/v1/pod/${ns}/${name}/logs/stream`);
+    es.onmessage = (e) => {
+      setLogLines((prev) => [...prev.slice(-499), e.data]);
+    };
+    es.onerror = () => es.close();
+
+    return () => es.close();
+  }, [tab, pod?.metadata.namespace, pod?.metadata.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (logScrollRef.current) {
+      logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
+    }
+  }, [logLines]);
 
   const specYaml = pod
     ? jsYaml.dump(
@@ -111,13 +122,8 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
       )
     : "";
 
-  const conditions = [
-    "PodScheduled",
-    "Initialized",
-    "ContainersReady",
-    "Ready",
-  ];
-
+  const conditions = overview?.conditions ?? pod?.status?.conditions ?? [];
+  const events = overview?.events ?? [];
   const labels = pod?.metadata.labels ?? {};
 
   return (
@@ -137,7 +143,6 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
         content: { display: "flex", flexDirection: "column" },
       }}
     >
-      {/* Summary header */}
       <Box
         px="lg"
         py="md"
@@ -178,35 +183,32 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
             variant="default"
             size="xs"
             leftSection={<IconCode size={12} />}
+            onClick={() => setTab("logs")}
           >
             Logs
           </Button>
           <Button
             variant="default"
             size="xs"
-            leftSection={<IconTerminal size={12} />}
-          >
-            Exec
-          </Button>
-          <Button
-            variant="default"
-            size="xs"
             leftSection={<IconEdit size={12} />}
+            onClick={onEdit}
+            disabled={!onEdit}
           >
             Edit
           </Button>
           <Button
             variant="outline"
-            color="danger"
+            color="red"
             size="xs"
             leftSection={<IconTrash size={12} />}
+            onClick={onDelete}
+            disabled={!onDelete}
           >
             Delete
           </Button>
         </Group>
       </Box>
 
-      {/* Tabs */}
       <Tabs
         value={tab}
         onChange={setTab}
@@ -328,15 +330,17 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
               >
                 Conditions
               </Text>
-              <Stack gap="xs">
-                {conditions.map((cond) => {
-                  const ok =
-                    cond === "PodScheduled" ||
-                    cond === "Initialized" ||
-                    phase === "Running";
-                  return (
-                    <Group key={cond} gap="xs">
-                      {ok ? (
+              {overviewLoading ? (
+                <Loader size="xs" />
+              ) : conditions.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No conditions reported
+                </Text>
+              ) : (
+                <Stack gap="xs">
+                  {conditions.map((cond) => (
+                    <Group key={cond.type} gap="xs">
+                      {cond.status === "True" ? (
                         <IconCheck
                           size={14}
                           color="var(--mantine-color-success-6)"
@@ -348,15 +352,20 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
                         />
                       )}
                       <Text size="sm" ff="monospace">
-                        {cond}
+                        {cond.type}
                       </Text>
                       <Text size="sm" c="dimmed">
-                        {ok ? "True" : "False"}
+                        {cond.status}
                       </Text>
+                      {cond.reason && (
+                        <Text size="sm" c="dimmed">
+                          — {cond.reason}
+                        </Text>
+                      )}
                     </Group>
-                  );
-                })}
-              </Stack>
+                  ))}
+                </Stack>
+              )}
             </section>
           </Stack>
         </Tabs.Panel>
@@ -381,78 +390,89 @@ export function PodDetailDrawer({ pod, onClose }: PodDetailDrawerProps) {
         </Tabs.Panel>
 
         <Tabs.Panel value="events" p="lg">
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                {["Type", "Reason", "Message", "Age"].map((h) => (
-                  <Table.Th key={h}>{h}</Table.Th>
-                ))}
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {MOCK_EVENTS.map((e, i) => (
-                <Table.Tr key={i}>
-                  <Table.Td>
-                    <Badge
-                      size="xs"
-                      color={e.type === "Normal" ? "gray" : "warning"}
-                      variant="light"
-                    >
-                      {e.type}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" ff="monospace">
-                      {e.reason}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{e.msg}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" c="dimmed" ff="monospace">
-                      {e.t}
-                    </Text>
-                  </Table.Td>
+          {overviewLoading ? (
+            <Loader size="xs" />
+          ) : events.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No events
+            </Text>
+          ) : (
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  {["Type", "Reason", "Message", "Count", "Last Seen"].map(
+                    (h) => (
+                      <Table.Th key={h}>{h}</Table.Th>
+                    ),
+                  )}
                 </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
+              </Table.Thead>
+              <Table.Tbody>
+                {events.map((e, i) => (
+                  <Table.Tr key={i}>
+                    <Table.Td>
+                      <Badge
+                        size="xs"
+                        color={e.type === "Normal" ? "gray" : "warning"}
+                        variant="light"
+                      >
+                        {e.type}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" ff="monospace">
+                        {e.reason}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{e.message}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" ff="monospace" c="dimmed">
+                        {e.count ?? 1}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" c="dimmed" ff="monospace">
+                        {e.lastTimestamp
+                          ? new Date(e.lastTimestamp).toLocaleTimeString()
+                          : "–"}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
         </Tabs.Panel>
 
-        <Tabs.Panel value="logs" p="lg">
-          <Box
-            style={{
-              background: "var(--mantine-color-dark-8, #0f0f11)",
-              color: "var(--mantine-color-dark-0, #fafafa)",
-              borderRadius: 6,
-              padding: 12,
-              fontFamily: "var(--mantine-font-monospace, monospace)",
-              fontSize: 12.5,
-              lineHeight: 1.6,
-              border: "1px solid var(--mantine-color-dark-4, #3f3f46)",
-            }}
-          >
-            {MOCK_LOGS.map((l, i) => (
-              <div key={i}>
-                <span style={{ color: "var(--mantine-color-dark-2, #a1a1aa)" }}>
-                  {l.t}
-                </span>{" "}
-                <span
-                  style={{
-                    color: logLevelColor[l.lvl],
-                    textTransform: "uppercase",
-                    fontSize: 10,
-                    padding: "0 4px",
-                  }}
-                >
-                  [{l.lvl}]
-                </span>{" "}
-                <span>{l.msg}</span>
-              </div>
-            ))}
-            <div style={{ color: "var(--mantine-color-success-5)" }}>▊</div>
-          </Box>
+        <Tabs.Panel value="logs" p="lg" style={{ display: "flex", flexDirection: "column" }}>
+          {logLines.length === 0 ? (
+            <Alert color="gray" variant="light">
+              Connecting to log stream…
+            </Alert>
+          ) : (
+            <Box
+              ref={logScrollRef}
+              style={{
+                background: "var(--mantine-color-dark-8, #0f0f11)",
+                color: "var(--mantine-color-dark-0, #fafafa)",
+                borderRadius: 6,
+                padding: 12,
+                fontFamily: "var(--mantine-font-monospace, monospace)",
+                fontSize: 12.5,
+                lineHeight: 1.6,
+                border: "1px solid var(--mantine-color-dark-4, #3f3f46)",
+                overflowY: "auto",
+                flex: 1,
+              }}
+            >
+              {logLines.map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+              <div style={{ color: "var(--mantine-color-success-5)" }}>▊</div>
+            </Box>
+          )}
         </Tabs.Panel>
       </Tabs>
     </Drawer>

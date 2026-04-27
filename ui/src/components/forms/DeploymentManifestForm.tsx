@@ -367,8 +367,6 @@ export function DeploymentManifestForm({
       args: d?.args ?? ([] as string[]),
       imagePullSecrets: d?.imagePullSecrets ?? ([] as string[]),
       replicas: d?.replicas ?? 1,
-      strategyType:
-        d?.strategy?.type ?? ("RollingUpdate" as "RollingUpdate" | "Recreate"),
       maxSurge: d?.strategy?.maxSurge ?? "",
       maxUnavailable: d?.strategy?.maxUnavailable ?? "",
       minReadySeconds: d?.minReadySeconds as number | undefined,
@@ -461,8 +459,8 @@ export function DeploymentManifestForm({
     if (readiness) payload.readinessProbe = readiness;
     if (startup) payload.startupProbe = startup;
 
-    payload.strategy = { type: v.strategyType };
-    if (v.strategyType === "RollingUpdate") {
+    payload.strategy = { type: strategyType };
+    if (strategyType === "RollingUpdate") {
       if (v.maxSurge.trim()) payload.strategy.maxSurge = v.maxSurge;
       if (v.maxUnavailable.trim())
         payload.strategy.maxUnavailable = v.maxUnavailable;
@@ -912,15 +910,12 @@ export function DeploymentManifestForm({
                   { label: "RollingUpdate", value: "RollingUpdate" },
                   { label: "Recreate", value: "Recreate" },
                 ]}
-                key={form.key("strategyType")}
-                {...form.getInputProps("strategyType")}
-                onChange={(value) => {
-                  const next = (value ?? "RollingUpdate") as
-                    | "RollingUpdate"
-                    | "Recreate";
-                  form.setFieldValue("strategyType", next);
-                  setStrategyType(next);
-                }}
+                value={strategyType}
+                onChange={(v) =>
+                  setStrategyType(
+                    (v ?? "RollingUpdate") as "RollingUpdate" | "Recreate",
+                  )
+                }
               />
             </SimpleGrid>
             {strategyType === "RollingUpdate" && (

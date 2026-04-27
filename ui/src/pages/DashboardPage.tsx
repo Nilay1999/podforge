@@ -1,26 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Group,
   Paper,
+  Select,
   SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
   Title,
   Button,
+  Badge,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   IconActivity,
   IconBox,
-  IconCheck,
   IconCube,
   IconFileText,
   IconPlus,
   IconRocket,
   IconServer,
   IconAlertTriangle,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
 import type { ResourceKind } from "@src/types";
@@ -28,6 +30,16 @@ import { useDeployments } from "@src/hooks/useDeployments";
 import { usePods } from "@src/hooks/usePods";
 import { useConfigMaps } from "@src/hooks/useConfigMaps";
 import type { Pod } from "@src/types";
+import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+
+interface ClusterEvent {
+  type?: string;
+  reason?: string;
+  message?: string;
+  regarding?: { name?: string; namespace?: string; kind?: string };
+  note?: string;
+  count?: number;
+}
 
 function PhaseDonut({
   running,
@@ -114,13 +126,11 @@ function SummaryCard({
   icon: Icon,
   label,
   count,
-  delta,
   color = "steelBlue",
 }: {
   icon: React.ComponentType<{ size?: number }>;
   label: string;
   count: string | number;
-  delta?: string;
   color?: string;
 }) {
   return (
@@ -145,143 +155,124 @@ function SummaryCard({
           >
             {label}
           </Text>
-          <Group gap={6} align="baseline">
-            <Text size="xl" fw={700} lh={1}>
-              {count}
-            </Text>
-            {delta && (
-              <Text size="xs" c="dimmed">
-                {delta}
-              </Text>
-            )}
-          </Group>
+          <Text size="xl" fw={700} lh={1}>
+            {count}
+          </Text>
         </Box>
       </Group>
     </Paper>
   );
 }
 
-const STATIC_EVENTS = [
-  {
-    icon: IconCheck,
-    color: "success",
-    who: "nginx-frontend",
-    what: "Scaled deployment to 3 replicas",
-    t: "12s",
-  },
-  {
-    icon: IconAlertTriangle,
-    color: "danger",
-    who: "migrator-7d4c-lkj22",
-    what: "CrashLoopBackOff (container: migrator)",
-    t: "1m",
-  },
-  {
-    icon: IconBox,
-    color: "gray",
-    who: "api-worker-5fd8",
-    what: "Pulled image api:v2.8.1 (1.2s)",
-    t: "4m",
-  },
-  {
-    icon: IconRocket,
-    color: "steelBlue",
-    who: "billing-api",
-    what: "RollingUpdate started (v2.7.0 → v2.8.1)",
-    t: "11m",
-  },
-  {
-    icon: IconFileText,
-    color: "gray",
-    who: "redis-config",
-    what: "ConfigMap updated (2 keys changed)",
-    t: "26m",
-  },
-  {
-    icon: IconCheck,
-    color: "success",
-    who: "nginx-7f9c4d",
-    what: "Created pod on ip-10-0-1-23",
-    t: "1h",
-  },
-] as const;
-
-const colorVars: Record<string, string> = {
-  success: "var(--mantine-color-success-5)",
-  danger: "var(--mantine-color-danger-5)",
-  steelBlue: "var(--mantine-color-steelBlue-5)",
-  gray: "var(--mantine-color-dimmed)",
-};
-
-function EventsFeed() {
+function EventsFeed({ events }: { events: ClusterEvent[] }) {
+  if (events.length === 0) {
+    return (
+      <Text size="sm" c="dimmed" py="sm">
+        Waiting for cluster events…
+      </Text>
+    );
+  }
   return (
     <Stack gap={0}>
-      {STATIC_EVENTS.map((e, i) => (
-        <Group
-          key={i}
-          gap="xs"
-          py="sm"
-          align="flex-start"
-          style={{
-            borderBottom:
-              i < STATIC_EVENTS.length - 1
-                ? "1px solid var(--mantine-color-default-border)"
-                : "none",
-          }}
-        >
-          <Box
+      {events.map((e, i) => {
+        const isWarning = e.type === "Warning";
+        return (
+          <Group
+            key={i}
+            gap="xs"
+            py="sm"
+            align="flex-start"
             style={{
-              width: 26,
-              height: 26,
-              borderRadius: 6,
-              background: "var(--mantine-color-default-hover)",
-              color: colorVars[e.color],
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              borderBottom:
+                i < events.length - 1
+                  ? "1px solid var(--mantine-color-default-border)"
+                  : "none",
             }}
           >
-            <e.icon size={14} />
-          </Box>
-          <Box style={{ flex: 1, minWidth: 0 }}>
-            <Text size="sm" lh={1.4}>
-              <Text span ff="monospace" fw={500}>
-                {e.who}
-              </Text>{" "}
-              <Text span c="dimmed">
-                — {e.what}
+            <Box
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                background: "var(--mantine-color-default-hover)",
+                color: isWarning
+                  ? "var(--mantine-color-warning-5)"
+                  : "var(--mantine-color-dimmed)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {isWarning ? (
+                <IconAlertTriangle size={14} />
+              ) : (
+                <IconInfoCircle size={14} />
+              )}
+            </Box>
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <Text size="sm" lh={1.4}>
+                {e.regarding?.name && (
+                  <Text span ff="monospace" fw={500}>
+                    {e.regarding.name}{" "}
+                  </Text>
+                )}
+                <Text span c="dimmed">
+                  — {e.note ?? e.message ?? e.reason ?? "event"}
+                </Text>
               </Text>
-            </Text>
-          </Box>
-          <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>
-            {e.t} ago
-          </Text>
-        </Group>
-      ))}
+            </Box>
+            <Badge
+              size="xs"
+              color={isWarning ? "warning" : "gray"}
+              variant="light"
+              style={{ flexShrink: 0 }}
+            >
+              {e.type ?? "Normal"}
+            </Badge>
+          </Group>
+        );
+      })}
     </Stack>
   );
 }
 
 export function DashboardPage() {
+  const [namespace, setNamespace] = useState("default");
   const [drawerKind, setDrawerKind] = useState<ResourceKind>("Deployment");
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
+  const [clusterEvents, setClusterEvents] = useState<ClusterEvent[]>([]);
 
-  const { data: pods } = usePods("default");
-  const { data: deployments } = useDeployments("default");
-  const { data: configMaps } = useConfigMaps("default");
+  const { data: pods } = usePods(namespace);
+  const { data: deployments } = useDeployments(namespace);
+  const { data: configMaps } = useConfigMaps(namespace);
 
   const podItems: Pod[] = pods?.items ?? [];
   const podCounts = {
     running: podItems.filter((p) => p.status?.phase === "Running").length,
     pending: podItems.filter((p) => p.status?.phase === "Pending").length,
-    failed: podItems.filter(
-      (p) =>
-        p.status?.phase === "Failed" ||
-        (p.status?.phase as string) === "CrashLoopBackOff",
-    ).length,
+    failed: podItems.filter((p) => p.status?.phase === "Failed").length,
   };
+
+  useEffect(() => {
+    const es = new EventSource("/api/v1/events/stream");
+
+    const handler = (e: MessageEvent) => {
+      try {
+        const event = JSON.parse(e.data) as ClusterEvent;
+        setClusterEvents((prev) => [event, ...prev].slice(0, 20));
+      } catch {}
+    };
+
+    es.onmessage = handler;
+    ["warning", "normal", "Warning", "Normal"].forEach((type) =>
+      es.addEventListener(type, handler),
+    );
+    es.onerror = () => es.close();
+
+    return () => es.close();
+  }, []);
 
   const handleCreate = (kind: ResourceKind) => {
     setDrawerKind(kind);
@@ -297,16 +288,21 @@ export function DashboardPage() {
       />
 
       <Stack gap="lg">
-        {/* Page header */}
         <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
           <Box>
             <Title order={2}>Dashboard</Title>
-            <Text size="sm" c="dimmed" mt={2}>
-              Cluster overview · namespace{" "}
-              <Text span ff="monospace" c="var(--mantine-color-text)">
-                default
+            <Group gap="xs" mt={2} align="center">
+              <Text size="sm" c="dimmed">
+                Cluster overview · namespace
               </Text>
-            </Text>
+              <Select
+                size="xs"
+                value={namespace}
+                onChange={(v) => v && setNamespace(v)}
+                data={DEFAULT_NAMESPACES}
+                style={{ minWidth: 130 }}
+              />
+            </Group>
           </Box>
           <Group gap="xs">
             <Button
@@ -336,20 +332,17 @@ export function DashboardPage() {
           </Group>
         </Group>
 
-        {/* Summary cards */}
         <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
           <SummaryCard
             icon={IconRocket}
             label="Deployments"
             count={deployments?.items.length ?? "–"}
-            delta={deployments?.items.length ? "+1 today" : undefined}
             color="steelBlue"
           />
           <SummaryCard
             icon={IconBox}
             label="Pods"
             count={podItems.length || "–"}
-            delta={podItems.length ? "+3 today" : undefined}
             color="success"
           />
           <SummaryCard
@@ -366,18 +359,15 @@ export function DashboardPage() {
           />
         </SimpleGrid>
 
-        {/* Nodes card — separate row */}
         <Box style={{ maxWidth: 260 }}>
           <SummaryCard
             icon={IconCube}
             label="Nodes"
             count="–"
-            delta="all ready"
             color="success"
           />
         </Box>
 
-        {/* Phase chart + events */}
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <Paper withBorder p="md" radius="md">
             <Text
@@ -450,10 +440,10 @@ export function DashboardPage() {
               </Text>
               <Box style={{ flex: 1 }} />
               <Text size="xs" c="dimmed">
-                last 1h
+                live
               </Text>
             </Group>
-            <EventsFeed />
+            <EventsFeed events={clusterEvents} />
           </Paper>
         </SimpleGrid>
       </Stack>
