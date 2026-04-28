@@ -1,7 +1,4 @@
-import { useState } from "react";
 import { Badge, Text } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   ResourceListPage,
   formatAge,
@@ -10,11 +7,8 @@ import {
 import { useConfigMaps, useDeleteConfigMap } from "@src/hooks/useConfigMaps";
 import { updateConfigMap } from "@src/api/configmaps";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
-import {
-  KIND_STRATEGIES,
-  type AnyPayload,
-} from "@src/components/manifest/kindStrategies";
-import type { ConfigMap, CreateConfigMapRequest } from "@src/types";
+import { useEditManifestDrawer } from "@src/hooks/useEditManifestDrawer";
+import type { ConfigMap } from "@src/types";
 
 const columns: Column<ConfigMap>[] = [
   {
@@ -65,37 +59,8 @@ const columns: Column<ConfigMap>[] = [
 ];
 
 export function ConfigMapsPage() {
-  const qc = useQueryClient();
-  const [editingConfigMap, setEditingConfigMap] = useState<ConfigMap | null>(
-    null,
-  );
-  const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] =
-    useDisclosure(false);
-
-  const handleEditItem = (c: ConfigMap) => {
-    setEditingConfigMap(c);
-    openEditDrawer();
-  };
-
-  const handleEditApply = (
-    payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
-  ) => {
-    if (!editingConfigMap) return;
-    const { namespace = "default", name } = editingConfigMap.metadata;
-    updateConfigMap(namespace, name, payload as CreateConfigMapRequest)
-      .then(() => {
-        qc.invalidateQueries({ queryKey: ["configmaps"] });
-        opts.onSuccess();
-      })
-      .catch(opts.onError);
-  };
-
-  const editInitialPayload = editingConfigMap
-    ? (KIND_STRATEGIES["ConfigMap"].fromManifest(
-        editingConfigMap,
-      ) as CreateConfigMapRequest)
-    : undefined;
+  const { editDrawerOpened, closeEditDrawer, handleEditItem, handleEditApply, editInitialPayload } =
+    useEditManifestDrawer<ConfigMap>("ConfigMap", updateConfigMap, "configmaps");
 
   return (
     <>

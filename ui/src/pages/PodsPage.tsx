@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Badge, Text } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   ResourceListPage,
   formatAge,
@@ -12,8 +10,8 @@ import { useDeletePod, usePods } from "@src/hooks/usePods";
 import { updatePod } from "@src/api/pods";
 import { PodDetailDrawer } from "@src/components/pods/PodDetailDrawer";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
-import { KIND_STRATEGIES, type AnyPayload } from "@src/components/manifest/kindStrategies";
-import type { CreatePodRequest, Pod } from "@src/types";
+import { useEditManifestDrawer } from "@src/hooks/useEditManifestDrawer";
+import type { Pod } from "@src/types";
 
 function phaseColor(phase?: string): string {
   switch (phase) {
@@ -92,11 +90,10 @@ const columns: Column<Pod>[] = [
 ];
 
 export function PodsPage() {
-  const qc = useQueryClient();
   const [selectedPod, setSelectedPod] = useState<Pod | null>(null);
-  const [editingPod, setEditingPod] = useState<Pod | null>(null);
-  const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] =
-    useDisclosure(false);
+
+  const { editDrawerOpened, closeEditDrawer, handleEditItem, handleEditApply, editInitialPayload } =
+    useEditManifestDrawer<Pod>("Pod", updatePod, "pods");
 
   const deleteNs = selectedPod?.metadata.namespace ?? "default";
   const deletePodMutation = useDeletePod(deleteNs);
@@ -120,29 +117,6 @@ export function PodsPage() {
         }),
     });
   };
-
-  const handleEditItem = (pod: Pod) => {
-    setEditingPod(pod);
-    openEditDrawer();
-  };
-
-  const handleEditApply = (
-    payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
-  ) => {
-    if (!editingPod) return;
-    const { namespace = "default", name } = editingPod.metadata;
-    updatePod(namespace, name, payload as CreatePodRequest)
-      .then(() => {
-        qc.invalidateQueries({ queryKey: ["pods"] });
-        opts.onSuccess();
-      })
-      .catch(opts.onError);
-  };
-
-  const editInitialPayload = editingPod
-    ? (KIND_STRATEGIES["Pod"].fromManifest(editingPod) as CreatePodRequest)
-    : undefined;
 
   return (
     <>

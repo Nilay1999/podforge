@@ -52,22 +52,13 @@ export function ManifestDrawer({
     createDeployment.isPending ||
     createPod.isPending;
 
+  const creators = { ConfigMap: createConfigMap, Deployment: createDeployment, Pod: createPod };
+
   const handleCreate = (
     payload: AnyPayload,
     opts: { onSuccess: () => void; onError: (err: Error) => void },
   ) => {
-    if (kind === "ConfigMap")
-      createConfigMap.mutate(
-        payload as Parameters<typeof createConfigMap.mutate>[0],
-        opts,
-      );
-    else if (kind === "Deployment")
-      createDeployment.mutate(
-        payload as Parameters<typeof createDeployment.mutate>[0],
-        opts,
-      );
-    else
-      createPod.mutate(payload as Parameters<typeof createPod.mutate>[0], opts);
+    creators[kind].mutate(payload as any, opts);
   };
 
   const [activeTab, setActiveTab] = useState("form");

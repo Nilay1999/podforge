@@ -226,8 +226,6 @@ function podFromManifest(raw: unknown): CreatePodRequest {
   };
 }
 
-export { configMapFromManifest, deploymentFromManifest, podFromManifest };
-
 export const KIND_STRATEGIES: Record<ResourceKind, KindStrategy> = {
   ConfigMap: {
     initialPayload: { name: "", namespace: "default" },

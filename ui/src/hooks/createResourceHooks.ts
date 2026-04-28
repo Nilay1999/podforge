@@ -11,11 +11,6 @@ export interface ResourceApi<TItem, TList, TCreate> {
   list: (namespace: string) => Promise<TList>;
   get: (namespace: string, name: string) => Promise<TItem>;
   create: (payload: TCreate) => Promise<MutationResponse>;
-  update: (
-    namespace: string,
-    name: string,
-    payload: TCreate,
-  ) => Promise<MutationResponse>;
   remove: (namespace: string, name: string) => Promise<MutationResponse>;
 }
 
@@ -67,29 +62,6 @@ export function createResourceHooks<TItem, TList, TCreate>(
     });
   };
 
-  const useUpdate = (
-    namespace: string,
-    options?: UseMutationOptions<
-      MutationResponse,
-      Error,
-      { name: string; payload: TCreate }
-    >,
-  ) => {
-    const qc = useQueryClient();
-    return useMutation<
-      MutationResponse,
-      Error,
-      { name: string; payload: TCreate }
-    >({
-      mutationFn: ({ name, payload }) => api.update(namespace, name, payload),
-      ...options,
-      onSuccess: (...args) => {
-        qc.invalidateQueries({ queryKey: keys.all });
-        options?.onSuccess?.(...args);
-      },
-    });
-  };
-
   const useRemove = (
     namespace: string,
     options?: UseMutationOptions<MutationResponse, Error, string>,
@@ -105,5 +77,5 @@ export function createResourceHooks<TItem, TList, TCreate>(
     });
   };
 
-  return { keys, useList, useDetail, useCreate, useUpdate, useRemove };
+  return { keys, useList, useDetail, useCreate, useRemove };
 }
