@@ -1,0 +1,40 @@
+meta {
+  name: Update Service
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/service/{{namespace}}/{{serviceName}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "nginx-service",
+    "namespace": "default",
+    "type": "ClusterIP",
+    "selector": {
+      "app": "nginx"
+    },
+    "ports": [
+      {
+        "name": "http",
+        "port": 80,
+        "targetPort": "80",
+        "protocol": "TCP"
+      },
+      {
+        "name": "https",
+        "port": 443,
+        "targetPort": "443",
+        "protocol": "TCP"
+      }
+    ]
+  }
+}

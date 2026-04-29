@@ -1,0 +1,11 @@
+meta {
+  name: Delete Pod
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/pod/{{namespace}}/{{podName}}
+  body: none
+  auth: none
+}

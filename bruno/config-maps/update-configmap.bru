@@ -1,0 +1,27 @@
+meta {
+  name: Update ConfigMap
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/config-map/{{namespace}}/{{configMapName}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "app-config",
+    "namespace": "default",
+    "data": {
+      "APP_ENV": "production",
+      "LOG_LEVEL": "info",
+      "config.yaml": "host: localhost\nport: 8080\ndebug: false\n"
+    }
+  }
+}

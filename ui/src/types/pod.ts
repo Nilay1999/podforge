@@ -113,3 +113,17 @@ export interface Pod {
 export interface PodList {
   items: Pod[];
 }
+
+export interface PodEvent {
+  type: string;
+  reason: string;
+  message: string;
+  count?: number;
+  lastTimestamp?: string;
+  firstTimestamp?: string;
+}
+
+export interface PodOverview {
+  events?: PodEvent[];
+  conditions?: PodCondition[];
+}

@@ -1,0 +1,11 @@
+meta {
+  name: Get Pod Overview
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/pod/{{namespace}}/{{podName}}/overview
+  body: none
+  auth: none
+}

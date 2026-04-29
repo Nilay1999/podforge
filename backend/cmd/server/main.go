@@ -15,14 +15,14 @@ func main() {
 	log := logger.New(cfg)
 	defer log.Sync()
 
-	clientset, err := k8ssvc.NewClient(cfg.Kubeconfig)
+	clientset, restConfig, err := k8ssvc.NewClient(cfg.Kubeconfig)
 	if err != nil {
 		log.Fatal("Failed to connect to K8s", zap.Error(err))
 	}
 	log.Info("Connected to K8s cluster")
 
 	r := gin.New()
-	routes.Setup(r, clientset, log)
+	routes.Setup(r, clientset, restConfig, log)
 
 	addr := ":" + cfg.Port
 	log.Info("Server starting", zap.String("addr", addr))

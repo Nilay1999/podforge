@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Button,
@@ -14,9 +15,8 @@ export const pairsToRecord = (pairs: KeyValuePair[]) => {
   const record: Record<string, string> = {};
   for (const { key, value } of pairs) {
     const k = key.trim();
-    const v = value.trim();
-    if (!k || !v) continue;
-    record[k] = v;
+    if (!k) continue;
+    record[k] = typeof value === "string" ? value : String(value);
   }
   return Object.keys(record).length > 0 ? record : undefined;
 };
@@ -25,9 +25,9 @@ export const validatePairs = (pairs: KeyValuePair[], label: string) => {
   const keys = new Set<string>();
   for (const { key, value } of pairs) {
     const k = key.trim();
-    const v = value.trim();
+    const v = typeof value === "string" ? value : String(value);
     if (!k && !v) continue;
-    if (!k || !v) return `${label}: fill both key and value`;
+    if (!k) return `${label}: key is required`;
     if (keys.has(k)) return `${label}: duplicate key "${k}"`;
     keys.add(k);
   }
@@ -135,5 +135,44 @@ export function KeyValuePairsField({
         </Stack>
       )}
     </Stack>
+  );
+}
+
+export function UncontrolledKeyValuePairs({
+  label,
+  description,
+  initial,
+  register,
+  error,
+  keyPlaceholder,
+  valuePlaceholder,
+}: {
+  label: string;
+  description?: string;
+  initial?: KeyValuePair[];
+  register: (fn: (() => KeyValuePair[]) | null) => void;
+  error?: string;
+  keyPlaceholder?: string;
+  valuePlaceholder?: string;
+}) {
+  const [pairs, setPairs] = useState<KeyValuePair[]>(() => initial ?? []);
+  const pairsRef = useRef(pairs);
+  pairsRef.current = pairs;
+
+  useEffect(() => {
+    register(() => pairsRef.current);
+    return () => register(null);
+  }, [register]);
+
+  return (
+    <KeyValuePairsField
+      label={label}
+      description={description}
+      pairs={pairs}
+      onChange={setPairs}
+      error={error}
+      keyPlaceholder={keyPlaceholder}
+      valuePlaceholder={valuePlaceholder}
+    />
   );
 }

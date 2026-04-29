@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, NumberInput, Paper, Stack, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import type { CreatePodRequest } from "../../types";
+import type { CreatePodRequest } from "@src/types";
 import {
   type KeyValuePair,
   pairsToRecord,
@@ -12,12 +12,31 @@ import { MetadataFields } from "./MetadataFields";
 export function PodManifestForm({
   formId,
   onSubmit,
+  registerGetPayload,
+  defaultPayload,
 }: {
   formId?: string;
   onSubmit?: (payload: CreatePodRequest) => void;
+  registerGetPayload?: (fn: (() => CreatePodRequest) | null) => void;
+  defaultPayload?: Partial<CreatePodRequest>;
 }) {
-  const [labelPairs, setLabelPairs] = useState<KeyValuePair[]>([]);
-  const [annotationPairs, setAnnotationPairs] = useState<KeyValuePair[]>([]);
+  const emptyPairs = useRef<() => KeyValuePair[]>(() => []).current;
+  const labelsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+  const annotationsGetter = useRef<() => KeyValuePair[]>(emptyPairs);
+
+  const registerLabels = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      labelsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
+  );
+  const registerAnnotations = useCallback(
+    (fn: (() => KeyValuePair[]) | null) => {
+      annotationsGetter.current = fn ?? emptyPairs;
+    },
+    [emptyPairs],
+  );
+
   const [pairErrors, setPairErrors] = useState<{
     labels?: string;
     annotations?: string;
@@ -26,9 +45,11 @@ export function PodManifestForm({
   const form = useForm<CreatePodRequest>({
     mode: "uncontrolled",
     initialValues: {
-      name: "",
-      namespace: "default",
-      containers: [{ name: "main", image: "", ports: [{ containerPort: 80 }] }],
+      name: defaultPayload?.name ?? "",
+      namespace: defaultPayload?.namespace ?? "default",
+      containers: defaultPayload?.containers?.length
+        ? defaultPayload.containers
+        : [{ name: "main", image: "", ports: [{ containerPort: 80 }] }],
     },
     validate: (values) => {
       const errors: Partial<Record<string, string>> = {};
@@ -39,11 +60,25 @@ export function PodManifestForm({
     },
   });
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const buildPayload = (): CreatePodRequest => ({
+    ...form.getValues(),
+    labels: pairsToRecord(labelsGetter.current()),
+    annotations: pairsToRecord(annotationsGetter.current()),
+  });
+
+  const buildPayloadRef = useRef(buildPayload);
+  buildPayloadRef.current = buildPayload;
+
+  useEffect(() => {
+    registerGetPayload?.(() => buildPayloadRef.current());
+    return () => registerGetPayload?.(null);
+  }, [registerGetPayload]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formResult = form.validate();
-    const labelsError = validatePairs(labelPairs, "Labels");
-    const annotationsError = validatePairs(annotationPairs, "Annotations");
+    const labelsError = validatePairs(labelsGetter.current(), "Labels");
+    const annotationsError = validatePairs(annotationsGetter.current(), "Annotations");
     if (formResult.hasErrors || labelsError || annotationsError) {
       setPairErrors({ labels: labelsError, annotations: annotationsError });
       return;
@@ -51,8 +86,8 @@ export function PodManifestForm({
     setPairErrors({});
     onSubmit?.({
       ...form.getValues(),
-      labels: pairsToRecord(labelPairs),
-      annotations: pairsToRecord(annotationPairs),
+      labels: pairsToRecord(labelsGetter.current()),
+      annotations: pairsToRecord(annotationsGetter.current()),
     });
   };
 
@@ -61,16 +96,14 @@ export function PodManifestForm({
       <Stack gap="md">
         <MetadataFields
           form={form}
-          labelPairs={labelPairs}
-          annotationPairs={annotationPairs}
-          onLabelsChange={(pairs) => {
-            setLabelPairs(pairs);
-            setPairErrors((prev) => ({ ...prev, labels: undefined }));
-          }}
-          onAnnotationsChange={(pairs) => {
-            setAnnotationPairs(pairs);
-            setPairErrors((prev) => ({ ...prev, annotations: undefined }));
-          }}
+          initialLabels={defaultPayload?.labels
+            ? Object.entries(defaultPayload.labels).map(([key, value]) => ({ key, value }))
+            : undefined}
+          initialAnnotations={defaultPayload?.annotations
+            ? Object.entries(defaultPayload.annotations).map(([key, value]) => ({ key, value }))
+            : undefined}
+          registerLabels={registerLabels}
+          registerAnnotations={registerAnnotations}
           labelError={pairErrors.labels}
           annotationError={pairErrors.annotations}
           namePlaceholder="my-pod"

@@ -1,22 +1,19 @@
 import { useState } from "react";
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Group,
-  Loader,
-  Stack,
-  Table,
-  TextInput,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { Badge, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconRefresh, IconTrash } from "@tabler/icons-react";
-import { ResourcePageHeader } from "../components/common/ResourcePageHeader";
-import { ManifestDrawer } from "../components/manifest/ManifestDrawer";
-import { useDeletePod, usePods } from "../hooks/usePods";
+import {
+  ResourceListPage,
+  formatAge,
+  type Column,
+} from "@src/components/common/ResourceListPage";
+import { useDeletePod, usePods } from "@src/hooks/usePods";
+import { updatePod } from "@src/api/pods";
+import { PodDetailDrawer } from "@src/components/pods/PodDetailDrawer";
+import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
+import { useEditManifestDrawer } from "@src/hooks/useEditManifestDrawer";
+import type { Pod } from "@src/types";
 
-const phaseColor = (phase?: string) => {
+function phaseColor(phase?: string): string {
   switch (phase) {
     case "Running":
       return "success";
@@ -28,24 +25,90 @@ const phaseColor = (phase?: string) => {
     default:
       return "gray";
   }
-};
+}
+
+const columns: Column<Pod>[] = [
+  {
+    header: "Name",
+    render: (p) => (
+      <Text size="sm" ff="monospace" fw={500}>
+        {p.metadata.name}
+      </Text>
+    ),
+  },
+  {
+    header: "Status",
+    render: (p) => (
+      <Badge color={phaseColor(p.status?.phase)} variant="light" size="sm">
+        {p.status?.phase ?? "Unknown"}
+      </Badge>
+    ),
+  },
+  {
+    header: "Ready",
+    render: (p) => {
+      const statuses = p.status?.containerStatuses ?? [];
+      const ready = statuses.filter((c) => c.ready).length;
+      const total = p.spec?.containers?.length ?? statuses.length;
+      return (
+        <Text size="sm" ff="monospace">
+          {total > 0 ? `${ready}/${total}` : "–"}
+        </Text>
+      );
+    },
+  },
+  {
+    header: "Restarts",
+    render: (p) => {
+      const restarts = (p.status?.containerStatuses ?? []).reduce(
+        (s, c) => s + c.restartCount,
+        0,
+      );
+      return (
+        <Text size="sm" ff="monospace" c={restarts > 0 ? "warning" : "dimmed"}>
+          {restarts}
+        </Text>
+      );
+    },
+  },
+  {
+    header: "Node",
+    render: (p) => (
+      <Text size="sm" ff="monospace" c="dimmed">
+        {p.spec?.nodeName ?? "–"}
+      </Text>
+    ),
+  },
+  {
+    header: "Age",
+    render: (p) => (
+      <Text size="sm" ff="monospace" c="dimmed">
+        {formatAge(p.metadata.creationTimestamp)}
+      </Text>
+    ),
+  },
+];
 
 export function PodsPage() {
-  const [namespace, setNamespace] = useState("default");
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
+  const [selectedPod, setSelectedPod] = useState<Pod | null>(null);
 
-  const { data, isLoading, error, refetch, isFetching } = usePods(namespace);
-  const deleteMutation = useDeletePod(namespace);
+  const { editDrawerOpened, closeEditDrawer, handleEditItem, handleEditApply, editInitialPayload } =
+    useEditManifestDrawer<Pod>("Pod", updatePod, "pods");
 
-  const handleDelete = (name: string) => {
-    deleteMutation.mutate(name, {
-      onSuccess: () =>
+  const deleteNs = selectedPod?.metadata.namespace ?? "default";
+  const deletePodMutation = useDeletePod(deleteNs);
+
+  const handleDelete = () => {
+    if (!selectedPod) return;
+    deletePodMutation.mutate(selectedPod.metadata.name, {
+      onSuccess: () => {
+        setSelectedPod(null);
         notifications.show({
           title: "Pod deleted",
-          message: `${name} removed from ${namespace}`,
+          message: `${selectedPod.metadata.name} was deleted`,
           color: "teal",
-        }),
+        });
+      },
       onError: (err) =>
         notifications.show({
           title: "Delete failed",
@@ -56,88 +119,38 @@ export function PodsPage() {
   };
 
   return (
-    <Stack>
-      <ResourcePageHeader title="Pod" onCreateClick={openDrawer} />
-
-      <ManifestDrawer
-        opened={drawerOpened}
-        onClose={closeDrawer}
-        kind="Pod"
+    <>
+      <PodDetailDrawer
+        pod={selectedPod}
+        onClose={() => setSelectedPod(null)}
+        onDelete={handleDelete}
+        onEdit={
+          selectedPod
+            ? () => {
+                setSelectedPod(null);
+                handleEditItem(selectedPod);
+              }
+            : undefined
+        }
       />
 
-      <Group>
-        <TextInput
-          label="Namespace"
-          value={namespace}
-          onChange={(e) => setNamespace(e.currentTarget.value)}
-          size="xs"
-        />
-        <ActionIcon
-          variant="light"
-          onClick={() => refetch()}
-          loading={isFetching}
-          size="lg"
-          mt="lg"
-        >
-          <IconRefresh size={18} />
-        </ActionIcon>
-      </Group>
+      <ManifestDrawer
+        opened={editDrawerOpened}
+        onClose={closeEditDrawer}
+        kind="Pod"
+        initialPayload={editInitialPayload}
+        onApply={handleEditApply}
+      />
 
-      {isLoading && <Loader />}
-
-      {error && (
-        <Alert color="red" title="Failed to load pods">
-          {error.message}
-        </Alert>
-      )}
-
-      {data && (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Node</Table.Th>
-              <Table.Th>Pod IP</Table.Th>
-              <Table.Th></Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {data.items.map((pod) => (
-              <Table.Tr key={pod.metadata.name}>
-                <Table.Td>{pod.metadata.name}</Table.Td>
-                <Table.Td>
-                  <Badge color={phaseColor(pod.status?.phase)} variant="light">
-                    {pod.status?.phase ?? "Unknown"}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>{pod.spec?.nodeName ?? "-"}</Table.Td>
-                <Table.Td>{pod.status?.podIP ?? "-"}</Table.Td>
-                <Table.Td>
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => handleDelete(pod.metadata.name)}
-                    loading={
-                      deleteMutation.isPending &&
-                      deleteMutation.variables === pod.metadata.name
-                    }
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-            {data.items.length === 0 && (
-              <Table.Tr>
-                <Table.Td colSpan={5} style={{ textAlign: "center" }}>
-                  No pods in namespace "{namespace}"
-                </Table.Td>
-              </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
-      )}
-    </Stack>
+      <ResourceListPage<Pod>
+        kind="Pod"
+        pluralTitle="Pods"
+        useList={usePods}
+        useDelete={useDeletePod}
+        columns={columns}
+        onRowClick={setSelectedPod}
+        onEditItem={handleEditItem}
+      />
+    </>
   );
 }

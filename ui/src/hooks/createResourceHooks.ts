@@ -5,17 +5,12 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
 } from "@tanstack/react-query";
-import type { MutationResponse } from "../types";
+import type { MutationResponse } from "@src/types";
 
 export interface ResourceApi<TItem, TList, TCreate> {
   list: (namespace: string) => Promise<TList>;
   get: (namespace: string, name: string) => Promise<TItem>;
   create: (payload: TCreate) => Promise<MutationResponse>;
-  update: (
-    namespace: string,
-    name: string,
-    payload: TCreate,
-  ) => Promise<MutationResponse>;
   remove: (namespace: string, name: string) => Promise<MutationResponse>;
 }
 
@@ -67,22 +62,6 @@ export function createResourceHooks<TItem, TList, TCreate>(
     });
   };
 
-  const useUpdate = (
-    namespace: string,
-    name: string,
-    options?: UseMutationOptions<MutationResponse, Error, TCreate>,
-  ) => {
-    const qc = useQueryClient();
-    return useMutation<MutationResponse, Error, TCreate>({
-      mutationFn: (payload) => api.update(namespace, name, payload),
-      ...options,
-      onSuccess: (...args) => {
-        qc.invalidateQueries({ queryKey: keys.all });
-        options?.onSuccess?.(...args);
-      },
-    });
-  };
-
   const useRemove = (
     namespace: string,
     options?: UseMutationOptions<MutationResponse, Error, string>,
@@ -92,11 +71,11 @@ export function createResourceHooks<TItem, TList, TCreate>(
       mutationFn: (name) => api.remove(namespace, name),
       ...options,
       onSuccess: (...args) => {
-        qc.invalidateQueries({ queryKey: keys.list(namespace) });
+        qc.invalidateQueries({ queryKey: keys.all });
         options?.onSuccess?.(...args);
       },
     });
   };
 
-  return { keys, useList, useDetail, useCreate, useUpdate, useRemove };
+  return { keys, useList, useDetail, useCreate, useRemove };
 }

@@ -1,0 +1,24 @@
+meta {
+  name: Bulk Apply
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/bulk/apply
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "manifests": [
+      "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: bulk-config\n  namespace: default\ndata:\n  key: value\n",
+      "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: bulk-deploy\n  namespace: default\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: bulk\n  template:\n    metadata:\n      labels:\n        app: bulk\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.25\n"
+    ]
+  }
+}

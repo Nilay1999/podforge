@@ -1,0 +1,15 @@
+meta {
+  name: Cluster Events Stream (SSE)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/stream
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: text/event-stream
+}

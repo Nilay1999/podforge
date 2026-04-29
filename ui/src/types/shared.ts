@@ -21,8 +21,6 @@ export interface EnvFrom {
   prefix?: string;
 }
 
-export type ImagePullPolicy = "Always" | "IfNotPresent" | "Never";
-
 export interface ResourceList {
   cpu?: string;
   memory?: string;
@@ -237,6 +235,12 @@ export interface HostAlias {
   hostnames: string[];
 }
 
+export interface MutationResponse {
+  name: string;
+  namespace: string;
+  status: string;
+}
+
 export type DNSPolicy =
   | "ClusterFirst"
   | "ClusterFirstWithHostNet"
@@ -245,8 +249,53 @@ export type DNSPolicy =
 
 export type RestartPolicy = "Always" | "OnFailure" | "Never";
 
-export interface MutationResponse {
-  name: string;
-  namespace: string;
-  status: string;
-}
+export type ImagePullPolicy = "Always" | "IfNotPresent" | "Never";
+
+export type Kind =
+  // Core
+  | "pod"
+  | "service"
+  | "configmap"
+  | "secret"
+  | "persistentvolume"
+  | "persistentvolumeclaim"
+  | "namespace"
+  | "node"
+  | "event"
+  | "limitrange"
+  | "resourcequota"
+  | "serviceaccount"
+
+  // Workloads
+  | "deployment"
+  | "replicaset"
+  | "statefulset"
+  | "daemonset"
+  | "job"
+  | "cronjob"
+
+  // Networking
+  | "ingress"
+  | "networkpolicy"
+
+  // RBAC
+  | "role"
+  | "rolebinding"
+  | "clusterrole"
+  | "clusterrolebinding"
+
+  // Storage
+  | "storageclass"
+  | "volumeattachment"
+
+  // Autoscaling
+  | "horizontalpodautoscaler"
+
+  // Policy / scheduling
+  | "poddisruptionbudget"
+  | "priorityclass"
+
+  // Extensions / misc
+  | "endpoint"
+  | "endpointslice"
+  | "runtimeclass";

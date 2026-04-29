@@ -4,12 +4,10 @@ import type {
   Deployment,
   DeploymentList,
   MutationResponse,
-} from "../types";
+} from "@src/types";
 
 export const listDeployments = (namespace: string) =>
-  apiClient
-    .get<DeploymentList>(`/deployment/${namespace}`)
-    .then((r) => r.data);
+  apiClient.get<DeploymentList>(`/deployment/${namespace}`).then((r) => r.data);
 
 export const getDeployment = (namespace: string, name: string) =>
   apiClient
@@ -22,7 +20,7 @@ export const createDeployment = (payload: CreateDeploymentRequest) =>
 export const updateDeployment = (
   namespace: string,
   name: string,
-  payload: CreateDeploymentRequest
+  payload: CreateDeploymentRequest,
 ) =>
   apiClient
     .put<MutationResponse>(`/deployment/${namespace}/${name}`, payload)

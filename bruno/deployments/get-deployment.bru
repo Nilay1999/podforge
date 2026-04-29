@@ -1,0 +1,11 @@
+meta {
+  name: Get Deployment
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/deployment/{{namespace}}/{{deploymentName}}
+  body: none
+  auth: none
+}

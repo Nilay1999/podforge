@@ -1,0 +1,15 @@
+meta {
+  name: Stream Pod Logs (SSE)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/pod/{{namespace}}/{{podName}}/logs/stream
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: text/event-stream
+}

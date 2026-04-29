@@ -1,0 +1,40 @@
+meta {
+  name: Update Pod
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/api/v1/pod/{{namespace}}/{{podName}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "nginx-pod",
+    "namespace": "default",
+    "labels": {
+      "app": "nginx",
+      "version": "v2"
+    },
+    "containers": [
+      {
+        "name": "nginx",
+        "image": "nginx:1.26",
+        "ports": [
+          { "containerPort": 80 }
+        ],
+        "resources": {
+          "requests": { "cpu": "100m", "memory": "64Mi" },
+          "limits":   { "cpu": "500m", "memory": "256Mi" }
+        }
+      }
+    ],
+    "restartPolicy": "Always"
+  }
+}
