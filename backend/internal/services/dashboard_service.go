@@ -133,5 +133,71 @@ func (s *dashboardService) PodPhases(ctx context.Context, namespace string) (typ
 }
 
 func (s *dashboardService) NamespaceOverview(ctx context.Context, namespace string) (types.NamespaceOverview, error) {
-	return types.NamespaceOverview{Namespace: namespace}, nil
+	var (
+		summary types.NamespaceOverview
+		mu      sync.Mutex
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		list, err := s.clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("pods: %w", err)
+		}
+		mu.Lock()
+		summary.Pods = len(list.Items)
+		mu.Unlock()
+		return nil
+	})
+
+	g.Go(func() error {
+		list, err := s.clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("deployments: %w", err)
+		}
+		mu.Lock()
+		summary.Deployments = len(list.Items)
+		mu.Unlock()
+		return nil
+	})
+
+	g.Go(func() error {
+		list, err := s.clientset.CoreV1().ConfigMaps(namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("configmaps: %w", err)
+		}
+		mu.Lock()
+		summary.ConfigMaps = len(list.Items)
+		mu.Unlock()
+		return nil
+	})
+
+	g.Go(func() error {
+		list, err := s.clientset.CoreV1().Services(namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("services: %w", err)
+		}
+		mu.Lock()
+		summary.Services = len(list.Items)
+		mu.Unlock()
+		return nil
+	})
+
+	g.Go(func() error {
+		list, err := s.clientset.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("secrets: %w", err)
+		}
+		mu.Lock()
+		summary.Secrets = len(list.Items)
+		mu.Unlock()
+		return nil
+	})
+	summary.Namespace = namespace
+	if err := g.Wait(); err != nil {
+		return types.NamespaceOverview{}, err
+	}
+
+	return summary, nil
 }
