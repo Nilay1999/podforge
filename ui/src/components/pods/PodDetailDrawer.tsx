@@ -95,9 +95,9 @@ export function PodDetailDrawer({
     setLogLines([]);
 
     const es = new EventSource(`/api/v1/pod/${ns}/${name}/logs/stream`);
-    es.onmessage = (e) => {
+    es.addEventListener("log", (e: MessageEvent) => {
       setLogLines((prev) => [...prev.slice(-499), e.data]);
-    };
+    });
     es.onerror = () => es.close();
 
     return () => es.close();

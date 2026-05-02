@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   Title,
+  Tooltip,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -29,6 +30,7 @@ import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import type { MutationResponse, ObjectMeta, ResourceKind } from "@src/types";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
 import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { useWatchResource } from "@src/hooks/useWatchResource";
 
 export interface Column<T> {
   header: string;
@@ -76,6 +78,10 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
   const [search, setSearch] = useState("");
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
     useDisclosure(false);
+
+  // "Pod" → "pods", "ConfigMap" → "configmaps" — matches the key used in createResourceHooks
+  const resource = kind.toLowerCase() + "s";
+  const { connected } = useWatchResource(resource, namespace);
 
   const { data, isLoading, error, refetch, isFetching } = useList(namespace);
   const deleteMutation = useDelete(namespace);
@@ -157,6 +163,19 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
           >
             <IconRefresh size={16} />
           </ActionIcon>
+          <Tooltip
+            label={connected ? "Receiving live updates" : "Connecting to live stream…"}
+            withArrow
+          >
+            <Badge
+              color={connected ? "teal" : "gray"}
+              variant="dot"
+              size="sm"
+              style={{ marginBottom: 1, cursor: "default" }}
+            >
+              {connected ? "Live" : "Connecting"}
+            </Badge>
+          </Tooltip>
         </Group>
 
         {isLoading && <Loader />}
