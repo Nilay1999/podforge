@@ -6,7 +6,7 @@ const hooks = createResourceHooks<Pod, PodList, CreatePodRequest>("pods", {
   list: podApi.listPods,
   get: podApi.getPod,
   create: podApi.createPod,
-  remove: podApi.deletePod,
+  remove: podApi.deletePod
 });
 
 export const usePods = hooks.useList;

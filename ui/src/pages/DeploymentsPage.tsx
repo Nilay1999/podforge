@@ -1,9 +1,5 @@
 import { Text } from "@mantine/core";
-import {
-  ResourceListPage,
-  formatAge,
-  type Column,
-} from "@src/components/common/ResourceListPage";
+import { ResourceListPage, formatAge, type Column } from "@src/components/common/ResourceListPage";
 import { useDeleteDeployment, useDeployments } from "@src/hooks/useDeployments";
 import { updateDeployment } from "@src/api/deployments";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
@@ -17,7 +13,7 @@ const columns: Column<Deployment>[] = [
       <Text size="sm" ff="monospace" fw={500}>
         {d.metadata.name}
       </Text>
-    ),
+    )
   },
   {
     header: "Ready",
@@ -29,7 +25,7 @@ const columns: Column<Deployment>[] = [
           {total > 0 ? `${ready}/${total}` : "–"}
         </Text>
       );
-    },
+    }
   },
   {
     header: "Available",
@@ -37,7 +33,7 @@ const columns: Column<Deployment>[] = [
       <Text size="sm" ff="monospace" c="dimmed">
         {d.status?.availableReplicas ?? "–"}
       </Text>
-    ),
+    )
   },
   {
     header: "Updated",
@@ -45,7 +41,7 @@ const columns: Column<Deployment>[] = [
       <Text size="sm" ff="monospace" c="dimmed">
         {d.status?.updatedReplicas ?? "–"}
       </Text>
-    ),
+    )
   },
   {
     header: "Strategy",
@@ -53,7 +49,7 @@ const columns: Column<Deployment>[] = [
       <Text size="sm" c="dimmed">
         {d.spec?.strategy?.type ?? "RollingUpdate"}
       </Text>
-    ),
+    )
   },
   {
     header: "Age",
@@ -61,8 +57,8 @@ const columns: Column<Deployment>[] = [
       <Text size="sm" ff="monospace" c="dimmed">
         {formatAge(d.metadata.creationTimestamp)}
       </Text>
-    ),
-  },
+    )
+  }
 ];
 
 export function DeploymentsPage() {

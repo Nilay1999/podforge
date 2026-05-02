@@ -1,20 +1,12 @@
 import * as configMapApi from "@src/api/configmaps";
-import type {
-  ConfigMap,
-  ConfigMapList,
-  CreateConfigMapRequest,
-} from "@src/types";
+import type { ConfigMap, ConfigMapList, CreateConfigMapRequest } from "@src/types";
 import { createResourceHooks } from "./createResourceHooks";
 
-const hooks = createResourceHooks<
-  ConfigMap,
-  ConfigMapList,
-  CreateConfigMapRequest
->("configmaps", {
+const hooks = createResourceHooks<ConfigMap, ConfigMapList, CreateConfigMapRequest>("configmaps", {
   list: configMapApi.listConfigMaps,
   get: configMapApi.getConfigMap,
   create: configMapApi.createConfigMap,
-  remove: configMapApi.deleteConfigMap,
+  remove: configMapApi.deleteConfigMap
 });
 
 export const useConfigMaps = hooks.useList;

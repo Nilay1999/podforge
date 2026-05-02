@@ -1,4 +1,4 @@
-import { Kind } from "@src/types";
+import type { Kind } from "@src/types";
 
 export const kindPicker: Record<Kind, string> = {
   // Core
@@ -47,5 +47,5 @@ export const kindPicker: Record<Kind, string> = {
   // Misc
   endpoint: "Endpoints",
   endpointslice: "EndpointSlice",
-  runtimeclass: "RuntimeClass",
+  runtimeclass: "RuntimeClass"
 };

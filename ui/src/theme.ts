@@ -1,9 +1,5 @@
-import {
-  createTheme,
-  MantineColorsTuple,
-  DEFAULT_THEME,
-  mergeMantineTheme,
-} from "@mantine/core";
+import type { MantineColorsTuple } from "@mantine/core";
+import { createTheme, DEFAULT_THEME, mergeMantineTheme } from "@mantine/core";
 
 // Steel Blue — primary brand color (desaturated, calm on dark backgrounds)
 const steelBlue: MantineColorsTuple = [
@@ -16,7 +12,7 @@ const steelBlue: MantineColorsTuple = [
   "#4a7de8",
   "#3a6dd8",
   "#2d5dbf",
-  "#1e4aa3",
+  "#1e4aa3"
 ];
 
 // Slate accent for secondary actions
@@ -30,7 +26,7 @@ const slate: MantineColorsTuple = [
   "#4f75d8",
   "#3d61c6",
   "#2e4fa8",
-  "#1f3a88",
+  "#1f3a88"
 ];
 
 // Green for success / running states
@@ -44,7 +40,7 @@ const success: MantineColorsTuple = [
   "#16a34a",
   "#15803d",
   "#166534",
-  "#14532d",
+  "#14532d"
 ];
 
 // Amber for warning / pending states
@@ -58,7 +54,7 @@ const warning: MantineColorsTuple = [
   "#d97706",
   "#b45309",
   "#92400e",
-  "#78350f",
+  "#78350f"
 ];
 
 // Red for error / failed states
@@ -72,7 +68,7 @@ const danger: MantineColorsTuple = [
   "#dc2626",
   "#b91c1c",
   "#991b1b",
-  "#7f1d1d",
+  "#7f1d1d"
 ];
 
 const themeOverride = createTheme({
@@ -93,18 +89,16 @@ const themeOverride = createTheme({
       "#27272a", // [6] bg-surface — Paper/Card use this index
       "#141416", // [7] bg-body
       "#0f0f11", // [8] deepest bg
-      "#09090b", // [9]
-    ],
+      "#09090b" // [9]
+    ]
   },
-  fontFamily:
-    "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+  fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
   headings: {
-    fontFamily:
-      "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif",
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
   },
   primaryShade: { light: 6, dark: 5 },
   defaultRadius: "md",
-  cursorType: "pointer",
+  cursorType: "pointer"
 });
 
 export const theme = mergeMantineTheme(DEFAULT_THEME, themeOverride);

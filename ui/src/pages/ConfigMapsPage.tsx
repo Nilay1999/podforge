@@ -1,9 +1,5 @@
 import { Badge, Text } from "@mantine/core";
-import {
-  ResourceListPage,
-  formatAge,
-  type Column,
-} from "@src/components/common/ResourceListPage";
+import { ResourceListPage, formatAge, type Column } from "@src/components/common/ResourceListPage";
 import { useConfigMaps, useDeleteConfigMap } from "@src/hooks/useConfigMaps";
 import { updateConfigMap } from "@src/api/configmaps";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
@@ -17,7 +13,7 @@ const columns: Column<ConfigMap>[] = [
       <Text size="sm" ff="monospace" fw={500}>
         {c.metadata.name}
       </Text>
-    ),
+    )
   },
   {
     header: "Data keys",
@@ -25,7 +21,7 @@ const columns: Column<ConfigMap>[] = [
       <Text size="sm" ff="monospace">
         {Object.keys(c.data ?? {}).length}
       </Text>
-    ),
+    )
   },
   {
     header: "Binary keys",
@@ -33,7 +29,7 @@ const columns: Column<ConfigMap>[] = [
       <Text size="sm" ff="monospace" c="dimmed">
         {Object.keys(c.binaryData ?? {}).length}
       </Text>
-    ),
+    )
   },
   {
     header: "Immutable",
@@ -46,7 +42,7 @@ const columns: Column<ConfigMap>[] = [
         <Text size="sm" c="dimmed">
           No
         </Text>
-      ),
+      )
   },
   {
     header: "Age",
@@ -54,8 +50,8 @@ const columns: Column<ConfigMap>[] = [
       <Text size="sm" ff="monospace" c="dimmed">
         {formatAge(c.metadata.creationTimestamp)}
       </Text>
-    ),
-  },
+    )
+  }
 ];
 
 export function ConfigMapsPage() {

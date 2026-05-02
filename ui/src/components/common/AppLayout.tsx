@@ -8,7 +8,7 @@ import {
   NavLink,
   Text,
   ActionIcon,
-  useMantineColorScheme,
+  useMantineColorScheme
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -21,14 +21,14 @@ import {
   IconSearch,
   IconServer,
   IconTag,
-  IconChevronDown,
+  IconChevronDown
 } from "@tabler/icons-react";
 
 const navItems = [
   { label: "Dashboard", icon: IconDashboard, path: "/" },
   { label: "Deployments", icon: IconRocket, path: "/deployments" },
   { label: "Pods", icon: IconBox, path: "/pods" },
-  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" },
+  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" }
 ];
 
 interface AppLayoutProps {
@@ -47,18 +47,16 @@ export function AppLayout({ children }: AppLayoutProps) {
       navbar={{
         width: 250,
         breakpoint: "sm",
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: !opened }
       }}
       padding="md"
       styles={{
         header: {
-          background:
-            "light-dark(var(--mantine-color-white), var(--mantine-color-dark-5))",
+          background: "light-dark(var(--mantine-color-white), var(--mantine-color-dark-5))"
         },
         navbar: {
-          background:
-            "light-dark(var(--mantine-color-white), var(--mantine-color-dark-5))",
-        },
+          background: "light-dark(var(--mantine-color-white), var(--mantine-color-dark-5))"
+        }
       }}
     >
       <AppShell.Header>
@@ -66,11 +64,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
           <Group gap="xs" mr="xs">
-            <IconRocket
-              size={26}
-              stroke={1.5}
-              color="var(--mantine-color-steelBlue-5)"
-            />
+            <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-5)" />
             <Text size="lg" fw={700} style={{ letterSpacing: "-0.01em" }}>
               k8s-orchestrator
             </Text>
@@ -81,7 +75,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               width: 1,
               height: 24,
               background: "var(--mantine-color-default-border)",
-              marginInline: 4,
+              marginInline: 4
             }}
             visibleFrom="sm"
           />
@@ -120,7 +114,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   padding: "0 5px",
                   borderRadius: 3,
                   background: "var(--mantine-color-default-hover)",
-                  border: "1px solid var(--mantine-color-default-border)",
+                  border: "1px solid var(--mantine-color-default-border)"
                 }}
               >
                 ⌘K
@@ -139,19 +133,12 @@ export function AppLayout({ children }: AppLayoutProps) {
             onClick={() => toggleColorScheme()}
             aria-label="Toggle color scheme"
           >
-            {colorScheme === "dark" ? (
-              <IconSun size={18} />
-            ) : (
-              <IconMoon size={18} />
-            )}
+            {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
           </ActionIcon>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar
-        p="sm"
-        style={{ display: "flex", flexDirection: "column" }}
-      >
+      <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -179,7 +166,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 height: 6,
                 borderRadius: "50%",
                 background: "var(--mantine-color-success-5)",
-                flexShrink: 0,
+                flexShrink: 0
               }}
             />
             <Text size="xs" c="dimmed">

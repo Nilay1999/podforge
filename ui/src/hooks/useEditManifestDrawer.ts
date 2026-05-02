@@ -4,17 +4,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { KIND_STRATEGIES, type AnyPayload } from "@src/components/manifest/kindStrategies";
 import type { ObjectMeta, ResourceKind } from "@src/types";
 
-type UpdateFn = (namespace: string, name: string, payload: any) => Promise<unknown>;
+type UpdateFn = (namespace: string, name: string, payload: AnyPayload) => Promise<unknown>;
 
 export function useEditManifestDrawer<T extends { metadata: ObjectMeta }>(
   kind: ResourceKind,
   updateFn: UpdateFn,
-  queryKey: string,
+  queryKey: string
 ) {
   const qc = useQueryClient();
   const [editingItem, setEditingItem] = useState<T | null>(null);
-  const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] =
-    useDisclosure(false);
+  const [editDrawerOpened, { open: openEditDrawer, close: closeEditDrawer }] = useDisclosure(false);
 
   const handleEditItem = (item: T) => {
     setEditingItem(item);
@@ -23,7 +22,7 @@ export function useEditManifestDrawer<T extends { metadata: ObjectMeta }>(
 
   const handleEditApply = (
     payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
+    opts: { onSuccess: () => void; onError: (err: Error) => void }
   ) => {
     if (!editingItem) return;
     const { namespace = "default", name } = editingItem.metadata;

@@ -3,7 +3,7 @@ import type {
   CreateConfigMapRequest,
   CreateDeploymentRequest,
   CreatePodRequest,
-  ResourceKind,
+  ResourceKind
 } from "@src/types";
 import { ConfigMapManifestForm } from "./ConfigMapManifestForm";
 import { DeploymentManifestForm } from "./DeploymentManifestForm";
@@ -28,7 +28,7 @@ export function ManifestForm<K extends ResourceKind>({
   formId,
   onSubmit,
   registerGetPayload,
-  defaultPayload,
+  defaultPayload
 }: ManifestFormProps<K>): ReactElement {
   switch (kind) {
     case "Deployment":
@@ -37,13 +37,9 @@ export function ManifestForm<K extends ResourceKind>({
           formId={formId}
           onSubmit={onSubmit as (p: CreateDeploymentRequest) => void}
           registerGetPayload={
-            registerGetPayload as
-              | ((fn: (() => CreateDeploymentRequest) | null) => void)
-              | undefined
+            registerGetPayload as ((fn: (() => CreateDeploymentRequest) | null) => void) | undefined
           }
-          defaultPayload={
-            defaultPayload as Partial<CreateDeploymentRequest> | undefined
-          }
+          defaultPayload={defaultPayload as Partial<CreateDeploymentRequest> | undefined}
         />
       );
     case "ConfigMap":
@@ -52,13 +48,9 @@ export function ManifestForm<K extends ResourceKind>({
           formId={formId}
           onSubmit={onSubmit as (p: CreateConfigMapRequest) => void}
           registerGetPayload={
-            registerGetPayload as
-              | ((fn: (() => CreateConfigMapRequest) | null) => void)
-              | undefined
+            registerGetPayload as ((fn: (() => CreateConfigMapRequest) | null) => void) | undefined
           }
-          defaultPayload={
-            defaultPayload as Partial<CreateConfigMapRequest> | undefined
-          }
+          defaultPayload={defaultPayload as Partial<CreateConfigMapRequest> | undefined}
         />
       );
     case "Pod":
@@ -67,13 +59,9 @@ export function ManifestForm<K extends ResourceKind>({
           formId={formId}
           onSubmit={onSubmit as (p: CreatePodRequest) => void}
           registerGetPayload={
-            registerGetPayload as
-              | ((fn: (() => CreatePodRequest) | null) => void)
-              | undefined
+            registerGetPayload as ((fn: (() => CreatePodRequest) | null) => void) | undefined
           }
-          defaultPayload={
-            defaultPayload as Partial<CreatePodRequest> | undefined
-          }
+          defaultPayload={defaultPayload as Partial<CreatePodRequest> | undefined}
         />
       );
   }

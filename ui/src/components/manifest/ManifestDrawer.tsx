@@ -8,7 +8,7 @@ import {
   Stack,
   Tabs,
   Text,
-  ThemeIcon,
+  ThemeIcon
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { IconCode, IconForms, IconX } from "@tabler/icons-react";
@@ -28,7 +28,7 @@ interface ManifestDrawerProps {
   initialPayload?: AnyPayload;
   onApply?: (
     payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
+    opts: { onSuccess: () => void; onError: (err: Error) => void }
   ) => void;
 }
 
@@ -37,7 +37,7 @@ export function ManifestDrawer({
   onClose,
   kind,
   initialPayload,
-  onApply,
+  onApply
 }: ManifestDrawerProps) {
   const formId = "manifest-drawer-form";
   const strategy = KIND_STRATEGIES[kind];
@@ -47,24 +47,21 @@ export function ManifestDrawer({
   const createDeployment = useCreateDeployment();
   const createPod = useCreatePod();
 
-  const isPending =
-    createConfigMap.isPending ||
-    createDeployment.isPending ||
-    createPod.isPending;
+  const isPending = createConfigMap.isPending || createDeployment.isPending || createPod.isPending;
 
   const creators = { ConfigMap: createConfigMap, Deployment: createDeployment, Pod: createPod };
 
   const handleCreate = (
     payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
+    opts: { onSuccess: () => void; onError: (err: Error) => void }
   ) => {
-    creators[kind].mutate(payload as any, opts);
+    (creators[kind].mutate as (payload: AnyPayload, opts: typeof opts) => void)(payload, opts);
   };
 
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
   const [pendingPayload, setPendingPayload] = useState<AnyPayload>(
-    () => initialPayload ?? strategy.initialPayload,
+    () => initialPayload ?? strategy.initialPayload
   );
   const [formKey, setFormKey] = useState(0);
   const getPayloadRef = useRef<(() => AnyPayload) | null>(null);
@@ -89,7 +86,7 @@ export function ManifestDrawer({
         notifications.show({
           title: isEditMode ? `${kind} updated` : `${kind} created`,
           message: `"${(payload as { name?: string }).name}" was ${isEditMode ? "updated" : "created"} successfully.`,
-          color: "teal",
+          color: "teal"
         });
         onClose();
       },
@@ -97,9 +94,9 @@ export function ManifestDrawer({
         notifications.show({
           title: `Failed to ${isEditMode ? "update" : "create"} ${kind}`,
           message: err.message,
-          color: "red",
+          color: "red"
         });
-      },
+      }
     });
   };
 
@@ -112,7 +109,7 @@ export function ManifestDrawer({
         notifications.show({
           title: "Invalid YAML",
           message: "Fix syntax errors before applying.",
-          color: "red",
+          color: "red"
         });
         return;
       }
@@ -128,9 +125,7 @@ export function ManifestDrawer({
 
     if (tab === "yaml") {
       const payload = getPayloadRef.current?.() ?? pendingPayload;
-      setEditorValue(
-        jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }),
-      );
+      setEditorValue(jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }));
     } else if (tab === "form") {
       try {
         const parsed = jsYaml.load(editorValue);
@@ -140,7 +135,7 @@ export function ManifestDrawer({
         notifications.show({
           title: "Invalid YAML",
           message: "Fix syntax errors before switching back to the form.",
-          color: "red",
+          color: "red"
         });
         return;
       }
@@ -161,9 +156,9 @@ export function ManifestDrawer({
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          padding: 0,
+          padding: 0
         },
-        content: { display: "flex", flexDirection: "column" },
+        content: { display: "flex", flexDirection: "column" }
       }}
     >
       <Group px="lg" py="md" justify="space-between">
@@ -180,12 +175,7 @@ export function ManifestDrawer({
             </Text>
           </Stack>
         </Group>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          onClick={onClose}
-          aria-label="Close drawer"
-        >
+        <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close drawer">
           <IconX size={16} />
         </ActionIcon>
       </Group>
@@ -199,10 +189,10 @@ export function ManifestDrawer({
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          overflow: "hidden"
         }}
         styles={{
-          panel: { flex: 1, overflowY: "auto" },
+          panel: { flex: 1, overflowY: "auto" }
         }}
       >
         <Tabs.List px="lg" pt="xs">
@@ -220,11 +210,7 @@ export function ManifestDrawer({
             kind={kind}
             formId={formId}
             onSubmit={(values) => applyPayload(values)}
-            registerGetPayload={
-              registerGetPayload as (
-                fn: (() => AnyPayload) | null,
-              ) => void
-            }
+            registerGetPayload={registerGetPayload as (fn: (() => AnyPayload) | null) => void}
             defaultPayload={pendingPayload}
           />
         </Tabs.Panel>
@@ -239,11 +225,7 @@ export function ManifestDrawer({
         <Button variant="subtle" color="gray" onClick={onClose} type="button">
           Cancel
         </Button>
-        <Button
-          type="button"
-          onClick={handleApplyClick}
-          loading={isPending}
-        >
+        <Button type="button" onClick={handleApplyClick} loading={isPending}>
           {isEditMode ? "Save changes" : "Apply"}
         </Button>
       </Group>
