@@ -4,7 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { KIND_STRATEGIES, type AnyPayload } from "@src/components/manifest/kindStrategies";
 import type { ObjectMeta, ResourceKind } from "@src/types";
 
-type UpdateFn = (namespace: string, name: string, payload: AnyPayload) => Promise<unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type UpdateFn = (namespace: string, name: string, payload: any) => Promise<unknown>;
 
 export function useEditManifestDrawer<T extends { metadata: ObjectMeta }>(
   kind: ResourceKind,

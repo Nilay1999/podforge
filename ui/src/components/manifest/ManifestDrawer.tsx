@@ -17,6 +17,8 @@ import type { ResourceKind } from "@src/types";
 import { useCreateConfigMap } from "@src/hooks/useConfigMaps";
 import { useCreateDeployment } from "@src/hooks/useDeployments";
 import { useCreatePod } from "@src/hooks/usePods";
+import { useCreateService } from "@src/hooks/useServices";
+import { useCreateSecret } from "@src/hooks/useSecrets";
 import { ManifestForm } from "@src/components/forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
 import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
@@ -46,10 +48,23 @@ export function ManifestDrawer({
   const createConfigMap = useCreateConfigMap();
   const createDeployment = useCreateDeployment();
   const createPod = useCreatePod();
+  const createService = useCreateService();
+  const createSecret = useCreateSecret();
 
-  const isPending = createConfigMap.isPending || createDeployment.isPending || createPod.isPending;
+  const isPending =
+    createConfigMap.isPending ||
+    createDeployment.isPending ||
+    createPod.isPending ||
+    createService.isPending ||
+    createSecret.isPending;
 
-  const creators = { ConfigMap: createConfigMap, Deployment: createDeployment, Pod: createPod };
+  const creators = {
+    ConfigMap: createConfigMap,
+    Deployment: createDeployment,
+    Pod: createPod,
+    Service: createService,
+    Secret: createSecret
+  };
 
   const handleCreate = (
     payload: AnyPayload,

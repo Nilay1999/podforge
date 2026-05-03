@@ -31,6 +31,7 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 	if err != nil {
 		log.Fatal("Failed to create apply service", zap.Error(err))
 	}
+	namespaceSvc := services.NewNamespaceService(clientset)
 	bulkSvc := services.NewBulkService(serviceSvc, deploySvc, podSvc, applySvc)
 	searchSvc := services.NewSearchService(clientset)
 
@@ -43,6 +44,7 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 	overviewHandler := handlers.NewOverviewHandler(overviewSvc, log)
 	logHandler := handlers.NewLogHandler(logSvc, log)
 	watchHandler := handlers.NewWatchHandler(watchSvc, log)
+	namespaceHandler := handlers.NewNamespaceHandler(namespaceSvc, log)
 	bulkHandler := handlers.NewBulkHandler(bulkSvc, log)
 	searchHandler := handlers.NewSearchHandler(searchSvc, log)
 
@@ -111,6 +113,13 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 			bulk.POST("/delete", bulkHandler.Delete)
 			bulk.POST("/apply", bulkHandler.Apply)
 		}
+		namespaces := v1.Group("namespaces")
+		{
+			namespaces.GET("/", namespaceHandler.List)
+			namespaces.POST("/", namespaceHandler.Create)
+			namespaces.DELETE("/:name", namespaceHandler.Delete)
+		}
+
 		v1.GET("/namespace/:namespace/overview", dashboardHandler.NamespaceOverview)
 		v1.GET("/events/stream", watchHandler.Events)
 		v1.GET("/watch/:kind/:namespace", watchHandler.Resource)

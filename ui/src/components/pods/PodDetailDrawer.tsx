@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActionIcon,
   Alert,
@@ -8,18 +8,23 @@ import {
   Drawer,
   Group,
   Loader,
+  Select,
   Stack,
+  Switch,
   Table,
   Tabs,
-  Text
+  Text,
+  TextInput
 } from "@mantine/core";
 import {
   IconActivity,
-  IconCheck,
   IconAlertTriangle,
+  IconCheck,
   IconCode,
+  IconDownload,
   IconEdit,
   IconInfoCircle,
+  IconSearch,
   IconTerminal,
   IconTrash,
   IconX
@@ -55,6 +60,11 @@ interface PodDetailDrawerProps {
 export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDrawerProps) {
   const [tab, setTab] = useState<string | null>("overview");
   const [logLines, setLogLines] = useState<string[]>([]);
+  const [follow, setFollow] = useState(true);
+  const [selectedContainer, setSelectedContainer] = useState("");
+  const [tailLines, setTailLines] = useState("200");
+  const [showPrevious, setShowPrevious] = useState(false);
+  const [logFilter, setLogFilter] = useState("");
   const logScrollRef = useRef<HTMLDivElement>(null);
 
   const phase = pod?.status?.phase;
@@ -63,39 +73,68 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
   const totalContainers = containerStatuses.length;
   const restarts = containerStatuses.reduce((s, c) => s + c.restartCount, 0);
   const age = podAge(pod?.metadata.creationTimestamp);
+  const podName = pod?.metadata.name;
+  const podNamespace = pod?.metadata.namespace;
+  const containers = pod?.spec?.containers?.map((c) => c.name) ?? [];
+  const firstContainer = pod?.spec?.containers?.[0]?.name ?? "";
+
+  useEffect(() => {
+    setSelectedContainer(firstContainer);
+  }, [firstContainer]);
 
   const { data: overview, isLoading: overviewLoading } = useQuery({
-    queryKey: ["pod-overview", pod?.metadata.namespace, pod?.metadata.name],
+    queryKey: ["pod-overview", podNamespace, podName],
     queryFn: () => getPodOverview(pod!.metadata.namespace!, pod!.metadata.name),
     enabled: !!pod,
     staleTime: 30_000
   });
 
   useEffect(() => {
-    if (!pod) {
-      setLogLines([]);
-      return;
-    }
-    if (tab !== "logs") return;
+    if (!podName || tab !== "logs") return;
 
-    const ns = pod.metadata.namespace ?? "default";
-    const name = pod.metadata.name;
+    const ns = podNamespace ?? "default";
     setLogLines([]);
 
-    const es = new EventSource(`/api/v1/pod/${ns}/${name}/logs/stream`);
+    const params = new URLSearchParams();
+    if (follow) params.set("follow", "true");
+    if (tailLines !== "all") params.set("tail", tailLines);
+    if (selectedContainer) params.set("container", selectedContainer);
+    if (showPrevious) params.set("previous", "true");
+
+    const es = new EventSource(`/api/v1/pod/${ns}/${podName}/logs/stream?${params}`);
     es.addEventListener("log", (e: MessageEvent) => {
-      setLogLines((prev) => [...prev.slice(-499), e.data]);
+      setLogLines((prev) => [...prev.slice(-1999), e.data]);
     });
     es.onerror = () => es.close();
 
     return () => es.close();
-  }, [tab, pod?.metadata.namespace, pod?.metadata.name]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, podNamespace, podName, follow, selectedContainer, tailLines, showPrevious]);
 
   useEffect(() => {
-    if (logScrollRef.current) {
+    if (follow && logScrollRef.current) {
       logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
     }
-  }, [logLines]);
+  }, [logLines, follow]);
+
+  const filteredLines = useMemo(
+    () =>
+      logFilter
+        ? logLines.filter((l) => l.toLowerCase().includes(logFilter.toLowerCase()))
+        : logLines,
+    [logLines, logFilter]
+  );
+
+  const handleDownload = () => {
+    const blob = new Blob([logLines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${pod?.metadata.name ?? "pod"}.log`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const specYaml = pod
     ? jsYaml.dump(
@@ -403,9 +442,76 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
           )}
         </Tabs.Panel>
 
-        <Tabs.Panel value="logs" p="lg" style={{ display: "flex", flexDirection: "column" }}>
+        <Tabs.Panel
+          value="logs"
+          style={{ display: "flex", flexDirection: "column", overflow: "hidden", padding: 0 }}
+        >
+          <Group
+            px="sm"
+            py="xs"
+            gap="xs"
+            wrap="nowrap"
+            style={{
+              borderBottom: "1px solid var(--mantine-color-default-border)",
+              flexShrink: 0
+            }}
+          >
+            {containers.length > 1 && (
+              <Select
+                size="xs"
+                data={containers}
+                value={selectedContainer}
+                onChange={(v) => setSelectedContainer(v ?? "")}
+                style={{ width: 130 }}
+                comboboxProps={{ withinPortal: true }}
+              />
+            )}
+            <Select
+              size="xs"
+              data={[
+                { value: "50", label: "Tail 50" },
+                { value: "200", label: "Tail 200" },
+                { value: "1000", label: "Tail 1000" },
+                { value: "all", label: "All lines" }
+              ]}
+              value={tailLines}
+              onChange={(v) => setTailLines(v ?? "200")}
+              style={{ width: 110 }}
+              comboboxProps={{ withinPortal: true }}
+            />
+            <TextInput
+              size="xs"
+              placeholder="Filter..."
+              leftSection={<IconSearch size={12} />}
+              value={logFilter}
+              onChange={(e) => setLogFilter(e.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Switch
+              size="xs"
+              label="Follow"
+              checked={follow}
+              onChange={(e) => setFollow(e.currentTarget.checked)}
+            />
+            <Switch
+              size="xs"
+              label="Prev"
+              checked={showPrevious}
+              onChange={(e) => setShowPrevious(e.currentTarget.checked)}
+            />
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              onClick={handleDownload}
+              disabled={logLines.length === 0}
+              title="Download logs"
+            >
+              <IconDownload size={14} />
+            </ActionIcon>
+          </Group>
+
           {logLines.length === 0 ? (
-            <Alert color="gray" variant="light">
+            <Alert color="gray" variant="light" m="sm">
               Connecting to log stream…
             </Alert>
           ) : (
@@ -414,20 +520,22 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
               style={{
                 background: "var(--mantine-color-dark-8, #0f0f11)",
                 color: "var(--mantine-color-dark-0, #fafafa)",
-                borderRadius: 6,
                 padding: 12,
                 fontFamily: "var(--mantine-font-monospace, monospace)",
                 fontSize: 12.5,
                 lineHeight: 1.6,
-                border: "1px solid var(--mantine-color-dark-4, #3f3f46)",
                 overflowY: "auto",
                 flex: 1
               }}
             >
-              {logLines.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-              <div style={{ color: "var(--mantine-color-success-5)" }}>▊</div>
+              {filteredLines.length === 0 ? (
+                <Text c="dimmed" size="xs" ff="monospace">
+                  No lines match &quot;{logFilter}&quot;
+                </Text>
+              ) : (
+                filteredLines.map((line, i) => <div key={i}>{line}</div>)
+              )}
+              {!logFilter && <div style={{ color: "var(--mantine-color-success-5)" }}>▊</div>}
             </Box>
           )}
         </Tabs.Panel>

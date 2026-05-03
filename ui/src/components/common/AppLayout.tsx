@@ -21,14 +21,20 @@ import {
   IconSearch,
   IconServer,
   IconTag,
-  IconChevronDown
+  IconChevronDown,
+  IconNetwork,
+  IconKey,
+  IconFolder
 } from "@tabler/icons-react";
 
 const navItems = [
   { label: "Dashboard", icon: IconDashboard, path: "/" },
   { label: "Deployments", icon: IconRocket, path: "/deployments" },
   { label: "Pods", icon: IconBox, path: "/pods" },
-  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" }
+  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" },
+  { label: "Services", icon: IconNetwork, path: "/services" },
+  { label: "Secrets", icon: IconKey, path: "/secrets" },
+  { label: "Namespaces", icon: IconFolder, path: "/namespaces" }
 ];
 
 interface AppLayoutProps {

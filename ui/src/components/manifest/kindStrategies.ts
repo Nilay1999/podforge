@@ -2,10 +2,17 @@ import type {
   CreateConfigMapRequest,
   CreateDeploymentRequest,
   CreatePodRequest,
+  CreateServiceRequest,
+  CreateSecretRequest,
   ResourceKind
 } from "@src/types";
 
-export type AnyPayload = CreateConfigMapRequest | CreateDeploymentRequest | CreatePodRequest;
+export type AnyPayload =
+  | CreateConfigMapRequest
+  | CreateDeploymentRequest
+  | CreatePodRequest
+  | CreateServiceRequest
+  | CreateSecretRequest;
 
 // Typed shapes for raw parsed YAML/manifest objects — avoids `any` in fromManifest functions.
 interface RawMeta {
@@ -74,6 +81,32 @@ interface RawDeployment {
 interface RawPod {
   metadata?: RawMeta;
   spec?: { containers?: unknown[]; restartPolicy?: string; serviceAccountName?: string };
+}
+interface RawServicePort {
+  name?: string;
+  protocol?: string;
+  port?: number;
+  targetPort?: string | number;
+  nodePort?: number;
+}
+interface RawService {
+  metadata?: RawMeta;
+  spec?: {
+    type?: string;
+    clusterIP?: string;
+    selector?: Record<string, string>;
+    ports?: RawServicePort[];
+    externalName?: string;
+    externalIPs?: string[];
+    sessionAffinity?: string;
+    externalTrafficPolicy?: string;
+  };
+}
+interface RawSecret {
+  metadata?: RawMeta;
+  type?: string;
+  data?: Record<string, string>;
+  immutable?: boolean;
 }
 
 export interface KindStrategy {
@@ -280,6 +313,87 @@ function podFromManifest(raw: unknown): CreatePodRequest {
   };
 }
 
+function serviceToManifest(p: CreateServiceRequest): object {
+  const metadata: Record<string, unknown> = {
+    name: p.name || "",
+    namespace: p.namespace || "default"
+  };
+  if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
+
+  const spec: Record<string, unknown> = {};
+  if (p.type) spec.type = p.type;
+  if (p.selector && Object.keys(p.selector).length) spec.selector = p.selector;
+  if (p.ports?.length)
+    spec.ports = p.ports.map((port) => ({
+      ...(port.name ? { name: port.name } : {}),
+      protocol: port.protocol ?? "TCP",
+      port: port.port,
+      targetPort: isNaN(Number(port.targetPort)) ? port.targetPort : Number(port.targetPort),
+      ...(port.nodePort ? { nodePort: port.nodePort } : {})
+    }));
+  if (p.clusterIP) spec.clusterIP = p.clusterIP;
+  if (p.externalName) spec.externalName = p.externalName;
+  if (p.externalIPs?.length) spec.externalIPs = p.externalIPs;
+  if (p.sessionAffinity) spec.sessionAffinity = p.sessionAffinity;
+  if (p.externalTrafficPolicy) spec.externalTrafficPolicy = p.externalTrafficPolicy;
+
+  return { apiVersion: "v1", kind: "Service", metadata, spec };
+}
+
+function serviceFromManifest(raw: unknown): CreateServiceRequest {
+  const m = raw as RawService;
+  return {
+    name: m?.metadata?.name ?? "",
+    namespace: m?.metadata?.namespace ?? "default",
+    labels: m?.metadata?.labels,
+    annotations: m?.metadata?.annotations,
+    type: m?.spec?.type,
+    selector: m?.spec?.selector,
+    ports: m?.spec?.ports?.map((p) => ({
+      ...(p.name ? { name: p.name } : {}),
+      protocol: p.protocol,
+      port: p.port ?? 0,
+      targetPort: String(p.targetPort ?? p.port ?? ""),
+      ...(p.nodePort ? { nodePort: p.nodePort } : {})
+    })),
+    clusterIP: m?.spec?.clusterIP,
+    externalName: m?.spec?.externalName,
+    externalIPs: m?.spec?.externalIPs,
+    sessionAffinity: m?.spec?.sessionAffinity,
+    externalTrafficPolicy: m?.spec?.externalTrafficPolicy
+  };
+}
+
+function secretToManifest(p: CreateSecretRequest): object {
+  const metadata: Record<string, unknown> = {
+    name: p.name || "",
+    namespace: p.namespace || "default"
+  };
+  if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
+
+  const manifest: Record<string, unknown> = { apiVersion: "v1", kind: "Secret", metadata };
+  if (p.type) manifest.type = p.type;
+  if (p.stringData && Object.keys(p.stringData).length) manifest.stringData = p.stringData;
+  if (p.immutable) manifest.immutable = p.immutable;
+  return manifest;
+}
+
+function secretFromManifest(raw: unknown): CreateSecretRequest {
+  const m = raw as RawSecret;
+  return {
+    name: m?.metadata?.name ?? "",
+    namespace: m?.metadata?.namespace ?? "default",
+    labels: m?.metadata?.labels,
+    annotations: m?.metadata?.annotations,
+    type: m?.type,
+    // API returns data values as [REDACTED]; expose empty stringData for editing
+    stringData: undefined,
+    immutable: m?.immutable
+  };
+}
+
 export const KIND_STRATEGIES: Record<ResourceKind, KindStrategy> = {
   ConfigMap: {
     initialPayload: { name: "", namespace: "default" },
@@ -295,5 +409,15 @@ export const KIND_STRATEGIES: Record<ResourceKind, KindStrategy> = {
     initialPayload: { name: "", namespace: "default", containers: [] },
     toManifest: podToManifest as KindStrategy["toManifest"],
     fromManifest: podFromManifest
+  },
+  Service: {
+    initialPayload: { name: "", namespace: "default", type: "ClusterIP" },
+    toManifest: serviceToManifest as KindStrategy["toManifest"],
+    fromManifest: serviceFromManifest
+  },
+  Secret: {
+    initialPayload: { name: "", namespace: "default", type: "Opaque" },
+    toManifest: secretToManifest as KindStrategy["toManifest"],
+    fromManifest: secretFromManifest
   }
 };
