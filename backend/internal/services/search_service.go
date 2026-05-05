@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
+	"github.com/podforge/backend/internal/types"
 	"k8s.io/client-go/kubernetes"
 )
 

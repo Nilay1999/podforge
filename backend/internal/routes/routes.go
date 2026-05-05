@@ -8,9 +8,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/handlers"
-	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
-	"github.com/nilay/k8s-orchestrator/backend/internal/services"
+	"github.com/podforge/backend/internal/handlers"
+	"github.com/podforge/backend/internal/middleware/logger"
+	"github.com/podforge/backend/internal/services"
 )
 
 func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Config, log *zap.Logger) {

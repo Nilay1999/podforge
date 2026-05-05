@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/services"
-	"github.com/nilay/k8s-orchestrator/backend/internal/util"
+	"github.com/podforge/backend/internal/services"
+	"github.com/podforge/backend/internal/util"
 )
 
 type WatchHandler struct {

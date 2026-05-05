@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/services"
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
-	"github.com/nilay/k8s-orchestrator/backend/internal/util"
+	"github.com/podforge/backend/internal/services"
+	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 )
 
 type NamespaceHandler struct {

@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nilay/k8s-orchestrator/backend/internal/services"
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
-	"github.com/nilay/k8s-orchestrator/backend/internal/util"
+	"github.com/podforge/backend/internal/services"
+	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 	"go.uber.org/zap"
 )
 

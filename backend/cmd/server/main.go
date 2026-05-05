@@ -4,10 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/config"
-	k8ssvc "github.com/nilay/k8s-orchestrator/backend/internal/k8s"
-	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
-	"github.com/nilay/k8s-orchestrator/backend/internal/routes"
+	"github.com/podforge/backend/internal/config"
+	k8ssvc "github.com/podforge/backend/internal/k8s"
+	"github.com/podforge/backend/internal/middleware/logger"
+	"github.com/podforge/backend/internal/routes"
 )
 
 func main() {
