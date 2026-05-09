@@ -11,7 +11,7 @@ import {
   ThemeIcon
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCode, IconForms, IconX } from "@tabler/icons-react";
+import { IconBook, IconCode, IconForms, IconX } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
 import type { ResourceKind } from "@src/types";
 import { useCreateConfigMap } from "@src/hooks/useConfigMaps";
@@ -19,6 +19,7 @@ import { useCreateDeployment } from "@src/hooks/useDeployments";
 import { useCreatePod } from "@src/hooks/usePods";
 import { useCreateService } from "@src/hooks/useServices";
 import { useCreateSecret } from "@src/hooks/useSecrets";
+import { FormDocs } from "@src/components/forms/FormDocs";
 import { ManifestForm } from "@src/components/forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
 import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
@@ -70,7 +71,7 @@ export function ManifestDrawer({
     payload: AnyPayload,
     opts: { onSuccess: () => void; onError: (err: Error) => void }
   ) => {
-    (creators[kind].mutate as (payload: AnyPayload, opts: typeof opts) => void)(payload, opts);
+    (creators[kind].mutate as (payload: AnyPayload, opts: { onSuccess: () => void; onError: (err: Error) => void }) => void)(payload, opts);
   };
 
   const [activeTab, setActiveTab] = useState("form");
@@ -217,6 +218,9 @@ export function ManifestDrawer({
           <Tabs.Tab value="yaml" leftSection={<IconCode size={14} />}>
             YAML
           </Tabs.Tab>
+          <Tabs.Tab value="docs" leftSection={<IconBook size={14} />}>
+            Docs
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="form">
@@ -233,17 +237,25 @@ export function ManifestDrawer({
         <Tabs.Panel value="yaml" style={{ height: "100%", overflow: "hidden" }}>
           <ManifestEditor value={editorValue} onChange={setEditorValue} />
         </Tabs.Panel>
+
+        <Tabs.Panel value="docs" style={{ height: "100%", overflow: "hidden" }}>
+          <FormDocs kind={kind} />
+        </Tabs.Panel>
       </Tabs>
 
-      <Divider />
-      <Group px="lg" py="md" justify="flex-start">
-        <Button variant="subtle" color="gray" onClick={onClose} type="button">
-          Cancel
-        </Button>
-        <Button type="button" onClick={handleApplyClick} loading={isPending}>
-          {isEditMode ? "Save changes" : "Apply"}
-        </Button>
-      </Group>
+      {activeTab !== "docs" && (
+        <>
+          <Divider />
+          <Group px="lg" py="md" justify="flex-start">
+            <Button variant="subtle" color="gray" onClick={onClose} type="button">
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleApplyClick} loading={isPending}>
+              {isEditMode ? "Save changes" : "Apply"}
+            </Button>
+          </Group>
+        </>
+      )}
     </Drawer>
   );
 }
