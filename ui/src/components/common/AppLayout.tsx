@@ -72,7 +72,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Group gap="xs" mr="xs">
             <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-5)" />
             <Text size="lg" fw={700} style={{ letterSpacing: "-0.01em" }}>
-              k8s-orchestrator
+              podforge
             </Text>
           </Group>
 

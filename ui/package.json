@@ -1,5 +1,5 @@
 {
-  "name": "k8s-orchestrator-ui",
+  "name": "podforge-ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
