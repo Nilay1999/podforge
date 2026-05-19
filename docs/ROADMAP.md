@@ -100,7 +100,7 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 
 | Ticket | Feature | Priority | Estimate |
 |--------|---------|----------|----------|
-| PF-001 | K8s client setup (in-cluster + kubeconfig fallback) | P0 | ✅ Done |
+| PF-001 | K8s client setup (in-cluster + kubeconfig fallback + context override) | P0 | ✅ Done |
 | PF-002 | Gin router + middleware (logging, recovery, CORS) | P0 | ✅ Done |
 | PF-003 | Consistent error/response structure | P0 | ✅ Done |
 | PF-004 | Pod CRUD (list, get, create, update, delete) | P0 | ✅ Done |
@@ -117,12 +117,13 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 | PF-015 | SSE event stream (cluster events) | P1 | ✅ Done |
 | PF-016 | Generic resource watch via SSE | P2 | ✅ Done |
 | PF-017 | Global cross-namespace search | P2 | ✅ Done |
-| PF-018 | Namespace CRUD (list, create, delete) | P1 | Planned |
-| PF-019 | Deployment scale endpoint | P1 | Planned |
-| PF-020 | Deployment restart / rollout endpoint | P1 | Planned |
+| PF-018 | Namespace CRUD (list, create, delete) | P1 | ✅ Done |
+| PF-019 | Deployment scale endpoint | P1 | ✅ Done |
+| PF-020 | Deployment restart / rollout endpoint | P1 | ✅ Done |
 | PF-021 | YAML validate endpoint | P2 | Planned |
 | PF-022 | YAML apply from raw input endpoint | P1 | Planned |
 | PF-023 | YAML download endpoint | P2 | Planned |
+| PF-024 | Dynamic YAML config file (`podforge.yaml`) with env-var override layer | P1 | ✅ Done |
 
 ### Frontend
 
@@ -138,10 +139,10 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 | PF-037 | ManifestDrawer with Monaco YAML editor | P1 | ✅ Done |
 | PF-038 | Form-based creation — Pod, Deployment, ConfigMap | P1 | ✅ Done |
 | PF-039 | Shared ResourceListPage + ResourcePageHeader | P2 | ✅ Done |
-| PF-040 | Services list page + ServiceManifestForm | P1 | Planned |
-| PF-041 | Secrets list page + SecretManifestForm + reveal-on-click | P1 | Planned |
-| PF-042 | Namespaces page — list, create, delete with resource count | P1 | Planned |
-| PF-043 | Deployment detail drawer — scale slider, restart button | P1 | Planned |
+| PF-040 | Services list page + ServiceManifestForm | P1 | ✅ Done |
+| PF-041 | Secrets list page + SecretManifestForm + reveal-on-click | P1 | ✅ Done |
+| PF-042 | Namespaces page — list, create, delete with resource count | P1 | ✅ Done |
+| PF-043 | Deployment detail drawer — scale slider, restart button | P1 | ✅ Done |
 | PF-044 | Resource sort (name, age, status) on all list pages | P2 | Planned |
 | PF-045 | YAML apply from Monaco editor | P1 | Planned |
 | PF-046 | YAML download button | P2 | Planned |
@@ -223,7 +224,7 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 | PF-086 | Deployment history — log every create/update/delete with metadata | P0 |
 | PF-087 | Template categories (Node.js, Python, Java, Go, Custom) | P1 |
 | PF-088 | Template variables — parameterise image, port, replicas, env | P1 |
-| PF-089 | Cluster profiles — save and switch kubeconfig connections | P2 |
+| PF-089 | Cluster profiles — save and switch kubeconfig connections (file-based config done via PF-024; this covers UI + DB persistence) | P2 |
 
 ### Frontend
 
@@ -451,22 +452,20 @@ Stage: DEV ──approve──▶ Stage: STAGING ──approve──▶ Stage: P
 | PF-174 | Rollback button per stage | P1 |
 
 ### Pipeline Visualisation (the hero feature)
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Podforge — Promotion Pipeline: my-app                       │
+┌──────────────────────────────────────────────────────────────┐
+│ Podforge — Promotion Pipeline: my-app                        │
 │                                                              │
-│  ┌──────────┐     ┌──────────┐     ┌──────────┐            │
-│  │   DEV    │────▶│ STAGING  │────▶│   PROD   │            │
-│  │          │     │          │     │          │            │
-│  │ v1.2.3   │     │ v1.2.2   │     │ v1.2.1   │            │
-│  │ ✅ Healthy│     │ ⏳ Pending│     │ ✅ Healthy│            │
-│  └──────────┘     └──────────┘     └──────────┘            │
-│                        │                                    │
-│                   [Approve ▶]                               │
+│  ┌────────────┐    ┌────────────┐    ┌────────────┐          │
+│  │    DEV     │───▶│  STAGING   │───▶│    PROD    │          │
+│  │            │    │            │    │            │          │
+│  │  v1.2.3    │    │  v1.2.2    │    │  v1.2.1    │          │
+│  │  Healthy   │    │  Pending   │    │  Healthy   │          │
+│  └────────────┘    └────────────┘    └────────────┘          │
+│                         │                                    │
+│                    [ Approve ▶ ]                             │
 │                                                              │
-│  Freight Available: v1.2.3, v1.2.2, v1.2.1, v1.2.0         │
-└─────────────────────────────────────────────────────────────┘
-```
+│ Freight Available: v1.2.3, v1.2.2, v1.2.1, v1.2.0            │
+└──────────────────────────────────────────────────────────────┘
 
 ### Phase 6 Definition of Done
 - [ ] Kargo connection works

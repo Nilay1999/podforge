@@ -24,3 +24,14 @@ export const updateDeployment = (
 
 export const deleteDeployment = (namespace: string, name: string) =>
   apiClient.delete<MutationResponse>(`/deployment/${namespace}/${name}`).then((r) => r.data);
+
+export const scaleDeployment = (namespace: string, name: string, replicas: number) =>
+  apiClient
+    .patch<MutationResponse>(`/deployment/${namespace}/${name}/scale`, { replicas })
+    .then((r) => r.data);
+
+export const restartDeployment = (namespace: string, name: string) =>
+  apiClient.post<MutationResponse>(`/deployment/${namespace}/${name}/restart`).then((r) => r.data);
+
+export const getDeploymentOverview = (namespace: string, name: string) =>
+  apiClient.get(`/deployment/${namespace}/${name}/overview`).then((r) => r.data);

@@ -62,6 +62,8 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 			deployment.GET("/:namespace/:name/overview", overviewHandler.Deployment)
 			deployment.PUT("/:namespace/:name", deploymentHandler.Update)
 			deployment.DELETE("/:namespace/:name", deploymentHandler.Delete)
+			deployment.PATCH("/:namespace/:name/scale", deploymentHandler.Scale)
+			deployment.POST("/:namespace/:name/restart", deploymentHandler.Restart)
 		}
 
 		pod := v1.Group("pod")

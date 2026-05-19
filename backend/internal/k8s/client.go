@@ -9,13 +9,18 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewClient(kubeconfig string) (*kubernetes.Clientset, *rest.Config, error) {
+func NewClient(kubeconfig, context string) (*kubernetes.Clientset, *rest.Config, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		if kubeconfig == "" {
 			kubeconfig = os.Getenv("HOME") + "/.kube/config"
 		}
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfig}
+		overrides := &clientcmd.ConfigOverrides{}
+		if context != "" {
+			overrides.CurrentContext = context
+		}
+		config, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides).ClientConfig()
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to build k8s config: %w", err)
 		}

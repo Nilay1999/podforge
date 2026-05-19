@@ -15,7 +15,7 @@ func main() {
 	log := logger.New(cfg)
 	defer log.Sync()
 
-	clientset, restConfig, err := k8ssvc.NewClient(cfg.Kubeconfig)
+	clientset, restConfig, err := k8ssvc.NewClient(cfg.Kubeconfig, cfg.KubeContext)
 	if err != nil {
 		log.Fatal("Failed to connect to K8s", zap.Error(err))
 	}
