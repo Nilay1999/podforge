@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
+	"github.com/podforge/backend/internal/types"
 	"sigs.k8s.io/yaml"
 )
 

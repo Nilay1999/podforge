@@ -1,4 +1,4 @@
-module github.com/nilay/k8s-orchestrator/backend
+module github.com/podforge/backend
 
 go 1.25.5
 

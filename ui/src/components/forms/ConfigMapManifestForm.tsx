@@ -7,21 +7,19 @@ import {
   type KeyValuePair,
   KeyValuePairsField,
   pairsToRecord,
-  validatePairs,
+  validatePairs
 } from "./KeyValuePairsField";
 import { MetadataFields } from "./MetadataFields";
 
 function recordToPairs(record?: Record<string, string>): KeyValuePair[] {
-  return record
-    ? Object.entries(record).map(([key, value]) => ({ key, value }))
-    : [];
+  return record ? Object.entries(record).map(([key, value]) => ({ key, value })) : [];
 }
 
 export function ConfigMapManifestForm({
   formId,
   onSubmit,
   registerGetPayload,
-  defaultPayload,
+  defaultPayload
 }: {
   formId?: string;
   onSubmit: (payload: CreateConfigMapRequest) => void;
@@ -36,20 +34,20 @@ export function ConfigMapManifestForm({
     (fn: (() => KeyValuePair[]) | null) => {
       labelsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
   const registerAnnotations = useCallback(
     (fn: (() => KeyValuePair[]) | null) => {
       annotationsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
 
   const [dataPairs, setDataPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(defaultPayload?.data),
+    recordToPairs(defaultPayload?.data)
   );
   const [binaryDataPairs, setBinaryDataPairs] = useState<KeyValuePair[]>(() =>
-    recordToPairs(defaultPayload?.binaryData),
+    recordToPairs(defaultPayload?.binaryData)
   );
   const [pairErrors, setPairErrors] = useState<{
     labels?: string;
@@ -63,13 +61,13 @@ export function ConfigMapManifestForm({
     initialValues: {
       name: defaultPayload?.name ?? "",
       namespace: defaultPayload?.namespace ?? "default",
-      immutable: defaultPayload?.immutable ?? false,
+      immutable: defaultPayload?.immutable ?? false
     },
     validate: (values) => {
       const errors: Partial<Record<string, string>> = {};
       if (!values.name.trim()) errors.name = "Name is required";
       return errors;
-    },
+    }
   });
 
   const buildPayload = (): CreateConfigMapRequest => ({
@@ -77,7 +75,7 @@ export function ConfigMapManifestForm({
     labels: pairsToRecord(labelsGetter.current()),
     annotations: pairsToRecord(annotationsGetter.current()),
     data: pairsToRecord(dataPairs),
-    binaryData: pairsToRecord(binaryDataPairs),
+    binaryData: pairsToRecord(binaryDataPairs)
   });
 
   const buildPayloadRef = useRef(buildPayload);
@@ -96,18 +94,12 @@ export function ConfigMapManifestForm({
     const dataError = validatePairs(dataPairs, "Data");
     const binaryDataError = validatePairs(binaryDataPairs, "Binary data");
 
-    if (
-      formResult.hasErrors ||
-      labelsError ||
-      annotationsError ||
-      dataError ||
-      binaryDataError
-    ) {
+    if (formResult.hasErrors || labelsError || annotationsError || dataError || binaryDataError) {
       setPairErrors({
         labels: labelsError,
         annotations: annotationsError,
         data: dataError,
-        binaryData: binaryDataError,
+        binaryData: binaryDataError
       });
       return;
     }
@@ -117,7 +109,7 @@ export function ConfigMapManifestForm({
       labels: pairsToRecord(labelsGetter.current()),
       annotations: pairsToRecord(annotationsGetter.current()),
       data: pairsToRecord(dataPairs),
-      binaryData: pairsToRecord(binaryDataPairs),
+      binaryData: pairsToRecord(binaryDataPairs)
     });
   };
 
@@ -162,10 +154,7 @@ export function ConfigMapManifestForm({
             >
               <Text fw={600} style={{ width: "fit-content", cursor: "help" }}>
                 Binary Data{" "}
-                <IconInfoCircle
-                  size={14}
-                  style={{ verticalAlign: "middle", opacity: 0.6 }}
-                />
+                <IconInfoCircle size={14} style={{ verticalAlign: "middle", opacity: 0.6 }} />
               </Text>
             </Tooltip>
             <KeyValuePairsField

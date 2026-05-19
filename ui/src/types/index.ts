@@ -2,6 +2,8 @@ export * from "./shared";
 export * from "./pod";
 export * from "./deployment";
 export * from "./configmap";
+export * from "./service";
+export * from "./secret";
+export * from "./namespace";
 
-// Resource kind discriminator — useful for generic editor/form components
-export type ResourceKind = "Pod" | "Deployment" | "ConfigMap";
+export type ResourceKind = "Pod" | "Deployment" | "ConfigMap" | "Service" | "Secret";

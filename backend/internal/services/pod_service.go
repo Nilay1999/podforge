@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/builders"
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
+	"github.com/podforge/backend/internal/builders"
+	"github.com/podforge/backend/internal/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -59,11 +59,32 @@ func (s *podService) Update(ctx context.Context, req types.CreatePodRequest) (*c
 		return nil, err
 	}
 
-	pod, err := builders.BuildPod(req)
-	if err != nil {
-		return nil, err
+	imageMap := make(map[string]string, len(req.Containers))
+	for _, c := range req.Containers {
+		if c.Image != "" {
+			imageMap[c.Name] = c.Image
+		}
 	}
-	pod.ResourceVersion = existing.ResourceVersion
+	for i, c := range existing.Spec.Containers {
+		if img, ok := imageMap[c.Name]; ok {
+			existing.Spec.Containers[i].Image = img
+		}
+	}
+	for i, c := range existing.Spec.InitContainers {
+		if img, ok := imageMap[c.Name]; ok {
+			existing.Spec.InitContainers[i].Image = img
+		}
+	}
 
-	return s.clientset.CoreV1().Pods(req.Namespace).Update(ctx, pod, metav1.UpdateOptions{})
+	if req.ActiveDeadlineSeconds != nil {
+		existing.Spec.ActiveDeadlineSeconds = req.ActiveDeadlineSeconds
+	}
+	if req.TerminationGracePeriodSeconds != nil {
+		existing.Spec.TerminationGracePeriodSeconds = req.TerminationGracePeriodSeconds
+	}
+	if len(req.Tolerations) > 0 {
+		existing.Spec.Tolerations = append(existing.Spec.Tolerations, builders.BuildTolerations(req.Tolerations)...)
+	}
+
+	return s.clientset.CoreV1().Pods(req.Namespace).Update(ctx, existing, metav1.UpdateOptions{})
 }

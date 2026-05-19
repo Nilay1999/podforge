@@ -13,7 +13,7 @@ export const appEditorThemeDark = createTheme({
     lineHighlight: "#27272a",
     gutterBackground: "#18181b",
     gutterForeground: "#71717A",
-    gutterBorder: "#3f3f46",
+    gutterBorder: "#3f3f46"
   },
   styles: [
     { tag: t.propertyName, color: "#60a5fa", fontWeight: "600" },
@@ -26,8 +26,8 @@ export const appEditorThemeDark = createTheme({
     { tag: t.keyword, color: "#5b8def" },
     { tag: t.operator, color: "#6389e6" },
     { tag: t.comment, color: "#71717A", fontStyle: "italic" },
-    { tag: t.invalid, color: "#ef4444" },
-  ],
+    { tag: t.invalid, color: "#ef4444" }
+  ]
 });
 
 export const appEditorThemeLight = createTheme({
@@ -42,7 +42,7 @@ export const appEditorThemeLight = createTheme({
     lineHighlight: "#f1f5f9",
     gutterBackground: "#f1f5f9",
     gutterForeground: "#64748b",
-    gutterBorder: "#e2e8f0",
+    gutterBorder: "#e2e8f0"
   },
   styles: [
     { tag: t.propertyName, color: "#2563eb", fontWeight: "600" },
@@ -55,6 +55,6 @@ export const appEditorThemeLight = createTheme({
     { tag: t.keyword, color: "#2563eb" },
     { tag: t.operator, color: "#4f75d8" },
     { tag: t.comment, color: "#64748b", fontStyle: "italic" },
-    { tag: t.invalid, color: "#dc2626" },
-  ],
+    { tag: t.invalid, color: "#dc2626" }
+  ]
 });

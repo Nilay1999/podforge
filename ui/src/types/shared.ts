@@ -241,11 +241,7 @@ export interface MutationResponse {
   status: string;
 }
 
-export type DNSPolicy =
-  | "ClusterFirst"
-  | "ClusterFirstWithHostNet"
-  | "Default"
-  | "None";
+export type DNSPolicy = "ClusterFirst" | "ClusterFirstWithHostNet" | "Default" | "None";
 
 export type RestartPolicy = "Always" | "OnFailure" | "Never";
 

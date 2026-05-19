@@ -1,6 +1,6 @@
 # Frontend Architecture & Concepts
 
-Incubator's frontend is a React + TypeScript SPA that communicates with a Go backend over REST and SSE. This document explains how every major piece works and why it was built that way.
+Podforge's frontend is a React + TypeScript SPA that communicates with a Go backend over REST and SSE. This document explains how every major piece works and why it was built that way.
 
 ---
 

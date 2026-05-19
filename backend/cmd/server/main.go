@@ -4,10 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/config"
-	k8ssvc "github.com/nilay/k8s-orchestrator/backend/internal/k8s"
-	"github.com/nilay/k8s-orchestrator/backend/internal/middleware/logger"
-	"github.com/nilay/k8s-orchestrator/backend/internal/routes"
+	"github.com/podforge/backend/internal/config"
+	k8ssvc "github.com/podforge/backend/internal/k8s"
+	"github.com/podforge/backend/internal/middleware/logger"
+	"github.com/podforge/backend/internal/routes"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 	log := logger.New(cfg)
 	defer log.Sync()
 
-	clientset, restConfig, err := k8ssvc.NewClient(cfg.Kubeconfig)
+	clientset, restConfig, err := k8ssvc.NewClient(cfg.Kubeconfig, cfg.KubeContext)
 	if err != nil {
 		log.Fatal("Failed to connect to K8s", zap.Error(err))
 	}

@@ -10,7 +10,7 @@ import type {
   SidecarContainer,
   Toleration,
   TopologySpreadConstraint,
-  Volume,
+  Volume
 } from "./shared";
 
 export interface CreatePodRequest {
@@ -62,12 +62,7 @@ export interface CreatePodRequest {
   enableServiceLinks?: boolean;
 }
 
-export type PodPhase =
-  | "Pending"
-  | "Running"
-  | "Succeeded"
-  | "Failed"
-  | "Unknown";
+export type PodPhase = "Pending" | "Running" | "Succeeded" | "Failed" | "Unknown";
 
 export interface PodCondition {
   type: string;

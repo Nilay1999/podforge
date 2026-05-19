@@ -3,7 +3,7 @@ import {
   useQuery,
   useQueryClient,
   type UseMutationOptions,
-  type UseQueryOptions,
+  type UseQueryOptions
 } from "@tanstack/react-query";
 import type { MutationResponse } from "@src/types";
 
@@ -16,41 +16,35 @@ export interface ResourceApi<TItem, TList, TCreate> {
 
 export function createResourceHooks<TItem, TList, TCreate>(
   resource: string,
-  api: ResourceApi<TItem, TList, TCreate>,
+  api: ResourceApi<TItem, TList, TCreate>
 ) {
   const keys = {
     all: [resource] as const,
     list: (namespace: string) => [resource, "list", namespace] as const,
-    detail: (namespace: string, name: string) =>
-      [resource, "detail", namespace, name] as const,
+    detail: (namespace: string, name: string) => [resource, "detail", namespace, name] as const
   };
 
-  const useList = (
-    namespace: string,
-    options?: Partial<UseQueryOptions<TList, Error>>,
-  ) =>
+  const useList = (namespace: string, options?: Partial<UseQueryOptions<TList, Error>>) =>
     useQuery<TList, Error>({
       queryKey: keys.list(namespace),
       queryFn: () => api.list(namespace),
       refetchInterval: 15000,
-      ...options,
+      ...options
     });
 
   const useDetail = (
     namespace: string,
     name: string,
-    options?: Partial<UseQueryOptions<TItem, Error>>,
+    options?: Partial<UseQueryOptions<TItem, Error>>
   ) =>
     useQuery<TItem, Error>({
       queryKey: keys.detail(namespace, name),
       queryFn: () => api.get(namespace, name),
       enabled: Boolean(namespace && name),
-      ...options,
+      ...options
     });
 
-  const useCreate = (
-    options?: UseMutationOptions<MutationResponse, Error, TCreate>,
-  ) => {
+  const useCreate = (options?: UseMutationOptions<MutationResponse, Error, TCreate>) => {
     const qc = useQueryClient();
     return useMutation<MutationResponse, Error, TCreate>({
       mutationFn: api.create,
@@ -58,13 +52,13 @@ export function createResourceHooks<TItem, TList, TCreate>(
       onSuccess: (...args) => {
         qc.invalidateQueries({ queryKey: keys.all });
         options?.onSuccess?.(...args);
-      },
+      }
     });
   };
 
   const useRemove = (
     namespace: string,
-    options?: UseMutationOptions<MutationResponse, Error, string>,
+    options?: UseMutationOptions<MutationResponse, Error, string>
   ) => {
     const qc = useQueryClient();
     return useMutation<MutationResponse, Error, string>({
@@ -73,7 +67,7 @@ export function createResourceHooks<TItem, TList, TCreate>(
       onSuccess: (...args) => {
         qc.invalidateQueries({ queryKey: keys.all });
         options?.onSuccess?.(...args);
-      },
+      }
     });
   };
 

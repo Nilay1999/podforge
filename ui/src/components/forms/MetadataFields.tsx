@@ -1,17 +1,7 @@
-import {
-  Paper,
-  Select,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { Paper, Select, SimpleGrid, Stack, Text, TextInput } from "@mantine/core";
 import type { UseFormReturnType } from "@mantine/form";
 import { DEFAULT_NAMESPACES } from "@src/utils/constants";
-import {
-  type KeyValuePair,
-  UncontrolledKeyValuePairs,
-} from "./KeyValuePairsField";
+import { type KeyValuePair, UncontrolledKeyValuePairs } from "./KeyValuePairsField";
 
 interface MetadataFieldsProps<T extends { name: string; namespace: string }> {
   form: UseFormReturnType<T>;
@@ -32,7 +22,7 @@ export function MetadataFields<T extends { name: string; namespace: string }>({
   registerAnnotations,
   labelError,
   annotationError,
-  namePlaceholder = "my-resource",
+  namePlaceholder = "my-resource"
 }: MetadataFieldsProps<T>) {
   return (
     <Paper withBorder p="md" radius="md">

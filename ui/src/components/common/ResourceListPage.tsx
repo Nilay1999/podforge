@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   Title,
+  Tooltip
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -23,12 +24,13 @@ import {
   IconPlus,
   IconRefresh,
   IconSearch,
-  IconTrash,
+  IconTrash
 } from "@tabler/icons-react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import type { MutationResponse, ObjectMeta, ResourceKind } from "@src/types";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
 import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { useWatchResource } from "@src/hooks/useWatchResource";
 
 export interface Column<T> {
   header: string;
@@ -44,9 +46,7 @@ interface ResourceListPageProps<T extends { metadata: ObjectMeta }> {
   kind: ResourceKind;
   pluralTitle: string;
   useList: (namespace: string) => UseQueryResult<ListShape<T>, Error>;
-  useDelete: (
-    namespace: string,
-  ) => UseMutationResult<MutationResponse, Error, string>;
+  useDelete: (namespace: string) => UseMutationResult<MutationResponse, Error, string>;
   columns: Column<T>[];
   onRowClick?: (item: T) => void;
   onEditItem?: (item: T) => void;
@@ -54,9 +54,7 @@ interface ResourceListPageProps<T extends { metadata: ObjectMeta }> {
 
 export function formatAge(creationTimestamp?: string): string {
   if (!creationTimestamp) return "–";
-  const seconds = Math.floor(
-    (Date.now() - new Date(creationTimestamp).getTime()) / 1000,
-  );
+  const seconds = Math.floor((Date.now() - new Date(creationTimestamp).getTime()) / 1000);
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
@@ -70,12 +68,15 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
   useDelete,
   columns,
   onRowClick,
-  onEditItem,
+  onEditItem
 }: ResourceListPageProps<T>) {
   const [namespace, setNamespace] = useState("default");
   const [search, setSearch] = useState("");
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+
+  // "Pod" → "pods", "ConfigMap" → "configmaps" — matches the key used in createResourceHooks
+  const resource = kind.toLowerCase() + "s";
+  const { connected } = useWatchResource(resource, namespace);
 
   const { data, isLoading, error, refetch, isFetching } = useList(namespace);
   const deleteMutation = useDelete(namespace);
@@ -85,9 +86,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
   const filtered = useMemo(() => {
     if (!search) return allItems;
     const q = search.toLowerCase();
-    return allItems.filter((item) =>
-      item.metadata.name.toLowerCase().includes(q),
-    );
+    return allItems.filter((item) => item.metadata.name.toLowerCase().includes(q));
   }, [allItems, search]);
 
   const handleDelete = (name: string) => {
@@ -96,14 +95,14 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
         notifications.show({
           title: `${kind} deleted`,
           message: `${name} removed from ${namespace}`,
-          color: "teal",
+          color: "teal"
         }),
       onError: (err) =>
         notifications.show({
           title: "Delete failed",
           message: err.message,
-          color: "red",
-        }),
+          color: "red"
+        })
     });
   };
 
@@ -120,11 +119,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
               {filtered.length !== allItems.length && ` / ${allItems.length}`}
             </Badge>
           </Group>
-          <Button
-            leftSection={<IconPlus size={14} />}
-            size="sm"
-            onClick={openDrawer}
-          >
+          <Button leftSection={<IconPlus size={14} />} size="sm" onClick={openDrawer}>
             Create {kind}
           </Button>
         </Group>
@@ -157,15 +152,25 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
           >
             <IconRefresh size={16} />
           </ActionIcon>
+          <Tooltip
+            label={connected ? "Receiving live updates" : "Connecting to live stream…"}
+            withArrow
+          >
+            <Badge
+              color={connected ? "teal" : "gray"}
+              variant="dot"
+              size="sm"
+              style={{ marginBottom: 1, cursor: "default" }}
+            >
+              {connected ? "Live" : "Connecting"}
+            </Badge>
+          </Tooltip>
         </Group>
 
         {isLoading && <Loader />}
 
         {error && (
-          <Alert
-            color="red"
-            title={`Failed to load ${pluralTitle.toLowerCase()}`}
-          >
+          <Alert color="red" title={`Failed to load ${pluralTitle.toLowerCase()}`}>
             {error.message}
           </Alert>
         )}
@@ -173,15 +178,10 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
         {data && (
           <Paper withBorder radius="md" style={{ overflow: "hidden" }} p={0}>
             <Table highlightOnHover style={{ fontSize: 13 }}>
-              <Table.Thead
-                style={{ background: "var(--mantine-color-default-hover)" }}
-              >
+              <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
                 <Table.Tr>
                   {columns.map((col) => (
-                    <Table.Th
-                      key={col.header}
-                      style={col.width ? { width: col.width } : undefined}
-                    >
+                    <Table.Th key={col.header} style={col.width ? { width: col.width } : undefined}>
                       {col.header}
                     </Table.Th>
                   ))}

@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/services"
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
-	"github.com/nilay/k8s-orchestrator/backend/internal/util"
+	"github.com/podforge/backend/internal/services"
+	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 )
 
 type DeploymentHandler struct {
@@ -83,6 +83,31 @@ func (h *DeploymentHandler) Update(c *gin.Context) {
 		Namespace: result.Namespace,
 		Status:    "updated",
 	})
+}
+
+func (h *DeploymentHandler) Scale(c *gin.Context) {
+	var req struct {
+		Replicas int32 `json:"replicas" binding:"min=0"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	result, err := h.svc.Scale(c.Request.Context(), c.Param("namespace"), c.Param("name"), req.Replicas)
+	if err != nil {
+		util.CreateErrorResponse(c, h.log, err)
+		return
+	}
+	c.JSON(http.StatusOK, types.CreateResponse{Name: result.Name, Namespace: result.Namespace, Status: "scaled"})
+}
+
+func (h *DeploymentHandler) Restart(c *gin.Context) {
+	result, err := h.svc.Restart(c.Request.Context(), c.Param("namespace"), c.Param("name"))
+	if err != nil {
+		util.CreateErrorResponse(c, h.log, err)
+		return
+	}
+	c.JSON(http.StatusOK, types.CreateResponse{Name: result.Name, Namespace: result.Namespace, Status: "restarted"})
 }
 
 func (h *DeploymentHandler) Delete(c *gin.Context) {

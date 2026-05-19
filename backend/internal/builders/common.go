@@ -3,7 +3,7 @@ package builders
 import (
 	"fmt"
 
-	"github.com/nilay/k8s-orchestrator/backend/internal/types"
+	"github.com/podforge/backend/internal/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
