@@ -299,21 +299,21 @@ export function DashboardPage() {
           <SummaryCard
             icon={IconRocket}
             label="Deployments"
-            count={deployments?.items.length ?? "–"}
+            count={deployments?.items.length ?? "0"}
             color="steelBlue"
           />
-          <SummaryCard icon={IconBox} label="Pods" count={podItems.length || "–"} color="success" />
+          <SummaryCard icon={IconBox} label="Pods" count={podItems.length || "0"} color="success" />
           <SummaryCard
             icon={IconFileText}
             label="ConfigMaps"
-            count={configMaps?.items.length ?? "–"}
+            count={configMaps?.items.length ?? "0"}
             color="gray"
           />
-          <SummaryCard icon={IconServer} label="Services" count="–" color="gray" />
+          <SummaryCard icon={IconServer} label="Services" count="0" color="gray" />
         </SimpleGrid>
 
         <Box style={{ maxWidth: 260 }}>
-          <SummaryCard icon={IconCube} label="Nodes" count="–" color="success" />
+          <SummaryCard icon={IconCube} label="Nodes" count="0" color="success" />
         </Box>
 
         <SimpleGrid cols={{ base: 1, md: 2 }}>
