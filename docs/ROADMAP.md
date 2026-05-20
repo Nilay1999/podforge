@@ -34,12 +34,12 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 │                                                                  │
 │   Developer-friendly UI that ties everything together            │
 │                                                                  │
-│   ┌───────────┐    ┌───────────┐    ┌───────────┐                │
-│   │  GitHub   │    │  ArgoCD   │    │   Kargo   │                │
-│   │  Repo Mgmt│    │  GitOps   │    │ Promotion │                │
-│   └─────┬─────┘    └─────┬─────┘    └─────┬─────┘                │
-│         │                │                │                      │
-│         └────────────────┼────────────────┘                      │
+│   ┌───────────┐    ┌───────────┐                                  │
+│   │  GitHub   │    │  ArgoCD   │                                  │
+│   │  Repo Mgmt│    │  GitOps   │                                  │
+│   └─────┬─────┘    └─────┬─────┘                                  │
+│         │                │                                       │
+│         └────────────────┘                                       │
 │                          │                                       │
 │                    K8s API Server                                │
 │                          │                                       │
@@ -53,7 +53,6 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 |------|------|------------------------|
 | **K8s API** | Runs containers | Podforge talks to it via client-go |
 | **ArgoCD** | Syncs Git → Cluster | Podforge shows sync status + triggers syncs via ArgoCD API |
-| **Kargo** | Promotes across environments | Podforge shows promotion pipeline + triggers promotions via Kargo API |
 | **GitHub** | Stores manifests (source of truth) | Podforge reads/edits/commits manifests via GitHub API |
 | **Prometheus** | Collects metrics | Podforge exposes /metrics + queries pod/node metrics |
 | **Grafana** | Visualises metrics | Optional integration for deep dashboards |
@@ -69,10 +68,9 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 | k9s | Power users | Terminal speed, keyboard driven | Zero UI for non-terminal users |
 | Rancher | Platform teams | Full lifecycle — provision + manage | Heavy, complex, enterprise-focused |
 | ArgoCD UI | GitOps teams | Git sync status + diff | Not a resource manager, no forms |
-| Kargo UI | Platform Eng | Promotion pipeline visibility | Basic UI, not developer-friendly |
-| **Podforge** | **App developers** | **Guided deploy + GitOps + Promotion in one UI** | **New project, smaller scope initially** |
+| **Podforge** | **App developers** | **Guided deploy + GitOps in one bug-free UI** | **New project, smaller scope initially** |
 
-**Podforge's moat:** No existing tool provides form-based creation + GitHub integration + ArgoCD sync + Kargo promotion in a single developer-friendly interface. Each of those tools is powerful alone — Podforge is the connective tissue.
+**Podforge's moat:** No existing tool provides form-based creation + GitHub integration + ArgoCD sync in a single, bug-free developer-friendly interface. Each of those tools is powerful alone — Podforge is the connective tissue.
 
 ---
 
@@ -85,9 +83,8 @@ No kubectl. No YAML expertise. No switching between 5 different tools.
 | **3** | Persistence + Templates | 3-4 weeks | PostgreSQL, saved templates, deployment history |
 | **4** | GitHub Integration | 4-5 weeks | OAuth, repo scanning, edit manifests, commit back |
 | **5** | ArgoCD Integration | 4-5 weeks | Sync status, manual sync, rollback, app management |
-| **6** | Kargo Integration | 4-5 weeks | Promotion pipelines, approval gates, Freight tracking |
-| **7** | Observability | 3-4 weeks | Prometheus, pod/node metrics, log viewer |
-| **8** | Advanced Features | Ongoing | Web terminal, Helm, multi-cluster, CRDs, RBAC viz |
+| **6** | Observability | 3-4 weeks | Prometheus, pod/node metrics, log viewer |
+| **7** | Advanced Features | Ongoing | Web terminal, Helm, multi-cluster, CRDs, RBAC viz |
 
 ---
 
@@ -402,82 +399,7 @@ Developer clicks "Rollback" → ArgoCD reverts to previous revision
 
 ---
 
-## Phase 6 — Kargo Integration (Promotion Pipelines)
-
-> **Goal:** Connect Podforge to Kargo for multi-environment promotion. Developers can see
-> the promotion pipeline, approve promotions, and track Freight across stages.
-> This is the feature that no other lightweight UI provides.
-
-### What Kargo Gives Us
-
-```
-Warehouse (watches for new artifacts)
-        │
-        ▼
-Freight (versioned bundle: image:v1.2.3 + config commit)
-        │
-        ▼
-Stage: DEV ──approve──▶ Stage: STAGING ──approve──▶ Stage: PROD
-```
-
-### Backend
-
-| Ticket | Feature | Priority |
-|--------|---------|----------|
-| PF-150 | Kargo connection setup (server URL + auth) | P0 |
-| PF-151 | List Kargo Projects | P0 |
-| PF-152 | List Stages per Project (dev, staging, prod) | P0 |
-| PF-153 | Get Stage detail — current Freight, health, last promotion | P0 |
-| PF-154 | List Freight — available versions with metadata | P0 |
-| PF-155 | Promote Freight to next Stage | P0 |
-| PF-156 | Get promotion history per Stage | P1 |
-| PF-157 | Approve pending promotion (approval gate) | P1 |
-| PF-158 | List Warehouses — what sources are being watched | P2 |
-| PF-159 | SSE for promotion status changes | P2 |
-| PF-160 | Rollback Stage to previous Freight | P1 |
-
-### Frontend
-
-| Ticket | Feature | Priority |
-|--------|---------|----------|
-| PF-165 | Kargo connection settings page | P0 |
-| PF-166 | Promotion pipeline visualisation (DAG / flowchart) | P0 |
-| PF-167 | Stage cards showing current Freight + health | P0 |
-| PF-168 | "Promote" button between stages | P0 |
-| PF-169 | Approval dialog with comment field | P1 |
-| PF-170 | Freight list — version, source, created at | P1 |
-| PF-171 | Promotion history timeline per stage | P1 |
-| PF-172 | Warehouse overview — watched repos, registries | P2 |
-| PF-173 | Real-time pipeline updates via SSE | P2 |
-| PF-174 | Rollback button per stage | P1 |
-
-### Pipeline Visualisation (the hero feature)
-┌──────────────────────────────────────────────────────────────┐
-│ Podforge — Promotion Pipeline: my-app                        │
-│                                                              │
-│  ┌────────────┐    ┌────────────┐    ┌────────────┐          │
-│  │    DEV     │───▶│  STAGING   │───▶│    PROD    │          │
-│  │            │    │            │    │            │          │
-│  │  v1.2.3    │    │  v1.2.2    │    │  v1.2.1    │          │
-│  │  Healthy   │    │  Pending   │    │  Healthy   │          │
-│  └────────────┘    └────────────┘    └────────────┘          │
-│                         │                                    │
-│                    [ Approve ▶ ]                             │
-│                                                              │
-│ Freight Available: v1.2.3, v1.2.2, v1.2.1, v1.2.0            │
-└──────────────────────────────────────────────────────────────┘
-
-### Phase 6 Definition of Done
-- [ ] Kargo connection works
-- [ ] Promotion pipeline renders as a visual DAG
-- [ ] Stages show current Freight and health status
-- [ ] Promote and approve actions work end-to-end
-- [ ] Promotion history is visible per stage
-- [ ] The full loop: new image detected → auto-promoted to dev → manual approve to staging → approve to prod
-
----
-
-## Phase 7 — Observability
+## Phase 6 — Observability
 
 > **Goal:** Surface cluster health, resource consumption, and structured logs without
 > leaving Podforge.
@@ -508,7 +430,7 @@ Stage: DEV ──approve──▶ Stage: STAGING ──approve──▶ Stage: P
 | PF-197 | HPA list page + create form | P1 |
 | PF-198 | ResourceQuota display per namespace | P2 |
 
-### Phase 7 Definition of Done
+### Phase 6 Definition of Done
 - [ ] Podforge exposes /metrics that Prometheus can scrape
 - [ ] Pod and Node CPU/Memory visible when metrics-server is available
 - [ ] Log viewer has follow mode, search, download, and container selector
@@ -516,7 +438,7 @@ Stage: DEV ──approve──▶ Stage: STAGING ──approve──▶ Stage: P
 
 ---
 
-## Phase 8 — Advanced Features
+## Phase 7 — Advanced Features
 
 > **Goal:** Production-grade features for teams scaling their Podforge usage.
 > These are additive — each can be built independently.
@@ -614,7 +536,7 @@ These are UX improvements that apply across all phases.
 | PF-304 | Notification system (toast for create/delete/sync events) | Phase 2 |
 | PF-305 | User preferences persistence (default namespace, theme) | Phase 3 |
 | PF-306 | Responsive mobile layout | Phase 5 |
-| PF-307 | Onboarding tour for new users | Phase 6 |
+| PF-307 | Onboarding tour for new users | Phase 5 |
 
 ---
 
@@ -673,19 +595,6 @@ These are UX improvements that apply across all phases.
 /api/v1/argocd/applications/:name/history
 ```
 
-### Kargo APIs (Phase 6)
-```
-/api/v1/kargo/config                     (connection settings)
-/api/v1/kargo/projects                   (list projects)
-/api/v1/kargo/projects/:name/stages      (list stages)
-/api/v1/kargo/projects/:name/freight     (list freight)
-/api/v1/kargo/stages/:name/promote       (trigger promotion)
-/api/v1/kargo/stages/:name/approve       (approve pending)
-/api/v1/kargo/stages/:name/rollback      (rollback freight)
-/api/v1/kargo/stages/:name/history       (promotion history)
-/api/v1/kargo/warehouses                 (list warehouses)
-```
-
 ---
 
 ## Tech Stack (Final State)
@@ -702,8 +611,7 @@ These are UX improvements that apply across all phases.
 | Database | PostgreSQL + GORM | Phase 3 |
 | GitHub SDK | go-github | Phase 4 |
 | ArgoCD | REST API (HTTP calls) | Phase 5 |
-| Kargo | REST API (HTTP calls) | Phase 6 |
-| Metrics | Prometheus client_golang | Phase 7 |
+| Metrics | Prometheus client_golang | Phase 6 |
 | Tracing | OpenTelemetry Go SDK | Phase 8 |
 | Real-time | SSE (Gin streaming) | Phase 1 |
 | Real-time (terminal) | WebSocket (gorilla/websocket) | Phase 8 |
@@ -726,8 +634,8 @@ These are UX improvements that apply across all phases.
 | Monorepo | Simple folders | Turborepo, Nx | Only 2 services, no need for heavy tooling |
 | GitHub integration | go-github | raw HTTP | Typed, well-maintained, covers full GitHub API |
 | ArgoCD integration | REST API | ArgoCD Go client | REST is simpler, no heavy dependency |
-| Kargo integration | REST API | Go client | Same reasoning — lighter dependency |
-| Helm in Phase 8 | Deferred | Early | Complex (chart parsing, hooks), core value is elsewhere |
+| Kargo | Removed from scope | — | Third-party integrations deferred; core K8s features ship first |
+| Helm in Phase 7 | Deferred | Early | Complex (chart parsing, hooks), core value is elsewhere |
 | No gRPC | Deferred indefinitely | Phase 2 | No CLI component, REST sufficient for all use cases |
 | K8s cluster strategy | Minikube → K3d → K3s | Single cluster | Progressive: learn → test → production-like |
 | AI diagnosis | Pattern matching first | LLM first | Start rule-based, add LLM optionally later |
