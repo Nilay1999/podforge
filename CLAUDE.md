@@ -289,9 +289,9 @@ data: {"name": "nginx", "namespace": "default"}
 |---------|-------------|--------|-------|
 | Cluster events stream — Warning + Normal | All | ✅ Done | — |
 | Watch any resource kind via SSE | Headlamp, Lens | ✅ Done | — |
-| Live status badges in all list views | Lens, Headlamp | 📋 Planned | 2 |
-| SSE connection health indicator | Headlamp | 📋 Planned | 2 |
-| Event severity colour coding | Headlamp, Lens | 📋 Planned | 2 |
+| Live status badges in all list views | Lens, Headlamp | ✅ Done | — |
+| SSE connection health indicator | Headlamp | ✅ Done | — |
+| Event severity colour coding | Headlamp, Lens | ✅ Done | — |
 | Pod phase distribution chart | Lens, Headlamp | ✅ Done | — |
 | Pod CPU / Memory usage (metrics-server) | Lens, Headlamp, k9s | 📋 Planned | 5 |
 | Node CPU / Memory usage charts | Lens, Headlamp | 📋 Planned | 5 |
@@ -416,7 +416,8 @@ data: {"name": "nginx", "namespace": "default"}
 - [ ] Namespaces management page
 - [ ] Deployment detail drawer (scale slider, restart, ReplicaSet timeline)
 - [ ] Log viewer enhancements — follow toggle, container selector, tail-N, search/filter, download
-- [ ] SSE integration — live status badges across all list pages
+- [x] SSE integration — live status badges + connection health across all list pages
+- [x] Cluster Events page (live stream from `/events/stream`, severity colouring, filters)
 - [ ] Global search UI (command palette)
 - [ ] YAML apply from editor
 
@@ -444,10 +445,10 @@ Goal: every resource kind has a working list + create + detail flow in the UI.
 ### Phase 2 — Live Cluster Awareness
 Goal: UI reflects real-time cluster state without manual refresh.
 
-- [ ] Wire SSE watch endpoint to all list pages — rows update/appear/disappear live
+- [x] Wire SSE watch endpoint to all list pages — rows update/appear/disappear live
 - [ ] Pod status badge with phase-color pulsing animation when `Pending`
-- [ ] Cluster events panel (sidebar or dedicated page) fed from `/api/v1/events/stream`
-- [ ] SSE connection health indicator (connected / reconnecting)
+- [x] Cluster events panel (dedicated `/events` page) fed from `/api/v1/events/stream`
+- [x] SSE connection health indicator (connected / reconnecting)
 
 ### Phase 3 — Log Viewer (In Progress)
 Goal: first-class log experience comparable to `kubectl logs`.

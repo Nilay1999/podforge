@@ -24,7 +24,8 @@ import {
   IconChevronDown,
   IconNetwork,
   IconKey,
-  IconFolder
+  IconFolder,
+  IconActivity
 } from "@tabler/icons-react";
 
 const navItems = [
@@ -34,7 +35,8 @@ const navItems = [
   { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" },
   { label: "Services", icon: IconNetwork, path: "/services" },
   { label: "Secrets", icon: IconKey, path: "/secrets" },
-  { label: "Namespaces", icon: IconFolder, path: "/namespaces" }
+  { label: "Namespaces", icon: IconFolder, path: "/namespaces" },
+  { label: "Events", icon: IconActivity, path: "/events" }
 ];
 
 interface AppLayoutProps {
