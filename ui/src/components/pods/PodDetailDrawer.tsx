@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActionIcon,
   Alert,
@@ -8,21 +8,26 @@ import {
   Drawer,
   Group,
   Loader,
+  Select,
   Stack,
+  Switch,
   Table,
   Tabs,
   Text,
+  TextInput
 } from "@mantine/core";
 import {
   IconActivity,
-  IconCheck,
   IconAlertTriangle,
+  IconCheck,
   IconCode,
+  IconDownload,
   IconEdit,
   IconInfoCircle,
+  IconSearch,
   IconTerminal,
   IconTrash,
-  IconX,
+  IconX
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import jsYaml from "js-yaml";
@@ -38,9 +43,7 @@ function phaseColor(phase?: string) {
 
 function podAge(creationTimestamp?: string): string {
   if (!creationTimestamp) return "–";
-  const seconds = Math.floor(
-    (Date.now() - new Date(creationTimestamp).getTime()) / 1000,
-  );
+  const seconds = Math.floor((Date.now() - new Date(creationTimestamp).getTime()) / 1000);
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
@@ -54,14 +57,14 @@ interface PodDetailDrawerProps {
   onEdit?: () => void;
 }
 
-export function PodDetailDrawer({
-  pod,
-  onClose,
-  onDelete,
-  onEdit,
-}: PodDetailDrawerProps) {
+export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDrawerProps) {
   const [tab, setTab] = useState<string | null>("overview");
   const [logLines, setLogLines] = useState<string[]>([]);
+  const [follow, setFollow] = useState(true);
+  const [selectedContainer, setSelectedContainer] = useState("");
+  const [tailLines, setTailLines] = useState("200");
+  const [showPrevious, setShowPrevious] = useState(false);
+  const [logFilter, setLogFilter] = useState("");
   const logScrollRef = useRef<HTMLDivElement>(null);
 
   const phase = pod?.status?.phase;
@@ -70,44 +73,68 @@ export function PodDetailDrawer({
   const totalContainers = containerStatuses.length;
   const restarts = containerStatuses.reduce((s, c) => s + c.restartCount, 0);
   const age = podAge(pod?.metadata.creationTimestamp);
+  const podName = pod?.metadata.name;
+  const podNamespace = pod?.metadata.namespace;
+  const containers = pod?.spec?.containers?.map((c) => c.name) ?? [];
+  const firstContainer = pod?.spec?.containers?.[0]?.name ?? "";
+
+  useEffect(() => {
+    setSelectedContainer(firstContainer);
+  }, [firstContainer]);
 
   const { data: overview, isLoading: overviewLoading } = useQuery({
-    queryKey: [
-      "pod-overview",
-      pod?.metadata.namespace,
-      pod?.metadata.name,
-    ],
-    queryFn: () =>
-      getPodOverview(pod!.metadata.namespace!, pod!.metadata.name),
+    queryKey: ["pod-overview", podNamespace, podName],
+    queryFn: () => getPodOverview(pod!.metadata.namespace!, pod!.metadata.name),
     enabled: !!pod,
-    staleTime: 30_000,
+    staleTime: 30_000
   });
 
   useEffect(() => {
-    if (!pod) {
-      setLogLines([]);
-      return;
-    }
-    if (tab !== "logs") return;
+    if (!podName || tab !== "logs") return;
 
-    const ns = pod.metadata.namespace ?? "default";
-    const name = pod.metadata.name;
+    const ns = podNamespace ?? "default";
     setLogLines([]);
 
-    const es = new EventSource(`/api/v1/pod/${ns}/${name}/logs/stream`);
-    es.onmessage = (e) => {
-      setLogLines((prev) => [...prev.slice(-499), e.data]);
-    };
+    const params = new URLSearchParams();
+    if (follow) params.set("follow", "true");
+    if (tailLines !== "all") params.set("tail", tailLines);
+    if (selectedContainer) params.set("container", selectedContainer);
+    if (showPrevious) params.set("previous", "true");
+
+    const es = new EventSource(`/api/v1/pod/${ns}/${podName}/logs/stream?${params}`);
+    es.addEventListener("log", (e: MessageEvent) => {
+      setLogLines((prev) => [...prev.slice(-1999), e.data]);
+    });
     es.onerror = () => es.close();
 
     return () => es.close();
-  }, [tab, pod?.metadata.namespace, pod?.metadata.name]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, podNamespace, podName, follow, selectedContainer, tailLines, showPrevious]);
 
   useEffect(() => {
-    if (logScrollRef.current) {
+    if (follow && logScrollRef.current) {
       logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
     }
-  }, [logLines]);
+  }, [logLines, follow]);
+
+  const filteredLines = useMemo(
+    () =>
+      logFilter
+        ? logLines.filter((l) => l.toLowerCase().includes(logFilter.toLowerCase()))
+        : logLines,
+    [logLines, logFilter]
+  );
+
+  const handleDownload = () => {
+    const blob = new Blob([logLines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${pod?.metadata.name ?? "pod"}.log`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const specYaml = pod
     ? jsYaml.dump(
@@ -116,9 +143,9 @@ export function PodDetailDrawer({
           kind: "Pod",
           metadata: pod.metadata,
           spec: pod.spec,
-          status: pod.status,
+          status: pod.status
         },
-        { lineWidth: -1 },
+        { lineWidth: -1 }
       )
     : "";
 
@@ -138,9 +165,9 @@ export function PodDetailDrawer({
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          padding: 0,
+          padding: 0
         },
-        content: { display: "flex", flexDirection: "column" },
+        content: { display: "flex", flexDirection: "column" }
       }}
     >
       <Box
@@ -148,24 +175,14 @@ export function PodDetailDrawer({
         py="md"
         style={{
           borderBottom: "1px solid var(--mantine-color-default-border)",
-          background: "var(--mantine-color-default-hover)",
+          background: "var(--mantine-color-default-hover)"
         }}
       >
         <Group gap="xs" mb={8}>
-          <Text
-            fw={600}
-            size="md"
-            ff="monospace"
-            style={{ flex: 1, wordBreak: "break-all" }}
-          >
+          <Text fw={600} size="md" ff="monospace" style={{ flex: 1, wordBreak: "break-all" }}>
             {pod?.metadata.name}
           </Text>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close">
             <IconX size={16} />
           </ActionIcon>
         </Group>
@@ -175,8 +192,7 @@ export function PodDetailDrawer({
           </Badge>
           <Text size="xs" c="dimmed">
             {pod?.metadata.namespace ?? "default"} · {age}
-            {restarts > 0 &&
-              ` · ${restarts} restart${restarts !== 1 ? "s" : ""}`}
+            {restarts > 0 && ` · ${restarts} restart${restarts !== 1 ? "s" : ""}`}
           </Text>
           <Box style={{ flex: 1 }} />
           <Button
@@ -216,7 +232,7 @@ export function PodDetailDrawer({
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          overflow: "hidden"
         }}
         styles={{ panel: { flex: 1, overflowY: "auto" } }}
       >
@@ -256,7 +272,7 @@ export function PodDetailDrawer({
                   rowGap: 8,
                   columnGap: 12,
                   margin: 0,
-                  fontSize: 13,
+                  fontSize: 13
                 }}
               >
                 {[
@@ -264,21 +280,11 @@ export function PodDetailDrawer({
                   ["Node", pod?.spec?.nodeName ?? "–"],
                   ["Pod IP", pod?.status?.podIP ?? "–"],
                   ["Image", pod?.spec?.containers?.[0]?.image ?? "–"],
-                  [
-                    "Containers",
-                    totalContainers > 0
-                      ? `${readyCount}/${totalContainers}`
-                      : "–",
-                  ],
-                  ["Age", age],
+                  ["Containers", totalContainers > 0 ? `${readyCount}/${totalContainers}` : "–"],
+                  ["Age", age]
                 ].map(([label, value]) => (
                   <>
-                    <Text
-                      component="dt"
-                      size="sm"
-                      c="dimmed"
-                      key={`dt-${label}`}
-                    >
+                    <Text component="dt" size="sm" c="dimmed" key={`dt-${label}`}>
                       {label}
                     </Text>
                     <Text
@@ -341,15 +347,9 @@ export function PodDetailDrawer({
                   {conditions.map((cond) => (
                     <Group key={cond.type} gap="xs">
                       {cond.status === "True" ? (
-                        <IconCheck
-                          size={14}
-                          color="var(--mantine-color-success-6)"
-                        />
+                        <IconCheck size={14} color="var(--mantine-color-success-6)" />
                       ) : (
-                        <IconAlertTriangle
-                          size={14}
-                          color="var(--mantine-color-warning-6)"
-                        />
+                        <IconAlertTriangle size={14} color="var(--mantine-color-warning-6)" />
                       )}
                       <Text size="sm" ff="monospace">
                         {cond.type}
@@ -382,7 +382,7 @@ export function PodDetailDrawer({
               background: "var(--mantine-color-default-hover)",
               border: "1px solid var(--mantine-color-default-border)",
               lineHeight: 1.55,
-              overflow: "auto",
+              overflow: "auto"
             }}
           >
             {specYaml}
@@ -400,11 +400,9 @@ export function PodDetailDrawer({
             <Table>
               <Table.Thead>
                 <Table.Tr>
-                  {["Type", "Reason", "Message", "Count", "Last Seen"].map(
-                    (h) => (
-                      <Table.Th key={h}>{h}</Table.Th>
-                    ),
-                  )}
+                  {["Type", "Reason", "Message", "Count", "Last Seen"].map((h) => (
+                    <Table.Th key={h}>{h}</Table.Th>
+                  ))}
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -434,9 +432,7 @@ export function PodDetailDrawer({
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm" c="dimmed" ff="monospace">
-                        {e.lastTimestamp
-                          ? new Date(e.lastTimestamp).toLocaleTimeString()
-                          : "–"}
+                        {e.lastTimestamp ? new Date(e.lastTimestamp).toLocaleTimeString() : "–"}
                       </Text>
                     </Table.Td>
                   </Table.Tr>
@@ -446,9 +442,76 @@ export function PodDetailDrawer({
           )}
         </Tabs.Panel>
 
-        <Tabs.Panel value="logs" p="lg" style={{ display: "flex", flexDirection: "column" }}>
+        <Tabs.Panel
+          value="logs"
+          style={{ display: "flex", flexDirection: "column", overflow: "hidden", padding: 0 }}
+        >
+          <Group
+            px="sm"
+            py="xs"
+            gap="xs"
+            wrap="nowrap"
+            style={{
+              borderBottom: "1px solid var(--mantine-color-default-border)",
+              flexShrink: 0
+            }}
+          >
+            {containers.length > 1 && (
+              <Select
+                size="xs"
+                data={containers}
+                value={selectedContainer}
+                onChange={(v) => setSelectedContainer(v ?? "")}
+                style={{ width: 130 }}
+                comboboxProps={{ withinPortal: true }}
+              />
+            )}
+            <Select
+              size="xs"
+              data={[
+                { value: "50", label: "Tail 50" },
+                { value: "200", label: "Tail 200" },
+                { value: "1000", label: "Tail 1000" },
+                { value: "all", label: "All lines" }
+              ]}
+              value={tailLines}
+              onChange={(v) => setTailLines(v ?? "200")}
+              style={{ width: 110 }}
+              comboboxProps={{ withinPortal: true }}
+            />
+            <TextInput
+              size="xs"
+              placeholder="Filter..."
+              leftSection={<IconSearch size={12} />}
+              value={logFilter}
+              onChange={(e) => setLogFilter(e.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Switch
+              size="xs"
+              label="Follow"
+              checked={follow}
+              onChange={(e) => setFollow(e.currentTarget.checked)}
+            />
+            <Switch
+              size="xs"
+              label="Prev"
+              checked={showPrevious}
+              onChange={(e) => setShowPrevious(e.currentTarget.checked)}
+            />
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              onClick={handleDownload}
+              disabled={logLines.length === 0}
+              title="Download logs"
+            >
+              <IconDownload size={14} />
+            </ActionIcon>
+          </Group>
+
           {logLines.length === 0 ? (
-            <Alert color="gray" variant="light">
+            <Alert color="gray" variant="light" m="sm">
               Connecting to log stream…
             </Alert>
           ) : (
@@ -457,20 +520,22 @@ export function PodDetailDrawer({
               style={{
                 background: "var(--mantine-color-dark-8, #0f0f11)",
                 color: "var(--mantine-color-dark-0, #fafafa)",
-                borderRadius: 6,
                 padding: 12,
                 fontFamily: "var(--mantine-font-monospace, monospace)",
                 fontSize: 12.5,
                 lineHeight: 1.6,
-                border: "1px solid var(--mantine-color-dark-4, #3f3f46)",
                 overflowY: "auto",
-                flex: 1,
+                flex: 1
               }}
             >
-              {logLines.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-              <div style={{ color: "var(--mantine-color-success-5)" }}>▊</div>
+              {filteredLines.length === 0 ? (
+                <Text c="dimmed" size="xs" ff="monospace">
+                  No lines match &quot;{logFilter}&quot;
+                </Text>
+              ) : (
+                filteredLines.map((line, i) => <div key={i}>{line}</div>)
+              )}
+              {!logFilter && <div style={{ color: "var(--mantine-color-success-5)" }}>▊</div>}
             </Box>
           )}
         </Tabs.Panel>

@@ -1,5 +1,5 @@
 {
-  "name": "k8s-orchestrator-backend",
+  "name": "podforge-backend",
   "private": true,
   "scripts": {
     "dev": "go run ./cmd/server",

@@ -14,9 +14,9 @@ import {
   TagsInput,
   Text,
   TextInput,
-  Tooltip,
+  Tooltip
 } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import { useForm, type UseFormReturnType } from "@mantine/form";
 import { IconInfoCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import type {
   ContainerPort,
@@ -25,13 +25,13 @@ import type {
   EnvFrom,
   ImagePullPolicy,
   Probe,
-  Toleration,
+  Toleration
 } from "@src/types";
 import {
   type KeyValuePair,
   pairsToRecord,
   UncontrolledKeyValuePairs,
-  validatePairs,
+  validatePairs
 } from "./KeyValuePairsField";
 import { MetadataFields } from "./MetadataFields";
 
@@ -56,20 +56,14 @@ function defaultProbeState(): ProbeState {
     httpPath: "/",
     httpPort: 8080,
     execCommand: [],
-    tcpPort: 8080,
+    tcpPort: 8080
   };
 }
 
 function probeToState(p?: Probe): ProbeState {
   if (!p) return defaultProbeState();
   return {
-    type: p.httpGet
-      ? "httpGet"
-      : p.exec
-        ? "exec"
-        : p.tcpSocket
-          ? "tcpSocket"
-          : "none",
+    type: p.httpGet ? "httpGet" : p.exec ? "exec" : p.tcpSocket ? "tcpSocket" : "none",
     httpPath: p.httpGet?.path ?? "/",
     httpPort: p.httpGet?.port ?? 8080,
     execCommand: p.exec?.command ?? [],
@@ -78,36 +72,28 @@ function probeToState(p?: Probe): ProbeState {
     periodSeconds: p.periodSeconds,
     timeoutSeconds: p.timeoutSeconds,
     failureThreshold: p.failureThreshold,
-    successThreshold: p.successThreshold,
+    successThreshold: p.successThreshold
   };
 }
 
 function stateToProbe(s: ProbeState): Probe | undefined {
   if (s.type === "none") return undefined;
   return {
-    ...(s.type === "httpGet"
-      ? { httpGet: { path: s.httpPath, port: s.httpPort } }
-      : {}),
+    ...(s.type === "httpGet" ? { httpGet: { path: s.httpPath, port: s.httpPort } } : {}),
     ...(s.type === "exec" ? { exec: { command: s.execCommand } } : {}),
     ...(s.type === "tcpSocket" ? { tcpSocket: { port: s.tcpPort } } : {}),
-    ...(s.initialDelaySeconds != null
-      ? { initialDelaySeconds: s.initialDelaySeconds }
-      : {}),
+    ...(s.initialDelaySeconds != null ? { initialDelaySeconds: s.initialDelaySeconds } : {}),
     ...(s.periodSeconds != null ? { periodSeconds: s.periodSeconds } : {}),
     ...(s.timeoutSeconds != null ? { timeoutSeconds: s.timeoutSeconds } : {}),
-    ...(s.failureThreshold != null
-      ? { failureThreshold: s.failureThreshold }
-      : {}),
-    ...(s.successThreshold != null
-      ? { successThreshold: s.successThreshold }
-      : {}),
+    ...(s.failureThreshold != null ? { failureThreshold: s.failureThreshold } : {}),
+    ...(s.successThreshold != null ? { successThreshold: s.successThreshold } : {})
   };
 }
 
 function ProbeSection({
   label,
   state,
-  onChange,
+  onChange
 }: {
   label: string;
   state: ProbeState;
@@ -125,7 +111,7 @@ function ProbeSection({
           { label: "None", value: "none" },
           { label: "HTTP GET", value: "httpGet" },
           { label: "Exec", value: "exec" },
-          { label: "TCP Socket", value: "tcpSocket" },
+          { label: "TCP Socket", value: "tcpSocket" }
         ]}
         value={state.type}
         onChange={(v) => set({ type: (v ?? "none") as ProbeType })}
@@ -174,45 +160,35 @@ function ProbeSection({
             size="sm"
             min={0}
             value={state.initialDelaySeconds ?? ""}
-            onChange={(v) =>
-              set({ initialDelaySeconds: v !== "" ? Number(v) : undefined })
-            }
+            onChange={(v) => set({ initialDelaySeconds: v !== "" ? Number(v) : undefined })}
           />
           <NumberInput
             label="Period (s)"
             size="sm"
             min={1}
             value={state.periodSeconds ?? ""}
-            onChange={(v) =>
-              set({ periodSeconds: v !== "" ? Number(v) : undefined })
-            }
+            onChange={(v) => set({ periodSeconds: v !== "" ? Number(v) : undefined })}
           />
           <NumberInput
             label="Timeout (s)"
             size="sm"
             min={1}
             value={state.timeoutSeconds ?? ""}
-            onChange={(v) =>
-              set({ timeoutSeconds: v !== "" ? Number(v) : undefined })
-            }
+            onChange={(v) => set({ timeoutSeconds: v !== "" ? Number(v) : undefined })}
           />
           <NumberInput
             label="Failure Threshold"
             size="sm"
             min={1}
             value={state.failureThreshold ?? ""}
-            onChange={(v) =>
-              set({ failureThreshold: v !== "" ? Number(v) : undefined })
-            }
+            onChange={(v) => set({ failureThreshold: v !== "" ? Number(v) : undefined })}
           />
           <NumberInput
             label="Success Threshold"
             size="sm"
             min={1}
             value={state.successThreshold ?? ""}
-            onChange={(v) =>
-              set({ successThreshold: v !== "" ? Number(v) : undefined })
-            }
+            onChange={(v) => set({ successThreshold: v !== "" ? Number(v) : undefined })}
           />
         </SimpleGrid>
       )}
@@ -230,7 +206,7 @@ function envFromToEntries(envFrom?: EnvFrom[]): EnvFromEntry[] {
   return (envFrom ?? []).map((e) => ({
     refType: e.configMapRef ? "configMap" : "secret",
     name: (e.configMapRef || e.secretRef) ?? "",
-    prefix: e.prefix ?? "",
+    prefix: e.prefix ?? ""
   }));
 }
 
@@ -238,53 +214,49 @@ function entriesToEnvFrom(entries: EnvFromEntry[]): EnvFrom[] {
   return entries
     .filter((e) => e.name.trim())
     .map((e) => ({
-      ...(e.refType === "configMap"
-        ? { configMapRef: e.name }
-        : { secretRef: e.name }),
-      ...(e.prefix.trim() ? { prefix: e.prefix } : {}),
+      ...(e.refType === "configMap" ? { configMapRef: e.name } : { secretRef: e.name }),
+      ...(e.prefix.trim() ? { prefix: e.prefix } : {})
     }));
 }
 
 function recordToPairs(record?: Record<string, string>): KeyValuePair[] {
-  return record
-    ? Object.entries(record).map(([key, value]) => ({ key, value }))
-    : [];
+  return record ? Object.entries(record).map(([key, value]) => ({ key, value })) : [];
 }
 
 const DNS_POLICY_OPTIONS: { label: string; value: DNSPolicy }[] = [
   { label: "ClusterFirst", value: "ClusterFirst" },
   { label: "ClusterFirst + HostNet", value: "ClusterFirstWithHostNet" },
   { label: "Default", value: "Default" },
-  { label: "None", value: "None" },
+  { label: "None", value: "None" }
 ];
 
 const PULL_POLICY_OPTIONS: { label: string; value: ImagePullPolicy }[] = [
   { label: "IfNotPresent", value: "IfNotPresent" },
   { label: "Always", value: "Always" },
-  { label: "Never", value: "Never" },
+  { label: "Never", value: "Never" }
 ];
 
 const PROTOCOL_OPTIONS = ["TCP", "UDP", "SCTP"].map((v) => ({
   label: v,
-  value: v,
+  value: v
 }));
 
 const TOLERATION_OPERATOR_OPTIONS = [
   { label: "Equal", value: "Equal" },
-  { label: "Exists", value: "Exists" },
+  { label: "Exists", value: "Exists" }
 ];
 
 const TOLERATION_EFFECT_OPTIONS = [
   { label: "NoSchedule", value: "NoSchedule" },
   { label: "PreferNoSchedule", value: "PreferNoSchedule" },
-  { label: "NoExecute", value: "NoExecute" },
+  { label: "NoExecute", value: "NoExecute" }
 ];
 
 export function DeploymentManifestForm({
   formId,
   onSubmit,
   registerGetPayload,
-  defaultPayload,
+  defaultPayload
 }: {
   formId?: string;
   onSubmit?: (payload: CreateDeploymentRequest) => void;
@@ -308,52 +280,48 @@ export function DeploymentManifestForm({
     (fn: (() => KeyValuePair[]) | null) => {
       labelsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
   const registerAnnotations = useCallback(
     (fn: (() => KeyValuePair[]) | null) => {
       annotationsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
   const registerEnvVars = useCallback(
     (fn: (() => KeyValuePair[]) | null) => {
       envVarsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
   const registerNodeSelect = useCallback(
     (fn: (() => KeyValuePair[]) | null) => {
       nodeSelectGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
   const [ports, setPorts] = useState<ContainerPort[]>(
-    () => d?.ports ?? [{ containerPort: 80, protocol: "TCP" }],
+    () => d?.ports ?? [{ containerPort: 80, protocol: "TCP" }]
   );
   const [envFromEntries, setEnvFromEntries] = useState<EnvFromEntry[]>(() =>
-    envFromToEntries(d?.envFrom),
+    envFromToEntries(d?.envFrom)
   );
-  const [tolerations, setTolerations] = useState<Toleration[]>(
-    () => d?.tolerations ?? [],
-  );
+  const [tolerations, setTolerations] = useState<Toleration[]>(() => d?.tolerations ?? []);
   const [livenessState, setLivenessState] = useState<ProbeState>(() =>
-    probeToState(d?.livenessProbe),
+    probeToState(d?.livenessProbe)
   );
   const [readinessState, setReadinessState] = useState<ProbeState>(() =>
-    probeToState(d?.readinessProbe),
+    probeToState(d?.readinessProbe)
   );
-  const [startupState, setStartupState] = useState<ProbeState>(() =>
-    probeToState(d?.startupProbe),
-  );
+  const [startupState, setStartupState] = useState<ProbeState>(() => probeToState(d?.startupProbe));
   const [pairErrors, setPairErrors] = useState<{
     labels?: string;
     annotations?: string;
   }>({});
 
-  const [strategyType, setStrategyType] = useState<
-    "RollingUpdate" | "Recreate"
-  >(d?.strategy?.type ?? "RollingUpdate");
+  const [strategyType, setStrategyType] = useState<"RollingUpdate" | "Recreate">(
+    d?.strategy?.type ?? "RollingUpdate"
+  );
 
   const form = useForm({
     mode: "uncontrolled",
@@ -375,37 +343,30 @@ export function DeploymentManifestForm({
       serviceAccount: d?.serviceAccount ?? "",
       nodeName: d?.nodeName ?? "",
       dnsPolicy: d?.dnsPolicy as DNSPolicy | undefined,
-      terminationGracePeriodSeconds: d?.terminationGracePeriodSeconds as
-        | number
-        | undefined,
+      terminationGracePeriodSeconds: d?.terminationGracePeriodSeconds as number | undefined,
       priorityClassName: d?.priorityClassName ?? "",
       runtimeClassName: d?.runtimeClassName ?? "",
       requestsCpu: d?.resources?.requests?.cpu ?? "",
       requestsMemory: d?.resources?.requests?.memory ?? "",
       limitsCpu: d?.resources?.limits?.cpu ?? "",
       limitsMemory: d?.resources?.limits?.memory ?? "",
-      cscRunAsUser: d?.containerSecurityContext?.runAsUser as
-        | number
-        | undefined,
-      cscRunAsGroup: d?.containerSecurityContext?.runAsGroup as
-        | number
-        | undefined,
+      cscRunAsUser: d?.containerSecurityContext?.runAsUser as number | undefined,
+      cscRunAsGroup: d?.containerSecurityContext?.runAsGroup as number | undefined,
       cscRunAsNonRoot: d?.containerSecurityContext?.runAsNonRoot ?? false,
       cscReadOnly: d?.containerSecurityContext?.readOnlyRootFilesystem ?? false,
-      cscNoPrivEsc:
-        d?.containerSecurityContext?.allowPrivilegeEscalation === false,
+      cscNoPrivEsc: d?.containerSecurityContext?.allowPrivilegeEscalation === false,
       cscPrivileged: d?.containerSecurityContext?.privileged ?? false,
       pscRunAsUser: d?.podSecurityContext?.runAsUser as number | undefined,
       pscRunAsGroup: d?.podSecurityContext?.runAsGroup as number | undefined,
       pscRunAsNonRoot: d?.podSecurityContext?.runAsNonRoot ?? false,
-      pscFsGroup: d?.podSecurityContext?.fsGroup as number | undefined,
+      pscFsGroup: d?.podSecurityContext?.fsGroup as number | undefined
     },
     validate: (values) => {
       const errors: Record<string, string> = {};
       if (!values.name.trim()) errors.name = "Name is required";
       if (!values.image.trim()) errors.image = "Image is required";
       return errors;
-    },
+    }
   });
 
   function buildPayload(): CreateDeploymentRequest {
@@ -419,7 +380,7 @@ export function DeploymentManifestForm({
       name: v.name,
       namespace: v.namespace,
       image: v.image,
-      replicas: v.replicas,
+      replicas: v.replicas
     };
 
     if (labels) payload.labels = labels;
@@ -443,12 +404,12 @@ export function DeploymentManifestForm({
       if (reqCpu || reqMem)
         payload.resources.requests = {
           ...(reqCpu ? { cpu: reqCpu } : {}),
-          ...(reqMem ? { memory: reqMem } : {}),
+          ...(reqMem ? { memory: reqMem } : {})
         };
       if (limCpu || limMem)
         payload.resources.limits = {
           ...(limCpu ? { cpu: limCpu } : {}),
-          ...(limMem ? { memory: limMem } : {}),
+          ...(limMem ? { memory: limMem } : {})
         };
     }
 
@@ -462,27 +423,22 @@ export function DeploymentManifestForm({
     payload.strategy = { type: strategyType };
     if (strategyType === "RollingUpdate") {
       if (v.maxSurge.trim()) payload.strategy.maxSurge = v.maxSurge;
-      if (v.maxUnavailable.trim())
-        payload.strategy.maxUnavailable = v.maxUnavailable;
+      if (v.maxUnavailable.trim()) payload.strategy.maxUnavailable = v.maxUnavailable;
     }
     if (v.minReadySeconds != null) payload.minReadySeconds = v.minReadySeconds;
-    if (v.revisionHistoryLimit != null)
-      payload.revisionHistoryLimit = v.revisionHistoryLimit;
+    if (v.revisionHistoryLimit != null) payload.revisionHistoryLimit = v.revisionHistoryLimit;
     if (v.progressDeadlineSeconds != null)
       payload.progressDeadlineSeconds = v.progressDeadlineSeconds;
 
     if (v.serviceAccount.trim()) payload.serviceAccount = v.serviceAccount;
-    if (v.imagePullSecrets.length)
-      payload.imagePullSecrets = v.imagePullSecrets;
+    if (v.imagePullSecrets.length) payload.imagePullSecrets = v.imagePullSecrets;
     if (v.nodeName.trim()) payload.nodeName = v.nodeName;
     if (nodeSelector) payload.nodeSelector = nodeSelector;
     if (v.dnsPolicy) payload.dnsPolicy = v.dnsPolicy;
     if (v.terminationGracePeriodSeconds != null)
       payload.terminationGracePeriodSeconds = v.terminationGracePeriodSeconds;
-    if (v.priorityClassName.trim())
-      payload.priorityClassName = v.priorityClassName;
-    if (v.runtimeClassName.trim())
-      payload.runtimeClassName = v.runtimeClassName;
+    if (v.priorityClassName.trim()) payload.priorityClassName = v.priorityClassName;
+    if (v.runtimeClassName.trim()) payload.runtimeClassName = v.runtimeClassName;
 
     if (
       v.cscRunAsUser != null ||
@@ -498,7 +454,7 @@ export function DeploymentManifestForm({
         ...(v.cscRunAsNonRoot ? { runAsNonRoot: true } : {}),
         ...(v.cscReadOnly ? { readOnlyRootFilesystem: true } : {}),
         ...(v.cscNoPrivEsc ? { allowPrivilegeEscalation: false } : {}),
-        ...(v.cscPrivileged ? { privileged: true } : {}),
+        ...(v.cscPrivileged ? { privileged: true } : {})
       };
     }
 
@@ -512,13 +468,11 @@ export function DeploymentManifestForm({
         ...(v.pscRunAsUser != null ? { runAsUser: v.pscRunAsUser } : {}),
         ...(v.pscRunAsGroup != null ? { runAsGroup: v.pscRunAsGroup } : {}),
         ...(v.pscRunAsNonRoot ? { runAsNonRoot: true } : {}),
-        ...(v.pscFsGroup != null ? { fsGroup: v.pscFsGroup } : {}),
+        ...(v.pscFsGroup != null ? { fsGroup: v.pscFsGroup } : {})
       };
     }
 
-    const validTolerations = tolerations.filter(
-      (t) => t.key || t.operator === "Exists",
-    );
+    const validTolerations = tolerations.filter((t) => t.key || t.operator === "Exists");
     if (validTolerations.length) payload.tolerations = validTolerations;
 
     return payload;
@@ -536,10 +490,7 @@ export function DeploymentManifestForm({
     e.preventDefault();
     const formResult = form.validate();
     const labelsError = validatePairs(labelsGetter.current(), "Labels");
-    const annotationsError = validatePairs(
-      annotationsGetter.current(),
-      "Annotations",
-    );
+    const annotationsError = validatePairs(annotationsGetter.current(), "Annotations");
     if (formResult.hasErrors || labelsError || annotationsError) {
       setPairErrors({ labels: labelsError, annotations: annotationsError });
       return;
@@ -552,7 +503,7 @@ export function DeploymentManifestForm({
     <Box component="form" id={formId} onSubmit={handleSubmit} px="lg" py="md">
       <Stack gap="md">
         <MetadataFields
-          form={form as any}
+          form={form as UseFormReturnType<{ name: string; namespace: string }>}
           initialLabels={initialLabels}
           initialAnnotations={initialAnnotations}
           registerLabels={registerLabels}
@@ -598,10 +549,7 @@ export function DeploymentManifestForm({
                   label={
                     <>
                       Command{" "}
-                      <IconInfoCircle
-                        size={13}
-                        style={{ verticalAlign: "middle", opacity: 0.6 }}
-                      />
+                      <IconInfoCircle size={13} style={{ verticalAlign: "middle", opacity: 0.6 }} />
                     </>
                   }
                   placeholder="Add token, press Enter"
@@ -619,10 +567,7 @@ export function DeploymentManifestForm({
                   label={
                     <>
                       Args{" "}
-                      <IconInfoCircle
-                        size={13}
-                        style={{ verticalAlign: "middle", opacity: 0.6 }}
-                      />
+                      <IconInfoCircle size={13} style={{ verticalAlign: "middle", opacity: 0.6 }} />
                     </>
                   }
                   placeholder="Add token, press Enter"
@@ -645,10 +590,7 @@ export function DeploymentManifestForm({
                 leftSection={<IconPlus size={14} />}
                 type="button"
                 onClick={() =>
-                  setPorts((prev) => [
-                    ...prev,
-                    { containerPort: 80, protocol: "TCP" },
-                  ])
+                  setPorts((prev) => [...prev, { containerPort: 80, protocol: "TCP" }])
                 }
               >
                 Add Port
@@ -665,10 +607,8 @@ export function DeploymentManifestForm({
                   onChange={(v) =>
                     setPorts((prev) =>
                       prev.map((p, idx) =>
-                        idx === i
-                          ? { ...p, containerPort: Number(v) || 80 }
-                          : p,
-                      ),
+                        idx === i ? { ...p, containerPort: Number(v) || 80 } : p
+                      )
                     )
                   }
                 />
@@ -683,11 +623,10 @@ export function DeploymentManifestForm({
                         idx === i
                           ? {
                               ...p,
-                              protocol: (v ??
-                                "TCP") as ContainerPort["protocol"],
+                              protocol: (v ?? "TCP") as ContainerPort["protocol"]
                             }
-                          : p,
-                      ),
+                          : p
+                      )
                     )
                   }
                 />
@@ -699,10 +638,8 @@ export function DeploymentManifestForm({
                   onChange={(e) =>
                     setPorts((prev) =>
                       prev.map((p, idx) =>
-                        idx === i
-                          ? { ...p, name: e.currentTarget.value || undefined }
-                          : p,
-                      ),
+                        idx === i ? { ...p, name: e.currentTarget.value || undefined } : p
+                      )
                     )
                   }
                 />
@@ -711,9 +648,7 @@ export function DeploymentManifestForm({
                   variant="subtle"
                   type="button"
                   mb={i === 0 ? 2 : 0}
-                  onClick={() =>
-                    setPorts((prev) => prev.filter((_, idx) => idx !== i))
-                  }
+                  onClick={() => setPorts((prev) => prev.filter((_, idx) => idx !== i))}
                 >
                   <IconTrash size={16} />
                 </ActionIcon>
@@ -756,7 +691,7 @@ export function DeploymentManifestForm({
                 onClick={() =>
                   setEnvFromEntries((prev) => [
                     ...prev,
-                    { refType: "configMap", name: "", prefix: "" },
+                    { refType: "configMap", name: "", prefix: "" }
                   ])
                 }
               >
@@ -769,7 +704,7 @@ export function DeploymentManifestForm({
                   label={i === 0 ? "Type" : undefined}
                   data={[
                     { label: "ConfigMap", value: "configMap" },
-                    { label: "Secret", value: "secret" },
+                    { label: "Secret", value: "secret" }
                   ]}
                   style={{ flex: 1 }}
                   value={entry.refType}
@@ -779,11 +714,10 @@ export function DeploymentManifestForm({
                         idx === i
                           ? {
                               ...e,
-                              refType: (v ??
-                                "configMap") as EnvFromEntry["refType"],
+                              refType: (v ?? "configMap") as EnvFromEntry["refType"]
                             }
-                          : e,
-                      ),
+                          : e
+                      )
                     )
                   }
                 />
@@ -795,8 +729,8 @@ export function DeploymentManifestForm({
                   onChange={(e) =>
                     setEnvFromEntries((prev) =>
                       prev.map((en, idx) =>
-                        idx === i ? { ...en, name: e.currentTarget.value } : en,
-                      ),
+                        idx === i ? { ...en, name: e.currentTarget.value } : en
+                      )
                     )
                   }
                 />
@@ -808,10 +742,8 @@ export function DeploymentManifestForm({
                   onChange={(e) =>
                     setEnvFromEntries((prev) =>
                       prev.map((en, idx) =>
-                        idx === i
-                          ? { ...en, prefix: e.currentTarget.value }
-                          : en,
-                      ),
+                        idx === i ? { ...en, prefix: e.currentTarget.value } : en
+                      )
                     )
                   }
                 />
@@ -820,11 +752,7 @@ export function DeploymentManifestForm({
                   variant="subtle"
                   type="button"
                   mb={i === 0 ? 2 : 0}
-                  onClick={() =>
-                    setEnvFromEntries((prev) =>
-                      prev.filter((_, idx) => idx !== i),
-                    )
-                  }
+                  onClick={() => setEnvFromEntries((prev) => prev.filter((_, idx) => idx !== i))}
                 >
                   <IconTrash size={16} />
                 </ActionIcon>
@@ -874,21 +802,9 @@ export function DeploymentManifestForm({
           <Stack gap="md">
             <Text fw={600}>Probes</Text>
             <SimpleGrid cols={{ base: 3, sm: 3 }}>
-              <ProbeSection
-                label="Liveness"
-                state={livenessState}
-                onChange={setLivenessState}
-              />
-              <ProbeSection
-                label="Readiness"
-                state={readinessState}
-                onChange={setReadinessState}
-              />
-              <ProbeSection
-                label="Startup"
-                state={startupState}
-                onChange={setStartupState}
-              />
+              <ProbeSection label="Liveness" state={livenessState} onChange={setLivenessState} />
+              <ProbeSection label="Readiness" state={readinessState} onChange={setReadinessState} />
+              <ProbeSection label="Startup" state={startupState} onChange={setStartupState} />
             </SimpleGrid>
           </Stack>
         </Paper>
@@ -908,13 +824,11 @@ export function DeploymentManifestForm({
                 label="Strategy"
                 data={[
                   { label: "RollingUpdate", value: "RollingUpdate" },
-                  { label: "Recreate", value: "Recreate" },
+                  { label: "Recreate", value: "Recreate" }
                 ]}
                 value={strategyType}
                 onChange={(v) =>
-                  setStrategyType(
-                    (v ?? "RollingUpdate") as "RollingUpdate" | "Recreate",
-                  )
+                  setStrategyType((v ?? "RollingUpdate") as "RollingUpdate" | "Recreate")
                 }
               />
             </SimpleGrid>
@@ -1103,9 +1017,7 @@ export function DeploymentManifestForm({
                 variant="light"
                 leftSection={<IconPlus size={14} />}
                 type="button"
-                onClick={() =>
-                  setTolerations((prev) => [...prev, { operator: "Equal" }])
-                }
+                onClick={() => setTolerations((prev) => [...prev, { operator: "Equal" }])}
               >
                 Add Toleration
               </Button>
@@ -1120,10 +1032,8 @@ export function DeploymentManifestForm({
                   onChange={(e) =>
                     setTolerations((prev) =>
                       prev.map((t, idx) =>
-                        idx === i
-                          ? { ...t, key: e.currentTarget.value || undefined }
-                          : t,
-                      ),
+                        idx === i ? { ...t, key: e.currentTarget.value || undefined } : t
+                      )
                     )
                   }
                 />
@@ -1138,11 +1048,10 @@ export function DeploymentManifestForm({
                         idx === i
                           ? {
                               ...t,
-                              operator: (v ??
-                                "Equal") as Toleration["operator"],
+                              operator: (v ?? "Equal") as Toleration["operator"]
                             }
-                          : t,
-                      ),
+                          : t
+                      )
                     )
                   }
                 />
@@ -1155,10 +1064,8 @@ export function DeploymentManifestForm({
                   onChange={(e) =>
                     setTolerations((prev) =>
                       prev.map((t, idx) =>
-                        idx === i
-                          ? { ...t, value: e.currentTarget.value || undefined }
-                          : t,
-                      ),
+                        idx === i ? { ...t, value: e.currentTarget.value || undefined } : t
+                      )
                     )
                   }
                 />
@@ -1175,10 +1082,10 @@ export function DeploymentManifestForm({
                         idx === i
                           ? {
                               ...t,
-                              effect: (v ?? undefined) as Toleration["effect"],
+                              effect: (v ?? undefined) as Toleration["effect"]
                             }
-                          : t,
-                      ),
+                          : t
+                      )
                     )
                   }
                 />
@@ -1187,9 +1094,7 @@ export function DeploymentManifestForm({
                   variant="subtle"
                   type="button"
                   mb={i === 0 ? 2 : 0}
-                  onClick={() =>
-                    setTolerations((prev) => prev.filter((_, idx) => idx !== i))
-                  }
+                  onClick={() => setTolerations((prev) => prev.filter((_, idx) => idx !== i))}
                 >
                   <IconTrash size={16} />
                 </ActionIcon>

@@ -2,18 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, NumberInput, Paper, Stack, Text, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import type { CreatePodRequest } from "@src/types";
-import {
-  type KeyValuePair,
-  pairsToRecord,
-  validatePairs,
-} from "./KeyValuePairsField";
+import { type KeyValuePair, pairsToRecord, validatePairs } from "./KeyValuePairsField";
 import { MetadataFields } from "./MetadataFields";
 
 export function PodManifestForm({
   formId,
   onSubmit,
   registerGetPayload,
-  defaultPayload,
+  defaultPayload
 }: {
   formId?: string;
   onSubmit?: (payload: CreatePodRequest) => void;
@@ -28,13 +24,13 @@ export function PodManifestForm({
     (fn: (() => KeyValuePair[]) | null) => {
       labelsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
   const registerAnnotations = useCallback(
     (fn: (() => KeyValuePair[]) | null) => {
       annotationsGetter.current = fn ?? emptyPairs;
     },
-    [emptyPairs],
+    [emptyPairs]
   );
 
   const [pairErrors, setPairErrors] = useState<{
@@ -49,7 +45,7 @@ export function PodManifestForm({
       namespace: defaultPayload?.namespace ?? "default",
       containers: defaultPayload?.containers?.length
         ? defaultPayload.containers
-        : [{ name: "main", image: "", ports: [{ containerPort: 80 }] }],
+        : [{ name: "main", image: "", ports: [{ containerPort: 80 }] }]
     },
     validate: (values) => {
       const errors: Partial<Record<string, string>> = {};
@@ -57,13 +53,13 @@ export function PodManifestForm({
       if (!values.containers?.[0]?.image?.trim())
         errors["containers.0.image"] = "Image is required";
       return errors;
-    },
+    }
   });
 
   const buildPayload = (): CreatePodRequest => ({
     ...form.getValues(),
     labels: pairsToRecord(labelsGetter.current()),
-    annotations: pairsToRecord(annotationsGetter.current()),
+    annotations: pairsToRecord(annotationsGetter.current())
   });
 
   const buildPayloadRef = useRef(buildPayload);
@@ -87,7 +83,7 @@ export function PodManifestForm({
     onSubmit?.({
       ...form.getValues(),
       labels: pairsToRecord(labelsGetter.current()),
-      annotations: pairsToRecord(annotationsGetter.current()),
+      annotations: pairsToRecord(annotationsGetter.current())
     });
   };
 
@@ -96,12 +92,16 @@ export function PodManifestForm({
       <Stack gap="md">
         <MetadataFields
           form={form}
-          initialLabels={defaultPayload?.labels
-            ? Object.entries(defaultPayload.labels).map(([key, value]) => ({ key, value }))
-            : undefined}
-          initialAnnotations={defaultPayload?.annotations
-            ? Object.entries(defaultPayload.annotations).map(([key, value]) => ({ key, value }))
-            : undefined}
+          initialLabels={
+            defaultPayload?.labels
+              ? Object.entries(defaultPayload.labels).map(([key, value]) => ({ key, value }))
+              : undefined
+          }
+          initialAnnotations={
+            defaultPayload?.annotations
+              ? Object.entries(defaultPayload.annotations).map(([key, value]) => ({ key, value }))
+              : undefined
+          }
           registerLabels={registerLabels}
           registerAnnotations={registerAnnotations}
           labelError={pairErrors.labels}

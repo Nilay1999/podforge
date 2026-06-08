@@ -1,0 +1,14 @@
+server:
+  port: "8080"
+  log_level: info   # debug | info | warn | error
+  env: development  # development | production
+
+kubernetes:
+  # Path to your kubeconfig file.
+  # Defaults to ~/.kube/config when omitted.
+  kubeconfig: ""
+
+  # kubectl context to use. Leave empty to use the current active context.
+  # Set this to the EKS context name for an external cluster, e.g.:
+  #   context: arn:aws:eks:us-east-1:123456789012:cluster/my-cluster
+  context: ""

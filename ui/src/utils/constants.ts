@@ -4,5 +4,5 @@ export const DEFAULT_NAMESPACES = [
   "kube-public",
   "production",
   "staging",
-  "monitoring",
+  "monitoring"
 ];

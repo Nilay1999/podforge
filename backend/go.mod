@@ -1,4 +1,4 @@
-module github.com/nilay/k8s-orchestrator/backend
+module github.com/podforge/backend
 
 go 1.25.5
 
@@ -9,6 +9,7 @@ require (
 	k8s.io/api v0.35.3
 	k8s.io/apimachinery v0.35.3
 	k8s.io/client-go v0.35.3
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -70,5 +71,4 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )

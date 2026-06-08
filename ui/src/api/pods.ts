@@ -1,11 +1,5 @@
 import { apiClient } from "./client";
-import type {
-  CreatePodRequest,
-  MutationResponse,
-  Pod,
-  PodList,
-  PodOverview,
-} from "@src/types";
+import type { CreatePodRequest, MutationResponse, Pod, PodList, PodOverview } from "@src/types";
 
 export const listPods = (namespace: string) =>
   apiClient.get<PodList>(`/pod/${namespace}`).then((r) => r.data);
@@ -16,21 +10,11 @@ export const getPod = (namespace: string, name: string) =>
 export const createPod = (payload: CreatePodRequest) =>
   apiClient.post<MutationResponse>(`/pod/`, payload).then((r) => r.data);
 
-export const updatePod = (
-  namespace: string,
-  name: string,
-  payload: CreatePodRequest,
-) =>
-  apiClient
-    .put<MutationResponse>(`/pod/${namespace}/${name}`, payload)
-    .then((r) => r.data);
+export const updatePod = (namespace: string, name: string, payload: CreatePodRequest) =>
+  apiClient.put<MutationResponse>(`/pod/${namespace}/${name}`, payload).then((r) => r.data);
 
 export const deletePod = (namespace: string, name: string) =>
-  apiClient
-    .delete<MutationResponse>(`/pod/${namespace}/${name}`)
-    .then((r) => r.data);
+  apiClient.delete<MutationResponse>(`/pod/${namespace}/${name}`).then((r) => r.data);
 
 export const getPodOverview = (namespace: string, name: string) =>
-  apiClient
-    .get<PodOverview>(`/pod/${namespace}/${name}/overview`)
-    .then((r) => r.data);
+  apiClient.get<PodOverview>(`/pod/${namespace}/${name}/overview`).then((r) => r.data);

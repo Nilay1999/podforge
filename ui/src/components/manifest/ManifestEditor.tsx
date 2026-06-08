@@ -10,8 +10,7 @@ interface ManifestEditorProps {
 
 export function ManifestEditor({ value, onChange }: ManifestEditorProps) {
   const { colorScheme } = useMantineColorScheme();
-  const editorTheme =
-    colorScheme === "dark" ? appEditorThemeDark : appEditorThemeLight;
+  const editorTheme = colorScheme === "dark" ? appEditorThemeDark : appEditorThemeLight;
 
   return (
     <CodeMirror
@@ -25,7 +24,7 @@ export function ManifestEditor({ value, onChange }: ManifestEditorProps) {
         lineNumbers: true,
         foldGutter: true,
         autocompletion: true,
-        highlightActiveLine: true,
+        highlightActiveLine: true
       }}
     />
   );

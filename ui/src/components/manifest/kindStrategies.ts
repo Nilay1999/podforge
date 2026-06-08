@@ -2,13 +2,112 @@ import type {
   CreateConfigMapRequest,
   CreateDeploymentRequest,
   CreatePodRequest,
-  ResourceKind,
+  CreateServiceRequest,
+  CreateSecretRequest,
+  ResourceKind
 } from "@src/types";
 
 export type AnyPayload =
   | CreateConfigMapRequest
   | CreateDeploymentRequest
-  | CreatePodRequest;
+  | CreatePodRequest
+  | CreateServiceRequest
+  | CreateSecretRequest;
+
+// Typed shapes for raw parsed YAML/manifest objects — avoids `any` in fromManifest functions.
+interface RawMeta {
+  name?: string;
+  namespace?: string;
+  labels?: Record<string, string>;
+  annotations?: Record<string, string>;
+}
+interface RawEnvVar {
+  name?: string;
+  value?: string;
+}
+interface RawEnvFrom {
+  configMapRef?: { name?: string };
+  secretRef?: { name?: string };
+  prefix?: string;
+}
+interface RawContainer {
+  image?: string;
+  imagePullPolicy?: string;
+  command?: string[];
+  args?: string[];
+  workingDir?: string;
+  ports?: unknown[];
+  env?: RawEnvVar[];
+  envFrom?: RawEnvFrom[];
+  resources?: unknown;
+  livenessProbe?: unknown;
+  readinessProbe?: unknown;
+  startupProbe?: unknown;
+  securityContext?: unknown;
+}
+interface RawPodSpec {
+  containers?: RawContainer[];
+  serviceAccountName?: string;
+  imagePullSecrets?: Array<{ name?: string }>;
+  nodeSelector?: Record<string, string>;
+  nodeName?: string;
+  tolerations?: unknown[];
+  dnsPolicy?: string;
+  terminationGracePeriodSeconds?: number;
+  priorityClassName?: string;
+  runtimeClassName?: string;
+  securityContext?: unknown;
+}
+interface RawConfigMap {
+  metadata?: RawMeta;
+  data?: Record<string, string>;
+  binaryData?: Record<string, string>;
+  immutable?: boolean;
+}
+interface RawDeployment {
+  metadata?: RawMeta;
+  spec?: {
+    replicas?: number;
+    template?: { spec?: RawPodSpec };
+    strategy?: {
+      type?: string;
+      rollingUpdate?: { maxSurge?: string; maxUnavailable?: string };
+    };
+    minReadySeconds?: number;
+    revisionHistoryLimit?: number;
+    progressDeadlineSeconds?: number;
+  };
+}
+interface RawPod {
+  metadata?: RawMeta;
+  spec?: { containers?: unknown[]; restartPolicy?: string; serviceAccountName?: string };
+}
+interface RawServicePort {
+  name?: string;
+  protocol?: string;
+  port?: number;
+  targetPort?: string | number;
+  nodePort?: number;
+}
+interface RawService {
+  metadata?: RawMeta;
+  spec?: {
+    type?: string;
+    clusterIP?: string;
+    selector?: Record<string, string>;
+    ports?: RawServicePort[];
+    externalName?: string;
+    externalIPs?: string[];
+    sessionAffinity?: string;
+    externalTrafficPolicy?: string;
+  };
+}
+interface RawSecret {
+  metadata?: RawMeta;
+  type?: string;
+  data?: Record<string, string>;
+  immutable?: boolean;
+}
 
 export interface KindStrategy {
   initialPayload: AnyPayload;
@@ -19,26 +118,24 @@ export interface KindStrategy {
 function configMapToManifest(p: CreateConfigMapRequest): object {
   const metadata: Record<string, unknown> = {
     name: p.name || "",
-    namespace: p.namespace || "default",
+    namespace: p.namespace || "default"
   };
   if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
-  if (p.annotations && Object.keys(p.annotations).length)
-    metadata.annotations = p.annotations;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
 
   const manifest: Record<string, unknown> = {
     apiVersion: "v1",
     kind: "ConfigMap",
-    metadata,
+    metadata
   };
   if (p.data && Object.keys(p.data).length) manifest.data = p.data;
-  if (p.binaryData && Object.keys(p.binaryData).length)
-    manifest.binaryData = p.binaryData;
+  if (p.binaryData && Object.keys(p.binaryData).length) manifest.binaryData = p.binaryData;
   if (p.immutable) manifest.immutable = p.immutable;
   return manifest;
 }
 
 function configMapFromManifest(raw: unknown): CreateConfigMapRequest {
-  const m = raw as Record<string, any>;
+  const m = raw as RawConfigMap;
   return {
     name: m?.metadata?.name ?? "",
     namespace: m?.metadata?.namespace ?? "default",
@@ -46,22 +143,21 @@ function configMapFromManifest(raw: unknown): CreateConfigMapRequest {
     annotations: m?.metadata?.annotations,
     data: m?.data,
     binaryData: m?.binaryData,
-    immutable: m?.immutable,
+    immutable: m?.immutable
   };
 }
 
 function deploymentToManifest(p: CreateDeploymentRequest): object {
   const metadata: Record<string, unknown> = {
     name: p.name || "",
-    namespace: p.namespace || "default",
+    namespace: p.namespace || "default"
   };
   if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
-  if (p.annotations && Object.keys(p.annotations).length)
-    metadata.annotations = p.annotations;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
 
   const container: Record<string, unknown> = {
     name: p.name || "app",
-    image: p.image || "",
+    image: p.image || ""
   };
   if (p.imagePullPolicy) container.imagePullPolicy = p.imagePullPolicy;
   if (p.command?.length) container.command = p.command;
@@ -71,27 +167,25 @@ function deploymentToManifest(p: CreateDeploymentRequest): object {
   if (p.envVars && Object.keys(p.envVars).length)
     container.env = Object.entries(p.envVars).map(([name, value]) => ({
       name,
-      value,
+      value
     }));
   if (p.envFrom?.length)
     container.envFrom = p.envFrom.map((e) => ({
       ...(e.configMapRef ? { configMapRef: { name: e.configMapRef } } : {}),
       ...(e.secretRef ? { secretRef: { name: e.secretRef } } : {}),
-      ...(e.prefix ? { prefix: e.prefix } : {}),
+      ...(e.prefix ? { prefix: e.prefix } : {})
     }));
   if (p.resources) container.resources = p.resources;
   if (p.livenessProbe) container.livenessProbe = p.livenessProbe;
   if (p.readinessProbe) container.readinessProbe = p.readinessProbe;
   if (p.startupProbe) container.startupProbe = p.startupProbe;
-  if (p.containerSecurityContext)
-    container.securityContext = p.containerSecurityContext;
+  if (p.containerSecurityContext) container.securityContext = p.containerSecurityContext;
 
   const podSpec: Record<string, unknown> = { containers: [container] };
   if (p.serviceAccount) podSpec.serviceAccountName = p.serviceAccount;
   if (p.imagePullSecrets?.length)
     podSpec.imagePullSecrets = p.imagePullSecrets.map((s) => ({ name: s }));
-  if (p.nodeSelector && Object.keys(p.nodeSelector).length)
-    podSpec.nodeSelector = p.nodeSelector;
+  if (p.nodeSelector && Object.keys(p.nodeSelector).length) podSpec.nodeSelector = p.nodeSelector;
   if (p.nodeName) podSpec.nodeName = p.nodeName;
   if (p.tolerations?.length) podSpec.tolerations = p.tolerations;
   if (p.dnsPolicy) podSpec.dnsPolicy = p.dnsPolicy;
@@ -104,7 +198,7 @@ function deploymentToManifest(p: CreateDeploymentRequest): object {
   const spec: Record<string, unknown> = {
     replicas: p.replicas ?? 1,
     selector: { matchLabels: p.labels ?? {} },
-    template: { metadata: { labels: p.labels ?? {} }, spec: podSpec },
+    template: { metadata: { labels: p.labels ?? {} }, spec: podSpec }
   };
   if (p.strategy?.type) {
     spec.strategy = {
@@ -113,40 +207,36 @@ function deploymentToManifest(p: CreateDeploymentRequest): object {
         ? {
             rollingUpdate: {
               ...(p.strategy.maxSurge ? { maxSurge: p.strategy.maxSurge } : {}),
-              ...(p.strategy.maxUnavailable
-                ? { maxUnavailable: p.strategy.maxUnavailable }
-                : {}),
-            },
+              ...(p.strategy.maxUnavailable ? { maxUnavailable: p.strategy.maxUnavailable } : {})
+            }
           }
-        : {}),
+        : {})
     };
   }
   if (p.minReadySeconds) spec.minReadySeconds = p.minReadySeconds;
-  if (p.revisionHistoryLimit != null)
-    spec.revisionHistoryLimit = p.revisionHistoryLimit;
-  if (p.progressDeadlineSeconds)
-    spec.progressDeadlineSeconds = p.progressDeadlineSeconds;
+  if (p.revisionHistoryLimit != null) spec.revisionHistoryLimit = p.revisionHistoryLimit;
+  if (p.progressDeadlineSeconds) spec.progressDeadlineSeconds = p.progressDeadlineSeconds;
 
   return { apiVersion: "apps/v1", kind: "Deployment", metadata, spec };
 }
 
 function deploymentFromManifest(raw: unknown): CreateDeploymentRequest {
-  const m = raw as Record<string, any>;
+  const m = raw as RawDeployment;
   const podSpec = m?.spec?.template?.spec ?? {};
   const container = podSpec?.containers?.[0] ?? {};
   const rollingUpdate = m?.spec?.strategy?.rollingUpdate ?? {};
 
   const envVars: Record<string, string> | undefined = container.env?.length
-    ? Object.fromEntries(container.env.map((e: any) => [e.name, e.value ?? ""]))
+    ? Object.fromEntries(container.env.map((e: RawEnvVar) => [e.name, e.value ?? ""]))
     : undefined;
 
-  const envFrom = container.envFrom?.map((e: any) => ({
+  const envFrom = container.envFrom?.map((e: RawEnvFrom) => ({
     ...(e.configMapRef ? { configMapRef: e.configMapRef.name } : {}),
     ...(e.secretRef ? { secretRef: e.secretRef.name } : {}),
-    ...(e.prefix ? { prefix: e.prefix } : {}),
+    ...(e.prefix ? { prefix: e.prefix } : {})
   }));
 
-  const imagePullSecrets = podSpec.imagePullSecrets?.map((s: any) => s.name);
+  const imagePullSecrets = podSpec.imagePullSecrets?.map((s: { name?: string }) => s.name);
 
   return {
     name: m?.metadata?.name ?? "",
@@ -181,40 +271,37 @@ function deploymentFromManifest(raw: unknown): CreateDeploymentRequest {
       ? {
           type: m.spec.strategy.type,
           maxSurge: rollingUpdate.maxSurge,
-          maxUnavailable: rollingUpdate.maxUnavailable,
+          maxUnavailable: rollingUpdate.maxUnavailable
         }
       : undefined,
     minReadySeconds: m?.spec?.minReadySeconds,
     revisionHistoryLimit: m?.spec?.revisionHistoryLimit,
-    progressDeadlineSeconds: m?.spec?.progressDeadlineSeconds,
+    progressDeadlineSeconds: m?.spec?.progressDeadlineSeconds
   };
 }
 
 function podToManifest(p: CreatePodRequest): object {
   const metadata: Record<string, unknown> = {
     name: p.name || "",
-    namespace: p.namespace || "default",
+    namespace: p.namespace || "default"
   };
   if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
-  if (p.annotations && Object.keys(p.annotations).length)
-    metadata.annotations = p.annotations;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
 
   return {
     apiVersion: "v1",
     kind: "Pod",
     metadata,
     spec: {
-      containers: p.containers?.length
-        ? p.containers
-        : [{ name: p.name || "app", image: "" }],
+      containers: p.containers?.length ? p.containers : [{ name: p.name || "app", image: "" }],
       ...(p.restartPolicy ? { restartPolicy: p.restartPolicy } : {}),
-      ...(p.serviceAccount ? { serviceAccountName: p.serviceAccount } : {}),
-    },
+      ...(p.serviceAccount ? { serviceAccountName: p.serviceAccount } : {})
+    }
   };
 }
 
 function podFromManifest(raw: unknown): CreatePodRequest {
-  const m = raw as Record<string, any>;
+  const m = raw as RawPod;
   return {
     name: m?.metadata?.name ?? "",
     namespace: m?.metadata?.namespace ?? "default",
@@ -222,7 +309,88 @@ function podFromManifest(raw: unknown): CreatePodRequest {
     annotations: m?.metadata?.annotations,
     containers: m?.spec?.containers ?? [],
     restartPolicy: m?.spec?.restartPolicy,
-    serviceAccount: m?.spec?.serviceAccountName,
+    serviceAccount: m?.spec?.serviceAccountName
+  };
+}
+
+function serviceToManifest(p: CreateServiceRequest): object {
+  const metadata: Record<string, unknown> = {
+    name: p.name || "",
+    namespace: p.namespace || "default"
+  };
+  if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
+
+  const spec: Record<string, unknown> = {};
+  if (p.type) spec.type = p.type;
+  if (p.selector && Object.keys(p.selector).length) spec.selector = p.selector;
+  if (p.ports?.length)
+    spec.ports = p.ports.map((port) => ({
+      ...(port.name ? { name: port.name } : {}),
+      protocol: port.protocol ?? "TCP",
+      port: port.port,
+      targetPort: isNaN(Number(port.targetPort)) ? port.targetPort : Number(port.targetPort),
+      ...(port.nodePort ? { nodePort: port.nodePort } : {})
+    }));
+  if (p.clusterIP) spec.clusterIP = p.clusterIP;
+  if (p.externalName) spec.externalName = p.externalName;
+  if (p.externalIPs?.length) spec.externalIPs = p.externalIPs;
+  if (p.sessionAffinity) spec.sessionAffinity = p.sessionAffinity;
+  if (p.externalTrafficPolicy) spec.externalTrafficPolicy = p.externalTrafficPolicy;
+
+  return { apiVersion: "v1", kind: "Service", metadata, spec };
+}
+
+function serviceFromManifest(raw: unknown): CreateServiceRequest {
+  const m = raw as RawService;
+  return {
+    name: m?.metadata?.name ?? "",
+    namespace: m?.metadata?.namespace ?? "default",
+    labels: m?.metadata?.labels,
+    annotations: m?.metadata?.annotations,
+    type: m?.spec?.type,
+    selector: m?.spec?.selector,
+    ports: m?.spec?.ports?.map((p) => ({
+      ...(p.name ? { name: p.name } : {}),
+      protocol: p.protocol,
+      port: p.port ?? 0,
+      targetPort: String(p.targetPort ?? p.port ?? ""),
+      ...(p.nodePort ? { nodePort: p.nodePort } : {})
+    })),
+    clusterIP: m?.spec?.clusterIP,
+    externalName: m?.spec?.externalName,
+    externalIPs: m?.spec?.externalIPs,
+    sessionAffinity: m?.spec?.sessionAffinity,
+    externalTrafficPolicy: m?.spec?.externalTrafficPolicy
+  };
+}
+
+function secretToManifest(p: CreateSecretRequest): object {
+  const metadata: Record<string, unknown> = {
+    name: p.name || "",
+    namespace: p.namespace || "default"
+  };
+  if (p.labels && Object.keys(p.labels).length) metadata.labels = p.labels;
+  if (p.annotations && Object.keys(p.annotations).length) metadata.annotations = p.annotations;
+
+  const manifest: Record<string, unknown> = { apiVersion: "v1", kind: "Secret", metadata };
+  if (p.type) manifest.type = p.type;
+  if (p.stringData && Object.keys(p.stringData).length) manifest.stringData = p.stringData;
+  if (p.immutable) manifest.immutable = p.immutable;
+  return manifest;
+}
+
+function secretFromManifest(raw: unknown): CreateSecretRequest {
+  const m = raw as RawSecret;
+  return {
+    name: m?.metadata?.name ?? "",
+    namespace: m?.metadata?.namespace ?? "default",
+    labels: m?.metadata?.labels,
+    annotations: m?.metadata?.annotations,
+    type: m?.type,
+    // API returns data values as [REDACTED]; expose empty stringData for editing
+    stringData: undefined,
+    immutable: m?.immutable
   };
 }
 
@@ -230,16 +398,26 @@ export const KIND_STRATEGIES: Record<ResourceKind, KindStrategy> = {
   ConfigMap: {
     initialPayload: { name: "", namespace: "default" },
     toManifest: configMapToManifest as KindStrategy["toManifest"],
-    fromManifest: configMapFromManifest,
+    fromManifest: configMapFromManifest
   },
   Deployment: {
     initialPayload: { name: "", namespace: "default", image: "", replicas: 1 },
     toManifest: deploymentToManifest as KindStrategy["toManifest"],
-    fromManifest: deploymentFromManifest,
+    fromManifest: deploymentFromManifest
   },
   Pod: {
     initialPayload: { name: "", namespace: "default", containers: [] },
     toManifest: podToManifest as KindStrategy["toManifest"],
-    fromManifest: podFromManifest,
+    fromManifest: podFromManifest
   },
+  Service: {
+    initialPayload: { name: "", namespace: "default", type: "ClusterIP" },
+    toManifest: serviceToManifest as KindStrategy["toManifest"],
+    fromManifest: serviceFromManifest
+  },
+  Secret: {
+    initialPayload: { name: "", namespace: "default", type: "Opaque" },
+    toManifest: secretToManifest as KindStrategy["toManifest"],
+    fromManifest: secretFromManifest
+  }
 };

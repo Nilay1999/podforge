@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -27,5 +28,15 @@ func NewLogService(clientset *kubernetes.Clientset) LogService {
 }
 
 func (s *logService) Stream(ctx context.Context, namespace, pod string, opts LogStreamOptions) (io.ReadCloser, error) {
-	return nil, nil
+	logOpts := &corev1.PodLogOptions{
+		Follow:   opts.Follow,
+		Previous: opts.Previous,
+	}
+	if opts.Container != "" {
+		logOpts.Container = opts.Container
+	}
+	if opts.TailLines != nil {
+		logOpts.TailLines = opts.TailLines
+	}
+	return s.clientset.CoreV1().Pods(namespace).GetLogs(pod, logOpts).Stream(ctx)
 }

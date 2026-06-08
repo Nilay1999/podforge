@@ -10,7 +10,7 @@ import {
   ThemeIcon,
   Title,
   Button,
-  Badge,
+  Badge
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -22,7 +22,7 @@ import {
   IconRocket,
   IconServer,
   IconAlertTriangle,
-  IconInfoCircle,
+  IconInfoCircle
 } from "@tabler/icons-react";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
 import type { ResourceKind } from "@src/types";
@@ -44,7 +44,7 @@ interface ClusterEvent {
 function PhaseDonut({
   running,
   pending,
-  failed,
+  failed
 }: {
   running: number;
   pending: number;
@@ -63,18 +63,13 @@ function PhaseDonut({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          flexShrink: 0,
+          flexShrink: 0
         }}
       >
         <Text fw={700} fz={22} lh={1}>
           0
         </Text>
-        <Text
-          fz={10}
-          c="dimmed"
-          tt="uppercase"
-          style={{ letterSpacing: "0.06em", marginTop: 3 }}
-        >
+        <Text fz={10} c="dimmed" tt="uppercase" style={{ letterSpacing: "0.06em", marginTop: 3 }}>
           pods
         </Text>
       </div>
@@ -88,12 +83,8 @@ function PhaseDonut({
     var(--mantine-color-danger-5) ${rPct + pPct}% 100%
   )`;
   return (
-    <div
-      style={{ position: "relative", width: 110, height: 110, flexShrink: 0 }}
-    >
-      <div
-        style={{ width: 110, height: 110, borderRadius: "50%", background: bg }}
-      />
+    <div style={{ position: "relative", width: 110, height: 110, flexShrink: 0 }}>
+      <div style={{ width: 110, height: 110, borderRadius: "50%", background: bg }} />
       <div
         style={{
           position: "absolute",
@@ -103,18 +94,13 @@ function PhaseDonut({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "center"
         }}
       >
         <Text fw={700} fz={22} lh={1}>
           {total}
         </Text>
-        <Text
-          fz={10}
-          c="dimmed"
-          tt="uppercase"
-          style={{ letterSpacing: "0.06em", marginTop: 3 }}
-        >
+        <Text fz={10} c="dimmed" tt="uppercase" style={{ letterSpacing: "0.06em", marginTop: 3 }}>
           pods
         </Text>
       </div>
@@ -126,7 +112,7 @@ function SummaryCard({
   icon: Icon,
   label,
   count,
-  color = "steelBlue",
+  color = "steelBlue"
 }: {
   icon: React.ComponentType<{ size?: number }>;
   label: string;
@@ -136,23 +122,11 @@ function SummaryCard({
   return (
     <Paper withBorder p="md" radius="md">
       <Group align="center" gap="md" wrap="nowrap">
-        <ThemeIcon
-          size={40}
-          variant="light"
-          color={color}
-          radius="md"
-          style={{ flexShrink: 0 }}
-        >
+        <ThemeIcon size={40} variant="light" color={color} radius="md" style={{ flexShrink: 0 }}>
           <Icon size={22} />
         </ThemeIcon>
         <Box>
-          <Text
-            size="xs"
-            c="dimmed"
-            tt="uppercase"
-            fw={700}
-            style={{ letterSpacing: "0.06em" }}
-          >
+          <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: "0.06em" }}>
             {label}
           </Text>
           <Text size="xl" fw={700} lh={1}>
@@ -184,9 +158,7 @@ function EventsFeed({ events }: { events: ClusterEvent[] }) {
             align="flex-start"
             style={{
               borderBottom:
-                i < events.length - 1
-                  ? "1px solid var(--mantine-color-default-border)"
-                  : "none",
+                i < events.length - 1 ? "1px solid var(--mantine-color-default-border)" : "none"
             }}
           >
             <Box
@@ -195,20 +167,14 @@ function EventsFeed({ events }: { events: ClusterEvent[] }) {
                 height: 26,
                 borderRadius: 6,
                 background: "var(--mantine-color-default-hover)",
-                color: isWarning
-                  ? "var(--mantine-color-warning-5)"
-                  : "var(--mantine-color-dimmed)",
+                color: isWarning ? "var(--mantine-color-warning-5)" : "var(--mantine-color-dimmed)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                flexShrink: 0,
+                flexShrink: 0
               }}
             >
-              {isWarning ? (
-                <IconAlertTriangle size={14} />
-              ) : (
-                <IconInfoCircle size={14} />
-              )}
+              {isWarning ? <IconAlertTriangle size={14} /> : <IconInfoCircle size={14} />}
             </Box>
             <Box style={{ flex: 1, minWidth: 0 }}>
               <Text size="sm" lh={1.4}>
@@ -240,8 +206,7 @@ function EventsFeed({ events }: { events: ClusterEvent[] }) {
 export function DashboardPage() {
   const [namespace, setNamespace] = useState("default");
   const [drawerKind, setDrawerKind] = useState<ResourceKind>("Deployment");
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
-    useDisclosure(false);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [clusterEvents, setClusterEvents] = useState<ClusterEvent[]>([]);
 
   const { data: pods } = usePods(namespace);
@@ -252,7 +217,7 @@ export function DashboardPage() {
   const podCounts = {
     running: podItems.filter((p) => p.status?.phase === "Running").length,
     pending: podItems.filter((p) => p.status?.phase === "Pending").length,
-    failed: podItems.filter((p) => p.status?.phase === "Failed").length,
+    failed: podItems.filter((p) => p.status?.phase === "Failed").length
   };
 
   useEffect(() => {
@@ -262,12 +227,14 @@ export function DashboardPage() {
       try {
         const event = JSON.parse(e.data) as ClusterEvent;
         setClusterEvents((prev) => [event, ...prev].slice(0, 20));
-      } catch {}
+      } catch {
+        // ignore malformed SSE data
+      }
     };
 
     es.onmessage = handler;
     ["warning", "normal", "Warning", "Normal"].forEach((type) =>
-      es.addEventListener(type, handler),
+      es.addEventListener(type, handler)
     );
     es.onerror = () => es.close();
 
@@ -281,11 +248,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <ManifestDrawer
-        opened={drawerOpened}
-        onClose={closeDrawer}
-        kind={drawerKind}
-      />
+      <ManifestDrawer opened={drawerOpened} onClose={closeDrawer} kind={drawerKind} />
 
       <Stack gap="lg">
         <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
@@ -336,36 +299,21 @@ export function DashboardPage() {
           <SummaryCard
             icon={IconRocket}
             label="Deployments"
-            count={deployments?.items.length ?? "–"}
+            count={deployments?.items.length ?? "0"}
             color="steelBlue"
           />
-          <SummaryCard
-            icon={IconBox}
-            label="Pods"
-            count={podItems.length || "–"}
-            color="success"
-          />
+          <SummaryCard icon={IconBox} label="Pods" count={podItems.length || "0"} color="success" />
           <SummaryCard
             icon={IconFileText}
             label="ConfigMaps"
-            count={configMaps?.items.length ?? "–"}
+            count={configMaps?.items.length ?? "0"}
             color="gray"
           />
-          <SummaryCard
-            icon={IconServer}
-            label="Services"
-            count="–"
-            color="gray"
-          />
+          <SummaryCard icon={IconServer} label="Services" count="0" color="gray" />
         </SimpleGrid>
 
         <Box style={{ maxWidth: 260 }}>
-          <SummaryCard
-            icon={IconCube}
-            label="Nodes"
-            count="–"
-            color="success"
-          />
+          <SummaryCard icon={IconCube} label="Nodes" count="0" color="success" />
         </Box>
 
         <SimpleGrid cols={{ base: 1, md: 2 }}>
@@ -391,18 +339,18 @@ export function DashboardPage() {
                   {
                     label: "Running",
                     count: podCounts.running,
-                    color: "var(--mantine-color-success-5)",
+                    color: "var(--mantine-color-success-5)"
                   },
                   {
                     label: "Pending",
                     count: podCounts.pending,
-                    color: "var(--mantine-color-warning-5)",
+                    color: "var(--mantine-color-warning-5)"
                   },
                   {
                     label: "Failed",
                     count: podCounts.failed,
-                    color: "var(--mantine-color-danger-5)",
-                  },
+                    color: "var(--mantine-color-danger-5)"
+                  }
                 ].map(({ label, count, color }) => (
                   <Group key={label} gap="xs">
                     <div
@@ -411,7 +359,7 @@ export function DashboardPage() {
                         height: 8,
                         borderRadius: 2,
                         background: color,
-                        flexShrink: 0,
+                        flexShrink: 0
                       }}
                     />
                     <Text size="sm" style={{ flex: 1 }}>

@@ -14,7 +14,7 @@ import type {
   Toleration,
   TopologySpreadConstraint,
   Volume,
-  VolumeMount,
+  VolumeMount
 } from "./shared";
 
 export interface DeploymentStrategy {

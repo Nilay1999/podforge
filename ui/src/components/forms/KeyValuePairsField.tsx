@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  ActionIcon,
-  Button,
-  Group,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { ActionIcon, Button, Group, Stack, Text, TextInput } from "@mantine/core";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 
 export type KeyValuePair = { key: string; value: string };
@@ -41,7 +34,7 @@ export function KeyValuePairsField({
   onChange,
   error,
   keyPlaceholder = "key",
-  valuePlaceholder = "value",
+  valuePlaceholder = "value"
 }: {
   label: string;
   description?: string;
@@ -88,12 +81,7 @@ export function KeyValuePairsField({
       ) : (
         <Stack gap="xs">
           {pairs.map((pair, index) => (
-            <Group
-              key={`${label}-${index}`}
-              align="flex-end"
-              gap="xs"
-              wrap="nowrap"
-            >
+            <Group key={`${label}-${index}`} align="flex-end" gap="xs" wrap="nowrap">
               <TextInput
                 label={index === 0 ? "Key" : undefined}
                 placeholder={keyPlaceholder}
@@ -101,9 +89,7 @@ export function KeyValuePairsField({
                 value={pair.key}
                 onChange={(e) => {
                   onChange(
-                    pairs.map((p, i) =>
-                      i === index ? { ...p, key: e.currentTarget.value } : p,
-                    ),
+                    pairs.map((p, i) => (i === index ? { ...p, key: e.currentTarget.value } : p))
                   );
                 }}
               />
@@ -114,9 +100,7 @@ export function KeyValuePairsField({
                 value={pair.value}
                 onChange={(e) => {
                   onChange(
-                    pairs.map((p, i) =>
-                      i === index ? { ...p, value: e.currentTarget.value } : p,
-                    ),
+                    pairs.map((p, i) => (i === index ? { ...p, value: e.currentTarget.value } : p))
                   );
                 }}
               />
@@ -145,7 +129,7 @@ export function UncontrolledKeyValuePairs({
   register,
   error,
   keyPlaceholder,
-  valuePlaceholder,
+  valuePlaceholder
 }: {
   label: string;
   description?: string;

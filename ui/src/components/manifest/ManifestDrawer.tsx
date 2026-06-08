@@ -8,15 +8,18 @@ import {
   Stack,
   Tabs,
   Text,
-  ThemeIcon,
+  ThemeIcon
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconCode, IconForms, IconX } from "@tabler/icons-react";
+import { IconBook, IconCode, IconForms, IconX } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
 import type { ResourceKind } from "@src/types";
 import { useCreateConfigMap } from "@src/hooks/useConfigMaps";
 import { useCreateDeployment } from "@src/hooks/useDeployments";
 import { useCreatePod } from "@src/hooks/usePods";
+import { useCreateService } from "@src/hooks/useServices";
+import { useCreateSecret } from "@src/hooks/useSecrets";
+import { FormDocs } from "@src/components/forms/FormDocs";
 import { ManifestForm } from "@src/components/forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
 import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
@@ -28,7 +31,7 @@ interface ManifestDrawerProps {
   initialPayload?: AnyPayload;
   onApply?: (
     payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
+    opts: { onSuccess: () => void; onError: (err: Error) => void }
   ) => void;
 }
 
@@ -37,7 +40,7 @@ export function ManifestDrawer({
   onClose,
   kind,
   initialPayload,
-  onApply,
+  onApply
 }: ManifestDrawerProps) {
   const formId = "manifest-drawer-form";
   const strategy = KIND_STRATEGIES[kind];
@@ -46,25 +49,35 @@ export function ManifestDrawer({
   const createConfigMap = useCreateConfigMap();
   const createDeployment = useCreateDeployment();
   const createPod = useCreatePod();
+  const createService = useCreateService();
+  const createSecret = useCreateSecret();
 
   const isPending =
     createConfigMap.isPending ||
     createDeployment.isPending ||
-    createPod.isPending;
+    createPod.isPending ||
+    createService.isPending ||
+    createSecret.isPending;
 
-  const creators = { ConfigMap: createConfigMap, Deployment: createDeployment, Pod: createPod };
+  const creators = {
+    ConfigMap: createConfigMap,
+    Deployment: createDeployment,
+    Pod: createPod,
+    Service: createService,
+    Secret: createSecret
+  };
 
   const handleCreate = (
     payload: AnyPayload,
-    opts: { onSuccess: () => void; onError: (err: Error) => void },
+    opts: { onSuccess: () => void; onError: (err: Error) => void }
   ) => {
-    creators[kind].mutate(payload as any, opts);
+    (creators[kind].mutate as (payload: AnyPayload, opts: { onSuccess: () => void; onError: (err: Error) => void }) => void)(payload, opts);
   };
 
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
   const [pendingPayload, setPendingPayload] = useState<AnyPayload>(
-    () => initialPayload ?? strategy.initialPayload,
+    () => initialPayload ?? strategy.initialPayload
   );
   const [formKey, setFormKey] = useState(0);
   const getPayloadRef = useRef<(() => AnyPayload) | null>(null);
@@ -89,7 +102,7 @@ export function ManifestDrawer({
         notifications.show({
           title: isEditMode ? `${kind} updated` : `${kind} created`,
           message: `"${(payload as { name?: string }).name}" was ${isEditMode ? "updated" : "created"} successfully.`,
-          color: "teal",
+          color: "teal"
         });
         onClose();
       },
@@ -97,9 +110,9 @@ export function ManifestDrawer({
         notifications.show({
           title: `Failed to ${isEditMode ? "update" : "create"} ${kind}`,
           message: err.message,
-          color: "red",
+          color: "red"
         });
-      },
+      }
     });
   };
 
@@ -112,7 +125,7 @@ export function ManifestDrawer({
         notifications.show({
           title: "Invalid YAML",
           message: "Fix syntax errors before applying.",
-          color: "red",
+          color: "red"
         });
         return;
       }
@@ -128,9 +141,7 @@ export function ManifestDrawer({
 
     if (tab === "yaml") {
       const payload = getPayloadRef.current?.() ?? pendingPayload;
-      setEditorValue(
-        jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }),
-      );
+      setEditorValue(jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }));
     } else if (tab === "form") {
       try {
         const parsed = jsYaml.load(editorValue);
@@ -140,7 +151,7 @@ export function ManifestDrawer({
         notifications.show({
           title: "Invalid YAML",
           message: "Fix syntax errors before switching back to the form.",
-          color: "red",
+          color: "red"
         });
         return;
       }
@@ -161,9 +172,9 @@ export function ManifestDrawer({
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          padding: 0,
+          padding: 0
         },
-        content: { display: "flex", flexDirection: "column" },
+        content: { display: "flex", flexDirection: "column" }
       }}
     >
       <Group px="lg" py="md" justify="space-between">
@@ -180,12 +191,7 @@ export function ManifestDrawer({
             </Text>
           </Stack>
         </Group>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          onClick={onClose}
-          aria-label="Close drawer"
-        >
+        <ActionIcon variant="subtle" color="gray" onClick={onClose} aria-label="Close drawer">
           <IconX size={16} />
         </ActionIcon>
       </Group>
@@ -199,10 +205,10 @@ export function ManifestDrawer({
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          overflow: "hidden"
         }}
         styles={{
-          panel: { flex: 1, overflowY: "auto" },
+          panel: { flex: 1, overflowY: "auto" }
         }}
       >
         <Tabs.List px="lg" pt="xs">
@@ -212,6 +218,9 @@ export function ManifestDrawer({
           <Tabs.Tab value="yaml" leftSection={<IconCode size={14} />}>
             YAML
           </Tabs.Tab>
+          <Tabs.Tab value="docs" leftSection={<IconBook size={14} />}>
+            Docs
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="form">
@@ -220,11 +229,7 @@ export function ManifestDrawer({
             kind={kind}
             formId={formId}
             onSubmit={(values) => applyPayload(values)}
-            registerGetPayload={
-              registerGetPayload as (
-                fn: (() => AnyPayload) | null,
-              ) => void
-            }
+            registerGetPayload={registerGetPayload as (fn: (() => AnyPayload) | null) => void}
             defaultPayload={pendingPayload}
           />
         </Tabs.Panel>
@@ -232,21 +237,25 @@ export function ManifestDrawer({
         <Tabs.Panel value="yaml" style={{ height: "100%", overflow: "hidden" }}>
           <ManifestEditor value={editorValue} onChange={setEditorValue} />
         </Tabs.Panel>
+
+        <Tabs.Panel value="docs" style={{ height: "100%", overflow: "hidden" }}>
+          <FormDocs kind={kind} />
+        </Tabs.Panel>
       </Tabs>
 
-      <Divider />
-      <Group px="lg" py="md" justify="flex-start">
-        <Button variant="subtle" color="gray" onClick={onClose} type="button">
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          onClick={handleApplyClick}
-          loading={isPending}
-        >
-          {isEditMode ? "Save changes" : "Apply"}
-        </Button>
-      </Group>
+      {activeTab !== "docs" && (
+        <>
+          <Divider />
+          <Group px="lg" py="md" justify="flex-start">
+            <Button variant="subtle" color="gray" onClick={onClose} type="button">
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleApplyClick} loading={isPending}>
+              {isEditMode ? "Save changes" : "Apply"}
+            </Button>
+          </Group>
+        </>
+      )}
     </Drawer>
   );
 }
