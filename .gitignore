@@ -44,10 +44,7 @@ kubeconfig
 *.swp
 *.swo
 .DS_Store
-.claude
-.codex
 graphify-out
-CLAUDE.md
 
 # Logs
 *.log
