@@ -83,6 +83,15 @@ deployments/           K8s manifests for Podforge itself
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/auth/login` | Local login (username/password) → JWT |
+| GET | `/api/v1/auth/me` | Current identity (username, role, provider) |
+| GET | `/api/v1/auth/providers` | Which auth providers are enabled (local/OIDC) |
+
+All other `/api/v1` routes require a Bearer token (Podforge JWT or OIDC ID token; `?token=` query param supported for SSE). Roles: `viewer` (GET), `editor` (mutations), `admin` (namespaces create/delete, bulk ops). Configured via the `auth:` section in `podforge.yaml` (see `backend/podforge.example.yaml`); `auth.enabled: false` disables auth for local dev.
+
 ### Pods
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -391,6 +400,7 @@ data: {"name": "nginx", "namespace": "default"}
 - [x] Secret endpoints (list, get, create, update, delete — values redacted)
 - [x] Dashboard endpoints (summary, pod-phases, namespace overview)
 - [x] Bulk delete and apply
+- [x] Authentication (local JWT login + OIDC token verification) and role-based authorization (viewer/editor/admin)
 - [x] SSE event stream (cluster events)
 - [x] Generic resource watch (SSE)
 - [x] Global search

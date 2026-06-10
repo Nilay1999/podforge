@@ -1,0 +1,42 @@
+# Copy to podforge.yaml (or ~/.podforge/config.yaml) and adjust.
+# Env vars override file values: PORT, LOG_LEVEL, APP_ENV, KUBECONFIG, KUBE_CONTEXT,
+# AUTH_ENABLED, AUTH_JWT_SECRET, OIDC_ISSUER, OIDC_CLIENT_ID.
+
+server:
+  port: "8080"
+  log_level: info
+  env: development
+
+kubernetes:
+  kubeconfig: ""
+  context: ""
+
+auth:
+  # Secure by default. Set to false only for local development.
+  enabled: true
+  # Lifetime of tokens issued by /api/v1/auth/login (Go duration). Default 12h.
+  token_ttl: 12h
+
+  jwt:
+    # At least 32 characters. Generate with: openssl rand -hex 32
+    secret: ""
+
+  # Local users for username/password login. Roles: viewer | editor | admin.
+  # Generate password_hash with: go run ./cmd/hashpw
+  users:
+    - username: admin
+      password_hash: "$2a$10$replace-me"
+      role: admin
+
+  # Optional OIDC: the frontend performs the Authorization Code + PKCE flow
+  # against the issuer and sends the resulting ID token as a Bearer token.
+  oidc:
+    enabled: false
+    issuer: https://accounts.google.com
+    client_id: podforge
+    username_claim: email
+    roles_claim: groups
+    role_mapping:
+      podforge-admins: admin
+      podforge-editors: editor
+    default_role: viewer

@@ -8,15 +8,73 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	"github.com/podforge/backend/internal/auth"
+	"github.com/podforge/backend/internal/config"
 	"github.com/podforge/backend/internal/handlers"
+	"github.com/podforge/backend/internal/middleware/authn"
 	"github.com/podforge/backend/internal/middleware/logger"
 	"github.com/podforge/backend/internal/services"
 )
 
-func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Config, log *zap.Logger) {
+func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *auth.OIDCVerifier, []auth.Verifier) {
+	if !cfg.Auth.Enabled {
+		log.Warn("authentication is DISABLED; every request has full cluster access")
+		return nil, nil, nil
+	}
+
+	var verifiers []auth.Verifier
+	var localAuth *auth.LocalAuthenticator
+	var oidcVerifier *auth.OIDCVerifier
+
+	if len(cfg.Auth.Users) > 0 {
+		users := make([]auth.User, 0, len(cfg.Auth.Users))
+		for _, u := range cfg.Auth.Users {
+			role, err := auth.ParseRole(u.Role)
+			if err != nil {
+				log.Fatal("Invalid auth config", zap.String("user", u.Username), zap.Error(err))
+			}
+			users = append(users, auth.User{Username: u.Username, PasswordHash: u.PasswordHash, Role: role})
+		}
+		var err error
+		localAuth, err = auth.NewLocalAuthenticator(cfg.Auth.JWTSecret, cfg.Auth.TokenTTL, users)
+		if err != nil {
+			log.Fatal("Invalid auth config", zap.Error(err))
+		}
+		verifiers = append(verifiers, localAuth)
+	}
+
+	if cfg.Auth.OIDC.Enabled {
+		roleMapping := make(map[string]auth.Role, len(cfg.Auth.OIDC.RoleMapping))
+		for group, role := range cfg.Auth.OIDC.RoleMapping {
+			roleMapping[group] = auth.Role(role)
+		}
+		var err error
+		oidcVerifier, err = auth.NewOIDCVerifier(auth.OIDCConfig{
+			Issuer:        cfg.Auth.OIDC.Issuer,
+			ClientID:      cfg.Auth.OIDC.ClientID,
+			UsernameClaim: cfg.Auth.OIDC.UsernameClaim,
+			RolesClaim:    cfg.Auth.OIDC.RolesClaim,
+			RoleMapping:   roleMapping,
+			DefaultRole:   auth.Role(cfg.Auth.OIDC.DefaultRole),
+		})
+		if err != nil {
+			log.Fatal("Invalid oidc config", zap.Error(err))
+		}
+		verifiers = append(verifiers, oidcVerifier)
+	}
+
+	if len(verifiers) == 0 {
+		log.Fatal("Auth is enabled but no providers configured; add auth.users or auth.oidc to config, or set auth.enabled: false")
+	}
+	return localAuth, oidcVerifier, verifiers
+}
+
+func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, restConfig *rest.Config, log *zap.Logger) {
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware(log))
 	r.SetTrustedProxies(nil)
+
+	localAuth, oidcVerifier, verifiers := setupAuth(cfg, log)
 
 	deploySvc := services.NewDeploymentService(clientset)
 	podSvc := services.NewPodService(clientset)
@@ -52,8 +110,21 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
+	authHandler := handlers.NewAuthHandler(localAuth, oidcVerifier, log)
+
 	v1 := r.Group("/api/v1")
 	{
+		v1.POST("/auth/login", authHandler.Login)
+		v1.GET("/auth/providers", authHandler.Providers(cfg.Auth.OIDC.Issuer, cfg.Auth.OIDC.ClientID, cfg.Auth.Enabled))
+
+		adminOnly := gin.HandlerFunc(func(c *gin.Context) { c.Next() })
+		if cfg.Auth.Enabled {
+			v1.Use(authn.Authenticate(log, verifiers...), authn.RequireMethodRole())
+			adminOnly = authn.RequireRole(auth.RoleAdmin)
+		}
+
+		v1.GET("/auth/me", authHandler.Me)
+
 		deployment := v1.Group("deployment")
 		{
 			deployment.POST("/", deploymentHandler.Create)
@@ -110,7 +181,7 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 			dashboard.GET("/pod-phases", dashboardHandler.PodPhases)
 		}
 
-		bulk := v1.Group("bulk")
+		bulk := v1.Group("bulk", adminOnly)
 		{
 			bulk.POST("/delete", bulkHandler.Delete)
 			bulk.POST("/apply", bulkHandler.Apply)
@@ -118,8 +189,8 @@ func Setup(r *gin.Engine, clientset *kubernetes.Clientset, restConfig *rest.Conf
 		namespaces := v1.Group("namespaces")
 		{
 			namespaces.GET("/", namespaceHandler.List)
-			namespaces.POST("/", namespaceHandler.Create)
-			namespaces.DELETE("/:name", namespaceHandler.Delete)
+			namespaces.POST("/", adminOnly, namespaceHandler.Create)
+			namespaces.DELETE("/:name", adminOnly, namespaceHandler.Delete)
 		}
 
 		v1.GET("/namespace/:namespace/overview", dashboardHandler.NamespaceOverview)
