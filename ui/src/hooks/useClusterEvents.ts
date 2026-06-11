@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ClusterEvent } from "@src/types";
 import { eventTimestamp } from "@src/types";
+import { sseUrl } from "@src/auth/token";
 
 const MAX_EVENTS = 500;
 
@@ -30,7 +31,7 @@ export function useClusterEvents(namespace: string, paused: boolean) {
     setEvents([]);
 
     const query = namespace ? `?namespace=${encodeURIComponent(namespace)}` : "";
-    const es = new EventSource(`/api/v1/events/stream${query}`);
+    const es = new EventSource(sseUrl(`/api/v1/events/stream${query}`));
 
     es.onopen = () => setConnected(true);
     es.onerror = () => setConnected(false);

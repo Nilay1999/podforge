@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/podforge/backend/internal/auth"
 )
@@ -17,13 +16,7 @@ func newRouter(t *testing.T, role auth.Role) (*gin.Engine, string) {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
-	hash, err := bcrypt.GenerateFromPassword([]byte("pw"), bcrypt.MinCost)
-	if err != nil {
-		t.Fatalf("hashing password: %v", err)
-	}
-	local, err := auth.NewLocalAuthenticator("0123456789abcdef0123456789abcdef", time.Hour, []auth.User{
-		{Username: "u", PasswordHash: string(hash), Role: role},
-	})
+	local, err := auth.NewLocalAuthenticator("0123456789abcdef0123456789abcdef", time.Hour, nil)
 	if err != nil {
 		t.Fatalf("NewLocalAuthenticator: %v", err)
 	}

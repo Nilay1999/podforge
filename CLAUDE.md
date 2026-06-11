@@ -55,6 +55,7 @@ backend/
     routes/            Gin router setup
     middleware/        Logger middleware
     k8s/               client-go clientset init
+    store/             User database (Postgres or SQLite)
     config/            App config
     util/              Shared utilities
 ui/
@@ -89,8 +90,14 @@ deployments/           K8s manifests for Podforge itself
 | POST | `/api/v1/auth/login` | Local login (username/password) → JWT |
 | GET | `/api/v1/auth/me` | Current identity (username, role, provider) |
 | GET | `/api/v1/auth/providers` | Which auth providers are enabled (local/OIDC) |
+| GET | `/api/v1/auth/users/` | List users (admin) |
+| POST | `/api/v1/auth/users/` | Create user (admin) |
+| PUT | `/api/v1/auth/users/:username` | Update user password/role (admin) |
+| DELETE | `/api/v1/auth/users/:username` | Delete user (admin) |
 
-All other `/api/v1` routes require a Bearer token (Podforge JWT or OIDC ID token; `?token=` query param supported for SSE). Roles: `viewer` (GET), `editor` (mutations), `admin` (namespaces create/delete, bulk ops). Configured via the `auth:` section in `podforge.yaml` (see `backend/podforge.example.yaml`); `auth.enabled: false` disables auth for local dev.
+All other `/api/v1` routes require a Bearer token (Podforge JWT or OIDC ID token; `?token=` query param supported for SSE). Roles: `viewer` (GET), `editor` (mutations), `admin` (namespaces create/delete, bulk ops, user management). Configured via the `auth:` section in `podforge.yaml` (see `backend/podforge.example.yaml`); `auth.enabled: false` disables auth for local dev.
+
+Local users live in a database (`internal/store`): PostgreSQL when `database.postgres` / `DATABASE_URL` is configured, otherwise a SQLite file (`database.sqlite.path`, default `podforge.db`). `auth.users` in config is a startup seed — inserted only if missing, never overwriting runtime changes.
 
 ### Pods
 | Method | Endpoint | Description |
@@ -152,6 +159,11 @@ All other `/api/v1` routes require a Bearer token (Podforge JWT or OIDC ID token
 |--------|----------|-------------|
 | POST | `/api/v1/bulk/delete` | Delete multiple resources |
 | POST | `/api/v1/bulk/apply` | Apply multiple resources |
+
+### YAML Apply
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/apply` | Apply raw YAML (multi-document); `dryRun: true` validates server-side without persisting |
 
 ### Real-Time Streaming (SSE)
 | Method | Endpoint | Description |
@@ -404,10 +416,10 @@ data: {"name": "nginx", "namespace": "default"}
 - [x] SSE event stream (cluster events)
 - [x] Generic resource watch (SSE)
 - [x] Global search
-- [ ] Namespace CRUD endpoints
-- [ ] Deployment scale endpoint
-- [ ] Deployment restart (rollout) endpoint
-- [ ] YAML validate + apply endpoints (`apply_service.go` stub exists; handler + route not wired)
+- [x] Namespace CRUD endpoints
+- [x] Deployment scale endpoint
+- [x] Deployment restart (rollout) endpoint
+- [x] YAML validate + apply endpoint (`POST /api/v1/apply` — multi-document, `dryRun` server-side validation)
 - [ ] Prometheus metrics endpoint
 
 ### Frontend
@@ -421,15 +433,16 @@ data: {"name": "nginx", "namespace": "default"}
 - [x] ManifestDrawer with Monaco YAML editor
 - [x] Form-based manifest creation (Pod, Deployment, ConfigMap)
 - [x] Shared ResourceListPage and ResourcePageHeader components
-- [ ] Services list page + form
-- [ ] Secrets list page + form
-- [ ] Namespaces management page
-- [ ] Deployment detail drawer (scale slider, restart, ReplicaSet timeline)
-- [ ] Log viewer enhancements — follow toggle, container selector, tail-N, search/filter, download
+- [x] Services list page + form
+- [x] Secrets list page + form
+- [x] Namespaces management page
+- [x] Deployment detail drawer (scale, restart, ReplicaSet timeline)
+- [x] Log viewer enhancements — follow toggle, container selector, tail-N, search/filter, download
 - [x] SSE integration — live status badges + connection health across all list pages
 - [x] Cluster Events page (live stream from `/events/stream`, severity colouring, filters)
+- [x] Auth integration — login page (local + OIDC PKCE), Bearer interceptor, `?token=` on SSE, 401 → login redirect, user menu with logout
 - [ ] Global search UI (command palette)
-- [ ] YAML apply from editor
+- [x] YAML apply from editor (Apply YAML drawer in header — validate via dry-run + apply)
 
 ---
 
@@ -441,16 +454,16 @@ data: {"name": "nginx", "namespace": "default"}
 Goal: every resource kind has a working list + create + detail flow in the UI.
 
 **Backend** (Services, Secrets, Dashboard, Bulk, SSE, Search are 100% complete)
-- [ ] Namespace CRUD endpoints (`GET/POST/DELETE /api/v1/namespace/`)
-- [ ] Deployment scale (`PUT /api/v1/deployment/:namespace/:name/scale`)
-- [ ] Deployment restart (`POST /api/v1/deployment/:namespace/:name/restart`)
-- [ ] Wire YAML apply endpoint (`apply_service.go` stub exists; needs handler + route)
+- [x] Namespace CRUD endpoints (`GET/POST/DELETE /api/v1/namespaces/`)
+- [x] Deployment scale (`PATCH /api/v1/deployment/:namespace/:name/scale`)
+- [x] Deployment restart (`POST /api/v1/deployment/:namespace/:name/restart`)
+- [x] Wire YAML apply endpoint (`POST /api/v1/apply`)
 
 **Frontend**
-- [ ] Services page: list table + `ServiceManifestForm` + API client (`api/services.ts`) + hooks (`hooks/useServices.ts`)
-- [ ] Secrets page: list table (values masked) + `SecretManifestForm` + reveal-on-click for base64 values
-- [ ] Namespaces page: list + create + delete with resource count badge
-- [ ] Deployment detail drawer: scale slider, restart button, ReplicaSet history timeline
+- [x] Services page: list table + `ServiceManifestForm` + API client (`api/services.ts`) + hooks (`hooks/useServices.ts`)
+- [x] Secrets page: list table (values masked) + `SecretManifestForm` + reveal-on-click for base64 values
+- [x] Namespaces page: list + create + delete with resource count badge
+- [x] Deployment detail drawer: scale, restart button, ReplicaSet history timeline
 
 ### Phase 2 — Live Cluster Awareness
 Goal: UI reflects real-time cluster state without manual refresh.
@@ -465,18 +478,18 @@ Goal: first-class log experience comparable to `kubectl logs`.
 
 Backend already supports `?follow=true`, `?tail=N`, `?container=name`, `?previous=true` on the log stream endpoint. `PodDetailDrawer` has a basic streaming log tab (SSE, auto-scroll, 500-line buffer). Phase 3 enhances it:
 
-- [ ] Follow-mode toggle button (switches `?follow=true`; re-opens EventSource on toggle)
-- [ ] Container selector dropdown (populated from `pod.spec.containers`; passes `?container=name`)
-- [ ] Tail-N selector — 50 / 200 / 1000 / all (passes `?tail=N`; re-opens EventSource on change)
-- [ ] Line-level search / filter (client-side; highlights matching lines, hides non-matching)
-- [ ] Download logs as `.log` file (client-side Blob from buffered line array)
-- [ ] Previous container logs toggle (`?previous=true`)
+- [x] Follow-mode toggle button (switches `?follow=true`; re-opens EventSource on toggle)
+- [x] Container selector dropdown (populated from `pod.spec.containers`; passes `?container=name`)
+- [x] Tail-N selector — 50 / 200 / 1000 / all (passes `?tail=N`; re-opens EventSource on change)
+- [x] Line-level search / filter (client-side; hides non-matching lines)
+- [x] Download logs as `.log` file (client-side Blob from buffered line array)
+- [x] Previous container logs toggle (`?previous=true`)
 
 ### Phase 4 — YAML Workflow
 Goal: power users can paste and apply raw YAML without forms.
 
-- [ ] "Apply YAML" button opens Monaco editor in full-width drawer
-- [ ] Backend validates YAML against K8s OpenAPI schema before applying
+- [x] "Apply YAML" button in header opens editor drawer (validate + apply, multi-document)
+- [x] Backend validates YAML via server-side dry-run before applying
 - [ ] Diff view: current resource YAML vs. proposed change (read-only left pane)
 - [ ] Download current resource YAML as `.yaml` file
 

@@ -1,6 +1,6 @@
 # Copy to podforge.yaml (or ~/.podforge/config.yaml) and adjust.
 # Env vars override file values: PORT, LOG_LEVEL, APP_ENV, KUBECONFIG, KUBE_CONTEXT,
-# AUTH_ENABLED, AUTH_JWT_SECRET, OIDC_ISSUER, OIDC_CLIENT_ID.
+# AUTH_ENABLED, AUTH_JWT_SECRET, OIDC_ISSUER, OIDC_CLIENT_ID, DATABASE_URL, SQLITE_PATH.
 
 server:
   port: "8080"
@@ -10,6 +10,21 @@ server:
 kubernetes:
   kubeconfig: ""
   context: ""
+
+# User storage. If postgres is configured (dsn, or host + friends), it is used;
+# otherwise Podforge falls back to a local SQLite file. No setup needed for SQLite.
+database:
+  postgres:
+    dsn: ""              # e.g. postgres://podforge:secret@db:5432/podforge?sslmode=disable
+    # ...or discrete fields instead of dsn:
+    host: ""
+    port: "5432"
+    user: ""
+    password: ""
+    dbname: ""
+    sslmode: disable
+  sqlite:
+    path: podforge.db
 
 auth:
   # Secure by default. Set to false only for local development.
@@ -21,7 +36,9 @@ auth:
     # At least 32 characters. Generate with: openssl rand -hex 32
     secret: ""
 
-  # Local users for username/password login. Roles: viewer | editor | admin.
+  # Seed users for username/password login. Roles: viewer | editor | admin.
+  # Inserted into the database on startup only if they don't exist yet; runtime
+  # changes (via POST/PUT /api/v1/auth/users) are never overwritten by seeding.
   # Generate password_hash with: go run ./cmd/hashpw
   users:
     - username: admin

@@ -8,55 +8,60 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/podforge/backend/internal/store"
 )
 
 var ErrInvalidCredentials = errors.New("invalid username or password")
 
-type User struct {
-	Username     string
-	PasswordHash string
-	Role         Role
+type UserStore interface {
+	GetUser(ctx context.Context, username string) (*store.User, error)
 }
 
 type LocalAuthenticator struct {
 	secret    []byte
 	tokenTTL  time.Duration
-	users     map[string]User
+	users     UserStore
 	dummyHash []byte
 }
 
-func NewLocalAuthenticator(secret string, tokenTTL time.Duration, users []User) (*LocalAuthenticator, error) {
+func NewLocalAuthenticator(secret string, tokenTTL time.Duration, users UserStore) (*LocalAuthenticator, error) {
 	if len(secret) < 32 {
 		return nil, fmt.Errorf("jwt secret must be at least 32 characters, got %d", len(secret))
-	}
-	byName := make(map[string]User, len(users))
-	for _, u := range users {
-		if u.Username == "" || u.PasswordHash == "" {
-			return nil, fmt.Errorf("user entry missing username or password_hash")
-		}
-		if !u.Role.AtLeast(RoleViewer) {
-			return nil, fmt.Errorf("user %q has invalid role %q", u.Username, u.Role)
-		}
-		byName[u.Username] = u
 	}
 	dummyHash, err := bcrypt.GenerateFromPassword([]byte("podforge-dummy"), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("generating dummy hash: %w", err)
 	}
-	return &LocalAuthenticator{secret: []byte(secret), tokenTTL: tokenTTL, users: byName, dummyHash: dummyHash}, nil
+	return &LocalAuthenticator{secret: []byte(secret), tokenTTL: tokenTTL, users: users, dummyHash: dummyHash}, nil
 }
 
-func (a *LocalAuthenticator) Login(username, password string) (*Identity, error) {
-	u, ok := a.users[username]
-	if !ok {
-		// equalize timing so unknown usernames are indistinguishable from bad passwords
-		bcrypt.CompareHashAndPassword(a.dummyHash, []byte(password))
-		return nil, ErrInvalidCredentials
+func HashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("hashing password: %w", err)
+	}
+	return string(hash), nil
+}
+
+func (a *LocalAuthenticator) Login(ctx context.Context, username, password string) (*Identity, error) {
+	u, err := a.users.GetUser(ctx, username)
+	if err != nil {
+		if errors.Is(err, store.ErrUserNotFound) {
+			// equalize timing so unknown usernames are indistinguishable from bad passwords
+			bcrypt.CompareHashAndPassword(a.dummyHash, []byte(password))
+			return nil, ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("looking up user: %w", err)
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
-	return &Identity{Username: u.Username, Role: u.Role, Provider: "local"}, nil
+	role, err := ParseRole(u.Role)
+	if err != nil {
+		return nil, fmt.Errorf("user %s: %w", username, err)
+	}
+	return &Identity{Username: u.Username, Role: role, Provider: "local"}, nil
 }
 
 type localClaims struct {

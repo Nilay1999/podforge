@@ -3,23 +3,36 @@ package auth
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/podforge/backend/internal/store"
 )
 
 const testSecret = "0123456789abcdef0123456789abcdef"
 
 func newTestAuthenticator(t *testing.T, ttl time.Duration) *LocalAuthenticator {
 	t.Helper()
+	s, err := store.Open(context.Background(), store.Options{
+		SQLitePath: filepath.Join(t.TempDir(), "test.db"),
+	})
+	if err != nil {
+		t.Fatalf("opening store: %v", err)
+	}
+	t.Cleanup(func() { s.Close() })
+
 	hash, err := bcrypt.GenerateFromPassword([]byte("s3cret"), bcrypt.MinCost)
 	if err != nil {
 		t.Fatalf("hashing password: %v", err)
 	}
-	a, err := NewLocalAuthenticator(testSecret, ttl, []User{
-		{Username: "alice", PasswordHash: string(hash), Role: RoleAdmin},
-	})
+	if err := s.CreateUser(context.Background(), "alice", string(hash), string(RoleAdmin)); err != nil {
+		t.Fatalf("creating user: %v", err)
+	}
+
+	a, err := NewLocalAuthenticator(testSecret, ttl, s)
 	if err != nil {
 		t.Fatalf("NewLocalAuthenticator: %v", err)
 	}
@@ -32,19 +45,11 @@ func TestNewLocalAuthenticatorRejectsShortSecret(t *testing.T) {
 	}
 }
 
-func TestNewLocalAuthenticatorRejectsInvalidRole(t *testing.T) {
-	_, err := NewLocalAuthenticator(testSecret, time.Hour, []User{
-		{Username: "bob", PasswordHash: "x", Role: Role("superuser")},
-	})
-	if err == nil {
-		t.Fatal("expected error for invalid role")
-	}
-}
-
 func TestLogin(t *testing.T) {
 	a := newTestAuthenticator(t, time.Hour)
+	ctx := context.Background()
 
-	id, err := a.Login("alice", "s3cret")
+	id, err := a.Login(ctx, "alice", "s3cret")
 	if err != nil {
 		t.Fatalf("Login: %v", err)
 	}
@@ -52,10 +57,10 @@ func TestLogin(t *testing.T) {
 		t.Fatalf("unexpected identity: %+v", id)
 	}
 
-	if _, err := a.Login("alice", "wrong"); !errors.Is(err, ErrInvalidCredentials) {
+	if _, err := a.Login(ctx, "alice", "wrong"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("expected ErrInvalidCredentials, got %v", err)
 	}
-	if _, err := a.Login("mallory", "s3cret"); !errors.Is(err, ErrInvalidCredentials) {
+	if _, err := a.Login(ctx, "mallory", "s3cret"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("expected ErrInvalidCredentials for unknown user, got %v", err)
 	}
 }

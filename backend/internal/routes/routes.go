@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -14,29 +16,53 @@ import (
 	"github.com/podforge/backend/internal/middleware/authn"
 	"github.com/podforge/backend/internal/middleware/logger"
 	"github.com/podforge/backend/internal/services"
+	"github.com/podforge/backend/internal/store"
 )
 
-func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *auth.OIDCVerifier, []auth.Verifier) {
+func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *auth.OIDCVerifier, *store.Store, []auth.Verifier) {
 	if !cfg.Auth.Enabled {
 		log.Warn("authentication is DISABLED; every request has full cluster access")
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	}
 
 	var verifiers []auth.Verifier
 	var localAuth *auth.LocalAuthenticator
 	var oidcVerifier *auth.OIDCVerifier
+	var userStore *store.Store
 
-	if len(cfg.Auth.Users) > 0 {
-		users := make([]auth.User, 0, len(cfg.Auth.Users))
+	if cfg.Auth.JWTSecret != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		var err error
+		userStore, err = store.Open(ctx, store.Options{
+			PostgresDSN: cfg.Database.PostgresDSN,
+			SQLitePath:  cfg.Database.SQLitePath,
+		})
+		if err != nil {
+			log.Fatal("Failed to open user database", zap.Error(err))
+		}
+		log.Info("User database ready", zap.String("dialect", userStore.Dialect()))
+
+		seed := make([]store.User, 0, len(cfg.Auth.Users))
 		for _, u := range cfg.Auth.Users {
-			role, err := auth.ParseRole(u.Role)
-			if err != nil {
+			if _, err := auth.ParseRole(u.Role); err != nil {
 				log.Fatal("Invalid auth config", zap.String("user", u.Username), zap.Error(err))
 			}
-			users = append(users, auth.User{Username: u.Username, PasswordHash: u.PasswordHash, Role: role})
+			seed = append(seed, store.User{Username: u.Username, PasswordHash: u.PasswordHash, Role: u.Role})
 		}
-		var err error
-		localAuth, err = auth.NewLocalAuthenticator(cfg.Auth.JWTSecret, cfg.Auth.TokenTTL, users)
+		created, err := userStore.SeedUsers(ctx, seed)
+		if err != nil {
+			log.Fatal("Failed to seed users", zap.Error(err))
+		}
+		if created > 0 {
+			log.Info("Seeded users from config", zap.Int("created", created))
+		}
+		if total, err := userStore.CountUsers(ctx); err == nil && total == 0 {
+			log.Warn("User database is empty; local login will reject everyone until users are added via auth.users config or POST /api/v1/auth/users")
+		}
+
+		localAuth, err = auth.NewLocalAuthenticator(cfg.Auth.JWTSecret, cfg.Auth.TokenTTL, userStore)
 		if err != nil {
 			log.Fatal("Invalid auth config", zap.Error(err))
 		}
@@ -64,9 +90,9 @@ func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *a
 	}
 
 	if len(verifiers) == 0 {
-		log.Fatal("Auth is enabled but no providers configured; add auth.users or auth.oidc to config, or set auth.enabled: false")
+		log.Fatal("Auth is enabled but no providers configured; set auth.jwt.secret (local login) or auth.oidc, or set auth.enabled: false")
 	}
-	return localAuth, oidcVerifier, verifiers
+	return localAuth, oidcVerifier, userStore, verifiers
 }
 
 func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, restConfig *rest.Config, log *zap.Logger) {
@@ -74,7 +100,7 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 	r.Use(logger.GinMiddleware(log))
 	r.SetTrustedProxies(nil)
 
-	localAuth, oidcVerifier, verifiers := setupAuth(cfg, log)
+	localAuth, oidcVerifier, userStore, verifiers := setupAuth(cfg, log)
 
 	deploySvc := services.NewDeploymentService(clientset)
 	podSvc := services.NewPodService(clientset)
@@ -103,6 +129,7 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 	logHandler := handlers.NewLogHandler(logSvc, log)
 	watchHandler := handlers.NewWatchHandler(watchSvc, log)
 	namespaceHandler := handlers.NewNamespaceHandler(namespaceSvc, log)
+	applyHandler := handlers.NewApplyHandler(applySvc, log)
 	bulkHandler := handlers.NewBulkHandler(bulkSvc, log)
 	searchHandler := handlers.NewSearchHandler(searchSvc, log)
 
@@ -110,7 +137,7 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	authHandler := handlers.NewAuthHandler(localAuth, oidcVerifier, log)
+	authHandler := handlers.NewAuthHandler(localAuth, oidcVerifier, userStore, log)
 
 	v1 := r.Group("/api/v1")
 	{
@@ -124,6 +151,16 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 		}
 
 		v1.GET("/auth/me", authHandler.Me)
+
+		if localAuth != nil {
+			users := v1.Group("auth/users", adminOnly)
+			{
+				users.GET("/", authHandler.ListUsers)
+				users.POST("/", authHandler.CreateUser)
+				users.PUT("/:username", authHandler.UpdateUser)
+				users.DELETE("/:username", authHandler.DeleteUser)
+			}
+		}
 
 		deployment := v1.Group("deployment")
 		{
@@ -193,6 +230,7 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 			namespaces.DELETE("/:name", adminOnly, namespaceHandler.Delete)
 		}
 
+		v1.POST("/apply", applyHandler.Apply)
 		v1.GET("/namespace/:namespace/overview", dashboardHandler.NamespaceOverview)
 		v1.GET("/events/stream", watchHandler.Events)
 		v1.GET("/watch/:kind/:namespace", watchHandler.Resource)

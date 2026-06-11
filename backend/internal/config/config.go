@@ -18,6 +18,20 @@ type fileConfig struct {
 		Kubeconfig string `yaml:"kubeconfig"`
 		Context    string `yaml:"context"`
 	} `yaml:"kubernetes"`
+	Database struct {
+		Postgres struct {
+			DSN      string `yaml:"dsn"`
+			Host     string `yaml:"host"`
+			Port     string `yaml:"port"`
+			User     string `yaml:"user"`
+			Password string `yaml:"password"`
+			DBName   string `yaml:"dbname"`
+			SSLMode  string `yaml:"sslmode"`
+		} `yaml:"postgres"`
+		SQLite struct {
+			Path string `yaml:"path"`
+		} `yaml:"sqlite"`
+	} `yaml:"database"`
 	Auth struct {
 		Enabled  *bool  `yaml:"enabled"`
 		TokenTTL string `yaml:"token_ttl"`
@@ -53,6 +67,12 @@ type OIDCConfig struct {
 	DefaultRole   string
 }
 
+type DatabaseConfig struct {
+	// PostgresDSN non-empty means use Postgres; otherwise SQLite at SQLitePath.
+	PostgresDSN string
+	SQLitePath  string
+}
+
 type AuthConfig struct {
 	Enabled   bool
 	JWTSecret string
@@ -67,16 +87,20 @@ type Config struct {
 	AppEnv      string
 	Kubeconfig  string
 	KubeContext string
+	Database    DatabaseConfig
 	Auth        AuthConfig
 }
 
 func Load() Config {
 	cfg := Config{
-		Port: "8080",
-		Auth: AuthConfig{Enabled: true, TokenTTL: 12 * time.Hour},
+		Port:     "8080",
+		Database: DatabaseConfig{SQLitePath: "podforge.db"},
+		Auth:     AuthConfig{Enabled: true, TokenTTL: 12 * time.Hour},
 	}
 
 	if fc, err := loadFile(); err == nil {
+		cfg.Database.PostgresDSN = postgresDSN(fc)
+		cfg.Database.SQLitePath = orDefault(fc.Database.SQLite.Path, cfg.Database.SQLitePath)
 		cfg.Port = orDefault(fc.Server.Port, cfg.Port)
 		cfg.LogLevel = fc.Server.LogLevel
 		cfg.AppEnv = fc.Server.Env
@@ -101,6 +125,9 @@ func Load() Config {
 	cfg.Kubeconfig = orEnv("KUBECONFIG", cfg.Kubeconfig)
 	cfg.KubeContext = orEnv("KUBE_CONTEXT", cfg.KubeContext)
 
+	cfg.Database.PostgresDSN = orEnv("DATABASE_URL", cfg.Database.PostgresDSN)
+	cfg.Database.SQLitePath = orEnv("SQLITE_PATH", cfg.Database.SQLitePath)
+
 	if v := os.Getenv("AUTH_ENABLED"); v != "" {
 		cfg.Auth.Enabled = v == "true" || v == "1"
 	}
@@ -112,6 +139,29 @@ func Load() Config {
 	}
 
 	return cfg
+}
+
+func postgresDSN(fc fileConfig) string {
+	pg := fc.Database.Postgres
+	if pg.DSN != "" {
+		return pg.DSN
+	}
+	if pg.Host == "" {
+		return ""
+	}
+	dsn := "host=" + pg.Host
+	for _, kv := range [][2]string{
+		{"port", pg.Port},
+		{"user", pg.User},
+		{"password", pg.Password},
+		{"dbname", pg.DBName},
+		{"sslmode", pg.SSLMode},
+	} {
+		if kv[1] != "" {
+			dsn += " " + kv[0] + "=" + kv[1]
+		}
+	}
+	return dsn
 }
 
 func loadFile() (fileConfig, error) {
