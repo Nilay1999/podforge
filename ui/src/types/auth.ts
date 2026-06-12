@@ -20,3 +20,21 @@ export interface AuthProviders {
     clientId: string;
   };
 }
+
+export interface UserAccount {
+  username: string;
+  role: Role;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  password: string;
+  role: Role;
+}
+
+export interface UpdateUserRequest {
+  password?: string;
+  role?: Role;
+}

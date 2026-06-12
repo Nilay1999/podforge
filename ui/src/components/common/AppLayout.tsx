@@ -31,7 +31,8 @@ import {
   IconActivity,
   IconCloudUpload,
   IconLogout,
-  IconUserCircle
+  IconUserCircle,
+  IconUserShield
 } from "@tabler/icons-react";
 import { useAuth } from "@src/auth/AuthContext";
 import { ApplyYamlDrawer } from "@src/components/manifest/ApplyYamlDrawer";
@@ -58,6 +59,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { identity, logout } = useAuth();
   const [applyOpened, setApplyOpened] = useState(false);
+
+  const items =
+    identity?.role === "admin"
+      ? [...navItems, { label: "Users", icon: IconUserShield, path: "/users" }]
+      : navItems;
 
   return (
     <AppShell
@@ -200,7 +206,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </AppShell.Header>
 
       <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
-        {navItems.map((item) => (
+        {items.map((item) => (
           <NavLink
             key={item.path}
             label={item.label}

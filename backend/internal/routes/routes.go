@@ -49,6 +49,9 @@ func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *a
 			if _, err := auth.ParseRole(u.Role); err != nil {
 				log.Fatal("Invalid auth config", zap.String("user", u.Username), zap.Error(err))
 			}
+			if err := auth.ValidatePasswordHash(u.PasswordHash); err != nil {
+				log.Fatal("Invalid auth config", zap.String("user", u.Username), zap.Error(err))
+			}
 			seed = append(seed, store.User{Username: u.Username, PasswordHash: u.PasswordHash, Role: u.Role})
 		}
 		created, err := userStore.SeedUsers(ctx, seed)
@@ -76,12 +79,13 @@ func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *a
 		}
 		var err error
 		oidcVerifier, err = auth.NewOIDCVerifier(auth.OIDCConfig{
-			Issuer:        cfg.Auth.OIDC.Issuer,
-			ClientID:      cfg.Auth.OIDC.ClientID,
-			UsernameClaim: cfg.Auth.OIDC.UsernameClaim,
-			RolesClaim:    cfg.Auth.OIDC.RolesClaim,
-			RoleMapping:   roleMapping,
-			DefaultRole:   auth.Role(cfg.Auth.OIDC.DefaultRole),
+			Issuer:         cfg.Auth.OIDC.Issuer,
+			ClientID:       cfg.Auth.OIDC.ClientID,
+			UsernameClaim:  cfg.Auth.OIDC.UsernameClaim,
+			RolesClaim:     cfg.Auth.OIDC.RolesClaim,
+			RoleMapping:    roleMapping,
+			DefaultRole:    auth.Role(cfg.Auth.OIDC.DefaultRole),
+			AllowedDomains: cfg.Auth.OIDC.AllowedDomains,
 		})
 		if err != nil {
 			log.Fatal("Invalid oidc config", zap.Error(err))

@@ -65,6 +65,19 @@ func TestLogin(t *testing.T) {
 	}
 }
 
+func TestValidatePasswordHash(t *testing.T) {
+	hash, err := HashPassword("s3cret")
+	if err != nil {
+		t.Fatalf("HashPassword: %v", err)
+	}
+	if err := ValidatePasswordHash(hash); err != nil {
+		t.Fatalf("ValidatePasswordHash(valid): %v", err)
+	}
+	if err := ValidatePasswordHash("root"); err == nil {
+		t.Fatal("expected error for plaintext password")
+	}
+}
+
 func TestIssueAndVerifyToken(t *testing.T) {
 	a := newTestAuthenticator(t, time.Hour)
 

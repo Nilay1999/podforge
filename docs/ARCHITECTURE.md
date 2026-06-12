@@ -55,7 +55,7 @@ graph TB
             CB["common.go"]
         end
 
-        CFG["config.go\npodforge.yaml / env"]
+        CFG["config.go\nconfig.yaml / env"]
         K8SCLIENT["k8s/client.go\nclient-go clientset"]
     end
 
@@ -503,7 +503,7 @@ classDiagram
 flowchart TD
     START([main.go starts]) --> CFG
 
-    CFG["config.Load()\nRead podforge.yaml\n→ ~/.podforge/config.yaml\n→ env var overrides"]
+    CFG["config.Load()\nRead config.yaml\n→ ~/.podforge/config.yaml\n→ env var overrides"]
 
     CFG --> LOG["logger.New(cfg)\nZap logger init"]
     CFG --> K8S["k8s.NewClient(kubeconfig, context)\nTry in-cluster → fallback kubeconfig"]
@@ -516,7 +516,7 @@ flowchart TD
 
     subgraph Config Priority
         ENV["Env vars  HIGHEST"]
-        YAML["podforge.yaml"]
+        YAML["config.yaml"]
         HOMEYAML["~/.podforge/config.yaml"]
         DEFAULTS["Built-in defaults  LOWEST"]
         ENV --> YAML --> HOMEYAML --> DEFAULTS
@@ -529,7 +529,7 @@ flowchart TD
 
 ```mermaid
 graph TD
-    ROOT["/ (repo root)\nMakefile · turbo.json · pnpm-workspace.yaml\npodforge.yaml · bruno/"]
+    ROOT["/ (repo root)\nMakefile · turbo.json · pnpm-workspace.yaml\nconfig.yaml · bruno/"]
 
     ROOT --> BE["backend/\nGo module: github.com/podforge/backend"]
     ROOT --> UI["ui/\npnpm package: podforge-ui"]

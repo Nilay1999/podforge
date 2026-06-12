@@ -53,3 +53,62 @@ func TestResolveRole(t *testing.T) {
 		}
 	}
 }
+
+func TestGroupGatedResolveRole(t *testing.T) {
+	v, err := NewOIDCVerifier(OIDCConfig{
+		Issuer:      "https://idp",
+		ClientID:    "podforge",
+		RolesClaim:  "groups",
+		RoleMapping: map[string]Role{"podforge-users": RoleViewer},
+		// no default_role -> group-gated
+	})
+	if err != nil {
+		t.Fatalf("NewOIDCVerifier: %v", err)
+	}
+	if v.cfg.DefaultRole != "" {
+		t.Fatalf("default role = %q, want empty (group-gated)", v.cfg.DefaultRole)
+	}
+	if got := v.resolveRole(map[string]any{"groups": []any{"outsiders"}}); got != "" {
+		t.Errorf("unmapped group: resolveRole = %q, want empty (denied)", got)
+	}
+	if got := v.resolveRole(map[string]any{"groups": []any{"podforge-users"}}); got != RoleViewer {
+		t.Errorf("mapped group: resolveRole = %q, want viewer", got)
+	}
+}
+
+func TestNewOIDCVerifierAtLeastOneRolePath(t *testing.T) {
+	if _, err := NewOIDCVerifier(OIDCConfig{Issuer: "https://idp", ClientID: "podforge"}); err != nil {
+		t.Fatalf("no mapping + no default should fall back to viewer: %v", err)
+	}
+}
+
+func TestDomainAllowed(t *testing.T) {
+	v, err := NewOIDCVerifier(OIDCConfig{
+		Issuer:         "https://idp",
+		ClientID:       "podforge",
+		AllowedDomains: []string{"YourOrg.com", " example.org "},
+	})
+	if err != nil {
+		t.Fatalf("NewOIDCVerifier: %v", err)
+	}
+	cases := []struct {
+		username string
+		want     bool
+	}{
+		{"alice@yourorg.com", true},
+		{"bob@EXAMPLE.ORG", true},
+		{"eve@evil.com", false},
+		{"no-domain", false},
+		{"", false},
+	}
+	for _, tc := range cases {
+		if got := v.domainAllowed(tc.username); got != tc.want {
+			t.Errorf("domainAllowed(%q) = %v, want %v", tc.username, got, tc.want)
+		}
+	}
+
+	open, _ := NewOIDCVerifier(OIDCConfig{Issuer: "https://idp", ClientID: "podforge"})
+	if !open.domainAllowed("anyone@anywhere.test") {
+		t.Error("with no allowed domains, all domains should be permitted")
+	}
+}

@@ -2,11 +2,20 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	gooidc "github.com/coreos/go-oidc/v3/oidc"
 )
+
+// ErrAccessDenied means the token is cryptographically valid but the identity is
+// not allowed in: its email domain is not on the allowlist, or it belongs to no
+// mapped group while no default role is configured. Distinct from a verification
+// failure so callers can tell an untrusted token from a trusted-but-unauthorized
+// one.
+var ErrAccessDenied = errors.New("access denied")
 
 type OIDCConfig struct {
 	Issuer        string
@@ -14,7 +23,13 @@ type OIDCConfig struct {
 	UsernameClaim string
 	RolesClaim    string
 	RoleMapping   map[string]Role
-	DefaultRole   Role
+	// DefaultRole is granted to authenticated users who match no mapped group.
+	// When empty, such users are rejected (group-gated access): only members of
+	// a mapped group can log in.
+	DefaultRole Role
+	// AllowedDomains, when non-empty, restricts login to identities whose
+	// username/email is on one of these domains (e.g. "yourorg.com").
+	AllowedDomains []string
 }
 
 type OIDCVerifier struct {
@@ -31,10 +46,14 @@ func NewOIDCVerifier(cfg OIDCConfig) (*OIDCVerifier, error) {
 	if cfg.UsernameClaim == "" {
 		cfg.UsernameClaim = "email"
 	}
-	if cfg.DefaultRole == "" {
+	// With no role_mapping there is nothing to gate on, so an omitted default_role
+	// falls back to viewer (open access, the original behavior). When a role_mapping
+	// IS configured, leaving default_role empty turns on group-gating: only members
+	// of a mapped group are admitted; everyone else is denied.
+	if cfg.DefaultRole == "" && len(cfg.RoleMapping) == 0 {
 		cfg.DefaultRole = RoleViewer
 	}
-	if !cfg.DefaultRole.AtLeast(RoleViewer) {
+	if cfg.DefaultRole != "" && !cfg.DefaultRole.AtLeast(RoleViewer) {
 		return nil, fmt.Errorf("oidc default_role %q is invalid", cfg.DefaultRole)
 	}
 	for group, role := range cfg.RoleMapping {
@@ -42,6 +61,7 @@ func NewOIDCVerifier(cfg OIDCConfig) (*OIDCVerifier, error) {
 			return nil, fmt.Errorf("oidc role_mapping for %q has invalid role %q", group, role)
 		}
 	}
+	cfg.AllowedDomains = normalizeDomains(cfg.AllowedDomains)
 	return &OIDCVerifier{cfg: cfg}, nil
 }
 
@@ -79,9 +99,39 @@ func (v *OIDCVerifier) Verify(ctx context.Context, rawToken string) (*Identity, 
 		username = idToken.Subject
 	}
 
-	return &Identity{Username: username, Role: v.resolveRole(claims), Provider: "oidc"}, nil
+	if !v.domainAllowed(username) {
+		return nil, fmt.Errorf("%w: %q is not on an allowed domain", ErrAccessDenied, username)
+	}
+
+	role := v.resolveRole(claims)
+	if role == "" {
+		return nil, fmt.Errorf("%w: %q is not a member of any mapped group", ErrAccessDenied, username)
+	}
+
+	return &Identity{Username: username, Role: role, Provider: "oidc"}, nil
 }
 
+// domainAllowed reports whether the username/email belongs to a permitted
+// domain. With no AllowedDomains configured every domain is permitted.
+func (v *OIDCVerifier) domainAllowed(username string) bool {
+	if len(v.cfg.AllowedDomains) == 0 {
+		return true
+	}
+	at := strings.LastIndex(username, "@")
+	if at < 0 {
+		return false
+	}
+	domain := strings.ToLower(username[at+1:])
+	for _, d := range v.cfg.AllowedDomains {
+		if d == domain {
+			return true
+		}
+	}
+	return false
+}
+
+// resolveRole returns the role for the token, or "" when the user matches no
+// mapped group and no default role is configured (group-gated denial).
 func (v *OIDCVerifier) resolveRole(claims map[string]any) Role {
 	if v.cfg.RolesClaim == "" || len(v.cfg.RoleMapping) == 0 {
 		return v.cfg.DefaultRole
@@ -112,4 +162,14 @@ func (v *OIDCVerifier) resolveRole(claims map[string]any) Role {
 		}
 	}
 	return best
+}
+
+func normalizeDomains(domains []string) []string {
+	out := make([]string, 0, len(domains))
+	for _, d := range domains {
+		if d = strings.ToLower(strings.TrimSpace(d)); d != "" {
+			out = append(out, d)
+		}
+	}
+	return out
 }

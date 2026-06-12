@@ -11,9 +11,10 @@ import { NamespacesPage } from "./pages/NamespacesPage";
 import { PodsPage } from "./pages/PodsPage";
 import { SecretsPage } from "./pages/SecretsPage";
 import { ServicesPage } from "./pages/ServicesPage";
+import { UsersPage } from "./pages/UsersPage";
 
 function ProtectedRoutes() {
-  const { status } = useAuth();
+  const { status, identity } = useAuth();
 
   if (status === "loading") {
     return (
@@ -37,6 +38,7 @@ function ProtectedRoutes() {
         <Route path="/secrets" element={<SecretsPage />} />
         <Route path="/namespaces" element={<NamespacesPage />} />
         <Route path="/events" element={<EventsPage />} />
+        {identity?.role === "admin" && <Route path="/users" element={<UsersPage />} />}
       </Routes>
     </AppLayout>
   );

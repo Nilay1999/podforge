@@ -44,6 +44,13 @@ func HashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
+func ValidatePasswordHash(hash string) error {
+	if _, err := bcrypt.Cost([]byte(hash)); err != nil {
+		return fmt.Errorf("invalid bcrypt password hash: %w", err)
+	}
+	return nil
+}
+
 func (a *LocalAuthenticator) Login(ctx context.Context, username, password string) (*Identity, error) {
 	u, err := a.users.GetUser(ctx, username)
 	if err != nil {
