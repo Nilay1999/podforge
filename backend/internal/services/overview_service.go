@@ -3,11 +3,11 @@ package services
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/podforge/backend/internal/types"
 	"golang.org/x/sync/errgroup"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -25,62 +25,81 @@ func NewOverviewService(clientset *kubernetes.Clientset) OverviewService {
 }
 
 func (s *overviewService) Deployment(ctx context.Context, namespace, name string) (types.DeploymentOverview, error) {
-	var (
-		overview types.DeploymentOverview
-		mu       sync.Mutex
-	)
+	deployment, err := s.clientset.AppsV1().Deployments(namespace).Get(ctx, name, v1.GetOptions{})
+	if err != nil {
+		return types.DeploymentOverview{}, fmt.Errorf("deployment: %w", err)
+	}
+
+	selector, err := v1.LabelSelectorAsSelector(deployment.Spec.Selector)
+	if err != nil {
+		return types.DeploymentOverview{}, fmt.Errorf("deployment selector: %w", err)
+	}
+	ownedOpts := v1.ListOptions{LabelSelector: selector.String()}
+
+	overview := types.DeploymentOverview{Deployment: deployment}
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		deployment, err := s.clientset.AppsV1().Deployments(namespace).Get(ctx, name, v1.GetOptions{})
+		replicaSets, err := s.clientset.AppsV1().ReplicaSets(namespace).List(ctx, ownedOpts)
 		if err != nil {
-			return fmt.Errorf("deployment: %w", err)
+			return fmt.Errorf("replicaSets: %w", err)
 		}
-		mu.Lock()
-		overview.Deployment = deployment
-		mu.Unlock()
+		overview.ReplicaSets = replicaSets.Items
 		return nil
 	})
 
 	g.Go(func() error {
-		replicas, err := s.clientset.AppsV1().ReplicaSets(namespace).List(ctx, v1.ListOptions{})
-		if err != nil {
-			return fmt.Errorf("replicas: %w", err)
-		}
-		mu.Lock()
-		overview.ReplicaSets = replicas.Items
-		mu.Unlock()
-		return nil
-	})
-
-	g.Go(func() error {
-		pods, err := s.clientset.CoreV1().Pods(namespace).List(ctx, v1.ListOptions{})
+		pods, err := s.clientset.CoreV1().Pods(namespace).List(ctx, ownedOpts)
 		if err != nil {
 			return fmt.Errorf("pods: %w", err)
 		}
-		mu.Lock()
 		overview.Pods = pods.Items
-		mu.Unlock()
 		return nil
 	})
 
 	g.Go(func() error {
-		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, v1.ListOptions{})
+		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector("involvedObject.name", name).String(),
+		})
 		if err != nil {
 			return fmt.Errorf("events: %w", err)
 		}
-		mu.Lock()
 		overview.Events = events.Items
-		mu.Unlock()
 		return nil
 	})
 
 	if err := g.Wait(); err != nil {
 		return types.DeploymentOverview{}, err
 	}
-	return types.DeploymentOverview{}, nil
+	return overview, nil
 }
 
 func (s *overviewService) Pod(ctx context.Context, namespace, name string) (types.PodOverview, error) {
-	return types.PodOverview{}, nil
+	overview := types.PodOverview{}
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		pod, err := s.clientset.CoreV1().Pods(namespace).Get(ctx, name, v1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("pod: %w", err)
+		}
+		overview.Pod = pod
+		return nil
+	})
+
+	g.Go(func() error {
+		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, v1.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector("involvedObject.name", name).String(),
+		})
+		if err != nil {
+			return fmt.Errorf("events: %w", err)
+		}
+		overview.Events = events.Items
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return types.PodOverview{}, err
+	}
+	return overview, nil
 }
