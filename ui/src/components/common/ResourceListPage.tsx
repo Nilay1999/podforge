@@ -13,6 +13,7 @@ import {
   Table,
   Text,
   TextInput,
+  ThemeIcon,
   Title,
   Tooltip
 } from "@mantine/core";
@@ -21,6 +22,7 @@ import { notifications } from "@mantine/notifications";
 import {
   IconDots,
   IconEdit,
+  IconInbox,
   IconPlus,
   IconRefresh,
   IconSearch,
@@ -176,12 +178,32 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
         )}
 
         {data && (
-          <Paper withBorder radius="md" style={{ overflow: "hidden" }} p={0}>
-            <Table highlightOnHover style={{ fontSize: 13 }}>
-              <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
+          <Paper withBorder radius="lg" style={{ overflow: "hidden" }} p={0}>
+            <Table
+              highlightOnHover
+              verticalSpacing="sm"
+              horizontalSpacing="md"
+              style={{ fontSize: 13 }}
+            >
+              <Table.Thead
+                style={{
+                  background: "var(--mantine-color-default-hover)",
+                  borderBottom: "1px solid var(--mantine-color-default-border)"
+                }}
+              >
                 <Table.Tr>
                   {columns.map((col) => (
-                    <Table.Th key={col.header} style={col.width ? { width: col.width } : undefined}>
+                    <Table.Th
+                      key={col.header}
+                      style={{
+                        ...(col.width ? { width: col.width } : {}),
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "var(--mantine-color-dimmed)"
+                      }}
+                    >
                       {col.header}
                     </Table.Th>
                   ))}
@@ -228,18 +250,31 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
                 ))}
                 {filtered.length === 0 && (
                   <Table.Tr>
-                    <Table.Td
-                      colSpan={columns.length + 1}
-                      style={{ textAlign: "center", padding: 40 }}
-                    >
-                      <Text c="dimmed" size="sm">
-                        {search
-                          ? `No ${pluralTitle.toLowerCase()} match "${search}" in `
-                          : `No ${pluralTitle.toLowerCase()} in namespace `}
-                        <Text span ff="monospace">
-                          {namespace}
+                    <Table.Td colSpan={columns.length + 1} style={{ padding: "48px 40px" }}>
+                      <Stack align="center" gap="xs">
+                        <ThemeIcon size={44} radius="xl" variant="light" color="gray">
+                          <IconInbox size={22} stroke={1.5} />
+                        </ThemeIcon>
+                        <Text c="dimmed" size="sm" ta="center">
+                          {search
+                            ? `No ${pluralTitle.toLowerCase()} match "${search}" in `
+                            : `No ${pluralTitle.toLowerCase()} in namespace `}
+                          <Text span ff="monospace" fw={500}>
+                            {namespace}
+                          </Text>
                         </Text>
-                      </Text>
+                        {!search && (
+                          <Button
+                            variant="light"
+                            size="xs"
+                            leftSection={<IconPlus size={14} />}
+                            onClick={openDrawer}
+                            mt={4}
+                          >
+                            Create {kind}
+                          </Button>
+                        )}
+                      </Stack>
                     </Table.Td>
                   </Table.Tr>
                 )}

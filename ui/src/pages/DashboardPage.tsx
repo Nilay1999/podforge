@@ -296,7 +296,7 @@ export function DashboardPage() {
           </Group>
         </Group>
 
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
+        <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, lg: 5 }}>
           <SummaryCard
             icon={IconRocket}
             label="Deployments"
@@ -311,11 +311,8 @@ export function DashboardPage() {
             color="gray"
           />
           <SummaryCard icon={IconServer} label="Services" count="0" color="gray" />
-        </SimpleGrid>
-
-        <Box style={{ maxWidth: 260 }}>
           <SummaryCard icon={IconCube} label="Nodes" count="0" color="success" />
-        </Box>
+        </SimpleGrid>
 
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <Paper withBorder p="md" radius="md">

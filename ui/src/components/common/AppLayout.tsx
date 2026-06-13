@@ -9,43 +9,44 @@ import {
   Group,
   Menu,
   NavLink,
+  Stack,
   Text,
   ActionIcon,
   useMantineColorScheme
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
-  IconDashboard,
-  IconRocket,
-  IconBox,
-  IconSun,
-  IconMoon,
-  IconFileText,
-  IconSearch,
-  IconServer,
-  IconTag,
-  IconChevronDown,
-  IconNetwork,
-  IconKey,
-  IconFolder,
-  IconActivity,
-  IconCloudUpload,
-  IconLogout,
-  IconUserCircle,
-  IconUserShield
-} from "@tabler/icons-react";
+  LayoutDashboard,
+  Rocket,
+  Box as BoxIcon,
+  Sun,
+  Moon,
+  FileText,
+  Search,
+  Server,
+  Tag,
+  ChevronDown,
+  Network,
+  KeyRound,
+  FolderClosed,
+  Activity,
+  CloudUpload,
+  LogOut,
+  CircleUser,
+  ShieldUser
+} from "lucide-react";
 import { useAuth } from "@src/auth/AuthContext";
 import { ApplyYamlDrawer } from "@src/components/manifest/ApplyYamlDrawer";
 
 const navItems = [
-  { label: "Dashboard", icon: IconDashboard, path: "/" },
-  { label: "Deployments", icon: IconRocket, path: "/deployments" },
-  { label: "Pods", icon: IconBox, path: "/pods" },
-  { label: "ConfigMaps", icon: IconFileText, path: "/configmaps" },
-  { label: "Services", icon: IconNetwork, path: "/services" },
-  { label: "Secrets", icon: IconKey, path: "/secrets" },
-  { label: "Namespaces", icon: IconFolder, path: "/namespaces" },
-  { label: "Events", icon: IconActivity, path: "/events" }
+  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Deployments", icon: Rocket, path: "/deployments" },
+  { label: "Pods", icon: BoxIcon, path: "/pods" },
+  { label: "ConfigMaps", icon: FileText, path: "/configmaps" },
+  { label: "Services", icon: Network, path: "/services" },
+  { label: "Secrets", icon: KeyRound, path: "/secrets" },
+  { label: "Namespaces", icon: FolderClosed, path: "/namespaces" },
+  { label: "Events", icon: Activity, path: "/events" }
 ];
 
 interface AppLayoutProps {
@@ -62,7 +63,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const items =
     identity?.role === "admin"
-      ? [...navItems, { label: "Users", icon: IconUserShield, path: "/users" }]
+      ? [...navItems, { label: "Users", icon: ShieldUser, path: "/users" }]
       : navItems;
 
   return (
@@ -88,7 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
           <Group gap="xs" mr="xs">
-            <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-5)" />
+            <Rocket size={24} strokeWidth={1.75} color="var(--mantine-color-steelBlue-5)" />
             <Text size="lg" fw={700} style={{ letterSpacing: "-0.01em" }}>
               podforge
             </Text>
@@ -107,8 +108,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Button
             variant="default"
             size="xs"
-            leftSection={<IconServer size={14} />}
-            rightSection={<IconChevronDown size={12} />}
+            leftSection={<Server size={14} />}
+            rightSection={<ChevronDown size={13} />}
             visibleFrom="sm"
           >
             production
@@ -117,8 +118,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Button
             variant="default"
             size="xs"
-            leftSection={<IconTag size={14} />}
-            rightSection={<IconChevronDown size={12} />}
+            leftSection={<Tag size={14} />}
+            rightSection={<ChevronDown size={13} />}
             visibleFrom="sm"
           >
             ns: default
@@ -126,7 +127,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Button
             variant="default"
             size="xs"
-            leftSection={<IconCloudUpload size={14} />}
+            leftSection={<CloudUpload size={14} />}
             visibleFrom="sm"
             onClick={() => setApplyOpened(true)}
           >
@@ -136,7 +137,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Button
             variant="default"
             size="xs"
-            leftSection={<IconSearch size={14} />}
+            leftSection={<Search size={14} />}
             rightSection={
               <Text
                 span
@@ -166,7 +167,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             onClick={() => toggleColorScheme()}
             aria-label="Toggle color scheme"
           >
-            {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
+            {colorScheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </ActionIcon>
 
           {identity && (
@@ -175,7 +176,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Button
                   variant="default"
                   size="xs"
-                  leftSection={<IconUserCircle size={16} />}
+                  leftSection={<CircleUser size={16} />}
                   rightSection={
                     <Badge size="xs" variant="light">
                       {identity.role}
@@ -191,7 +192,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </Menu.Label>
                 <Menu.Item
                   color="red"
-                  leftSection={<IconLogout size={16} />}
+                  leftSection={<LogOut size={16} />}
                   onClick={() => {
                     logout();
                     navigate("/login");
@@ -206,39 +207,74 @@ export function AppLayout({ children }: AppLayoutProps) {
       </AppShell.Header>
 
       <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
-        {items.map((item) => (
-          <NavLink
-            key={item.path}
-            label={item.label}
-            fw={600}
-            leftSection={<item.icon size={20} stroke={1.5} />}
-            active={location.pathname === item.path}
-            onClick={() => {
-              navigate(item.path);
-              toggle();
-            }}
-            variant="filled"
-          />
-        ))}
+        <Text
+          size="xs"
+          fw={700}
+          c="dimmed"
+          tt="uppercase"
+          px="xs"
+          mb={6}
+          style={{ letterSpacing: "0.08em" }}
+        >
+          Resources
+        </Text>
+        <Stack gap={4}>
+          {items.map((item) => (
+            <NavLink
+              key={item.path}
+              className="pf-navlink"
+              label={item.label}
+              fw={600}
+              leftSection={<item.icon size={18} strokeWidth={1.75} />}
+              active={location.pathname === item.path}
+              onClick={() => {
+                navigate(item.path);
+                toggle();
+              }}
+              variant="subtle"
+              color="steelBlue"
+            />
+          ))}
+        </Stack>
 
         <Box
           mt="auto"
-          pt="xs"
+          pt="sm"
           style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}
         >
-          <Group gap="xs" px={4} py={4}>
-            <div
+          <Group gap="xs" px="xs" py={6} wrap="nowrap">
+            <Box
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--mantine-color-success-5)",
+                position: "relative",
+                width: 8,
+                height: 8,
                 flexShrink: 0
               }}
-            />
-            <Text size="xs" c="dimmed">
-              Connected · v1.28.4
+            >
+              <Box
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  background: "var(--mantine-color-success-5)"
+                }}
+              />
+              <Box
+                className="pf-pulse"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  background: "var(--mantine-color-success-5)"
+                }}
+              />
+            </Box>
+            <Text size="xs" c="dimmed" fw={500}>
+              Connected
             </Text>
+            <Badge size="xs" variant="default" ml="auto" ff="monospace">
+              v1.28.4
+            </Badge>
           </Group>
         </Box>
       </AppShell.Navbar>

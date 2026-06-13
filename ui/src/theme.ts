@@ -98,7 +98,54 @@ const themeOverride = createTheme({
   },
   primaryShade: { light: 6, dark: 5 },
   defaultRadius: "md",
-  cursorType: "pointer"
+  cursorType: "pointer",
+  components: {
+    Paper: {
+      defaultProps: { radius: "lg" }
+    },
+    Card: {
+      defaultProps: { radius: "lg" }
+    },
+    Button: {
+      defaultProps: { radius: "md" },
+      styles: { root: { fontWeight: 600 } }
+    },
+    ActionIcon: {
+      defaultProps: { radius: "md" }
+    },
+    Badge: {
+      defaultProps: { radius: "sm" },
+      styles: { root: { fontWeight: 600, letterSpacing: "0.01em" } }
+    },
+    TextInput: {
+      defaultProps: { radius: "md" }
+    },
+    PasswordInput: {
+      defaultProps: { radius: "md" }
+    },
+    Select: {
+      defaultProps: { radius: "md" }
+    },
+    NavLink: {
+      defaultProps: { radius: "md" }
+    },
+    Menu: {
+      defaultProps: { radius: "md", shadow: "md" }
+    },
+    Tooltip: {
+      defaultProps: { radius: "md", withArrow: true },
+      styles: { tooltip: { fontSize: "12px" } }
+    },
+    Table: {
+      defaultProps: { verticalSpacing: "sm", horizontalSpacing: "md" }
+    },
+    ThemeIcon: {
+      defaultProps: { radius: "md" }
+    },
+    Drawer: {
+      defaultProps: { radius: 0 }
+    }
+  }
 });
 
 export const theme = mergeMantineTheme(DEFAULT_THEME, themeOverride);

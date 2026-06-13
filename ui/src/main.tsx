@@ -11,6 +11,7 @@ import { theme } from "./theme";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
+import "./styles.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
