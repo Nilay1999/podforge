@@ -22,7 +22,7 @@ func main() {
 	log.Info("Connected to K8s cluster")
 
 	r := gin.New()
-	routes.Setup(r, clientset, restConfig, log)
+	routes.Setup(r, cfg, clientset, restConfig, log)
 
 	addr := ":" + cfg.Port
 	log.Info("Server starting", zap.String("addr", addr))

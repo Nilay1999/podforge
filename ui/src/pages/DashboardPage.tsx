@@ -31,6 +31,7 @@ import { usePods } from "@src/hooks/usePods";
 import { useConfigMaps } from "@src/hooks/useConfigMaps";
 import type { Pod } from "@src/types";
 import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { sseUrl } from "@src/auth/token";
 
 interface ClusterEvent {
   type?: string;
@@ -221,7 +222,7 @@ export function DashboardPage() {
   };
 
   useEffect(() => {
-    const es = new EventSource("/api/v1/events/stream");
+    const es = new EventSource(sseUrl("/api/v1/events/stream"));
 
     const handler = (e: MessageEvent) => {
       try {

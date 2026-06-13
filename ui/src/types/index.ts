@@ -6,5 +6,7 @@ export * from "./service";
 export * from "./secret";
 export * from "./namespace";
 export * from "./event";
+export * from "./auth";
+export * from "./apply";
 
 export type ResourceKind = "Pod" | "Deployment" | "ConfigMap" | "Service" | "Secret";

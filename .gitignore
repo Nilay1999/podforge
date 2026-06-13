@@ -51,3 +51,9 @@ graphify-out
 logs/
 .turbo
 **/.turbo
+
+# Podforge local database
+*.db
+*.db-wal
+*.db-shm
+config.yaml

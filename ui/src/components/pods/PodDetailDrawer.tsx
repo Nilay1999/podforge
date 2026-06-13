@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import jsYaml from "js-yaml";
 import type { Pod } from "@src/types";
 import { getPodOverview } from "@src/api/pods";
+import { sseUrl } from "@src/auth/token";
 
 function phaseColor(phase?: string) {
   if (phase === "Running") return "success";
@@ -101,7 +102,7 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
     if (selectedContainer) params.set("container", selectedContainer);
     if (showPrevious) params.set("previous", "true");
 
-    const es = new EventSource(`/api/v1/pod/${ns}/${podName}/logs/stream?${params}`);
+    const es = new EventSource(sseUrl(`/api/v1/pod/${ns}/${podName}/logs/stream?${params}`));
     es.addEventListener("log", (e: MessageEvent) => {
       setLogLines((prev) => [...prev.slice(-1999), e.data]);
     });

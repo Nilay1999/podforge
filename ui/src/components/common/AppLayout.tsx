@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   AppShell,
+  Badge,
   Box,
   Burger,
   Button,
   Group,
+  Menu,
   NavLink,
   Text,
   ActionIcon,
@@ -25,8 +28,14 @@ import {
   IconNetwork,
   IconKey,
   IconFolder,
-  IconActivity
+  IconActivity,
+  IconCloudUpload,
+  IconLogout,
+  IconUserCircle,
+  IconUserShield
 } from "@tabler/icons-react";
+import { useAuth } from "@src/auth/AuthContext";
+import { ApplyYamlDrawer } from "@src/components/manifest/ApplyYamlDrawer";
 
 const navItems = [
   { label: "Dashboard", icon: IconDashboard, path: "/" },
@@ -48,6 +57,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const location = useLocation();
   const navigate = useNavigate();
+  const { identity, logout } = useAuth();
+  const [applyOpened, setApplyOpened] = useState(false);
+
+  const items =
+    identity?.role === "admin"
+      ? [...navItems, { label: "Users", icon: IconUserShield, path: "/users" }]
+      : navItems;
 
   return (
     <AppShell
@@ -107,6 +123,15 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             ns: default
           </Button>
+          <Button
+            variant="default"
+            size="xs"
+            leftSection={<IconCloudUpload size={14} />}
+            visibleFrom="sm"
+            onClick={() => setApplyOpened(true)}
+          >
+            Apply YAML
+          </Button>
           <Box style={{ flex: 1 }} />
           <Button
             variant="default"
@@ -143,11 +168,45 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
           </ActionIcon>
+
+          {identity && (
+            <Menu position="bottom-end" width={200}>
+              <Menu.Target>
+                <Button
+                  variant="default"
+                  size="xs"
+                  leftSection={<IconUserCircle size={16} />}
+                  rightSection={
+                    <Badge size="xs" variant="light">
+                      {identity.role}
+                    </Badge>
+                  }
+                >
+                  {identity.username}
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>
+                  Signed in via {identity.provider === "local" ? "Podforge" : identity.provider}
+                </Menu.Label>
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconLogout size={16} />}
+                  onClick={() => {
+                    logout();
+                    navigate("/login");
+                  }}
+                >
+                  Sign out
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          )}
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
-        {navItems.map((item) => (
+        {items.map((item) => (
           <NavLink
             key={item.path}
             label={item.label}
@@ -185,6 +244,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
+
+      <ApplyYamlDrawer opened={applyOpened} onClose={() => setApplyOpened(false)} />
     </AppShell>
   );
 }

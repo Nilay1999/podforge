@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ObjectMeta } from "@src/types";
+import { sseUrl } from "@src/auth/token";
 
 export function useWatchResource<T extends { metadata: ObjectMeta }>(
   resource: string,
@@ -10,7 +11,7 @@ export function useWatchResource<T extends { metadata: ObjectMeta }>(
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const es = new EventSource(`/api/v1/watch/${resource}/${namespace}`);
+    const es = new EventSource(sseUrl(`/api/v1/watch/${resource}/${namespace}`));
 
     const prefix = resource.endsWith("s") ? resource.slice(0, -1) : resource;
     const listKey = [resource, "list", namespace];
