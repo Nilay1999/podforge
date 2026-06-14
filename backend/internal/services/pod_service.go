@@ -5,6 +5,7 @@ import (
 
 	"github.com/podforge/backend/internal/builders"
 	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -35,9 +36,7 @@ func (s *podService) List(ctx context.Context, namespace string) (*corev1.PodLis
 	if err != nil {
 		return &corev1.PodList{Items: []corev1.Pod{}}, err
 	}
-	if list.Items == nil {
-		list.Items = []corev1.Pod{}
-	}
+	util.NormalizeList(&list.Items)
 	return list, nil
 }
 

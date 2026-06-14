@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 )
 
 type NamespaceService interface {
@@ -29,9 +30,7 @@ func (s *namespaceService) List(ctx context.Context) (*corev1.NamespaceList, err
 	if err != nil {
 		return &corev1.NamespaceList{Items: []corev1.Namespace{}}, err
 	}
-	if list.Items == nil {
-		list.Items = []corev1.Namespace{}
-	}
+	util.NormalizeList(&list.Items)
 	return list, nil
 }
 

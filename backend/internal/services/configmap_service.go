@@ -5,6 +5,7 @@ import (
 
 	"github.com/podforge/backend/internal/builders"
 	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -35,9 +36,7 @@ func (s *configmapService) List(ctx context.Context, namespace string) (*corev1.
 	if err != nil {
 		return &corev1.ConfigMapList{Items: []corev1.ConfigMap{}}, err
 	}
-	if list.Items == nil {
-		list.Items = []corev1.ConfigMap{}
-	}
+	util.NormalizeList(&list.Items)
 	return list, nil
 }
 

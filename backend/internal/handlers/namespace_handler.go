@@ -31,8 +31,7 @@ func (h *NamespaceHandler) List(c *gin.Context) {
 
 func (h *NamespaceHandler) Create(c *gin.Context) {
 	var req types.CreateNamespaceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -41,12 +40,7 @@ func (h *NamespaceHandler) Create(c *gin.Context) {
 		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
-
-	c.JSON(http.StatusCreated, types.CreateResponse{
-		Name:      result.Name,
-		Namespace: result.Name,
-		Status:    "created",
-	})
+	respondMutation(c, http.StatusCreated, result.Name, result.Name, "created")
 }
 
 func (h *NamespaceHandler) Delete(c *gin.Context) {
@@ -56,10 +50,5 @@ func (h *NamespaceHandler) Delete(c *gin.Context) {
 		util.CreateErrorResponse(c, h.log, err)
 		return
 	}
-
-	c.JSON(http.StatusOK, types.CreateResponse{
-		Name:      name,
-		Namespace: name,
-		Status:    "deleted",
-	})
+	respondMutation(c, http.StatusOK, name, name, "deleted")
 }

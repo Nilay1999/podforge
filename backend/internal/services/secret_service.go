@@ -5,6 +5,7 @@ import (
 
 	"github.com/podforge/backend/internal/builders"
 	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -50,9 +51,7 @@ func (s *secretService) List(ctx context.Context, namespace string) (*corev1.Sec
 	if err != nil {
 		return &corev1.SecretList{Items: []corev1.Secret{}}, err
 	}
-	if list.Items == nil {
-		list.Items = []corev1.Secret{}
-	}
+	util.NormalizeList(&list.Items)
 	for i := range list.Items {
 		redactSecret(&list.Items[i])
 	}
