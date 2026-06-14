@@ -22,8 +22,7 @@ func NewApplyHandler(svc services.ManifestApplier, log *zap.Logger) *ApplyHandle
 
 func (h *ApplyHandler) Apply(c *gin.Context) {
 	var req types.ApplyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !bindJSON(c, &req) {
 		return
 	}
 

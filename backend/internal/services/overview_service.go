@@ -6,7 +6,7 @@ import (
 
 	"github.com/podforge/backend/internal/types"
 	"golang.org/x/sync/errgroup"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 )
@@ -25,16 +25,16 @@ func NewOverviewService(clientset *kubernetes.Clientset) OverviewService {
 }
 
 func (s *overviewService) Deployment(ctx context.Context, namespace, name string) (types.DeploymentOverview, error) {
-	deployment, err := s.clientset.AppsV1().Deployments(namespace).Get(ctx, name, v1.GetOptions{})
+	deployment, err := s.clientset.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return types.DeploymentOverview{}, fmt.Errorf("deployment: %w", err)
 	}
 
-	selector, err := v1.LabelSelectorAsSelector(deployment.Spec.Selector)
+	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
 	if err != nil {
 		return types.DeploymentOverview{}, fmt.Errorf("deployment selector: %w", err)
 	}
-	ownedOpts := v1.ListOptions{LabelSelector: selector.String()}
+	ownedOpts := metav1.ListOptions{LabelSelector: selector.String()}
 
 	overview := types.DeploymentOverview{Deployment: deployment}
 	g, ctx := errgroup.WithContext(ctx)
@@ -58,7 +58,7 @@ func (s *overviewService) Deployment(ctx context.Context, namespace, name string
 	})
 
 	g.Go(func() error {
-		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, v1.ListOptions{
+		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector("involvedObject.name", name).String(),
 		})
 		if err != nil {
@@ -79,7 +79,7 @@ func (s *overviewService) Pod(ctx context.Context, namespace, name string) (type
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		pod, err := s.clientset.CoreV1().Pods(namespace).Get(ctx, name, v1.GetOptions{})
+		pod, err := s.clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("pod: %w", err)
 		}
@@ -88,7 +88,7 @@ func (s *overviewService) Pod(ctx context.Context, namespace, name string) (type
 	})
 
 	g.Go(func() error {
-		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, v1.ListOptions{
+		events, err := s.clientset.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector("involvedObject.name", name).String(),
 		})
 		if err != nil {

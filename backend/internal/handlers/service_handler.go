@@ -9,11 +9,11 @@ import (
 )
 
 type ServiceHandler struct {
-	svc services.KubernetesService
+	svc services.ServiceService
 	log *zap.Logger
 }
 
-func NewServiceHandler(svc services.KubernetesService, log *zap.Logger) *ServiceHandler {
+func NewServiceHandler(svc services.ServiceService, log *zap.Logger) *ServiceHandler {
 	return &ServiceHandler{svc: svc, log: log}
 }
 

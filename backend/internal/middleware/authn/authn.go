@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/podforge/backend/internal/auth"
+	"github.com/podforge/backend/internal/util"
 )
 
 const identityKey = "podforge/identity"
@@ -57,7 +58,7 @@ func enforce(c *gin.Context, required auth.Role) {
 		return
 	}
 	if !id.Role.AtLeast(required) {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "requires " + string(required) + " role"})
+		util.AbortError(c, http.StatusForbidden, "requires "+string(required)+" role")
 		return
 	}
 	c.Next()
@@ -84,5 +85,5 @@ func extractToken(c *gin.Context) string {
 
 func abort(c *gin.Context, msg string) {
 	c.Header("WWW-Authenticate", "Bearer")
-	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": msg})
+	util.AbortError(c, http.StatusUnauthorized, msg)
 }

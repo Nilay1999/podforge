@@ -33,14 +33,14 @@ type channelResult struct {
 }
 
 func NewBulkService(
-	kubernetesService KubernetesService,
+	serviceService ServiceService,
 	deploymentService DeploymentService,
 	podService PodService,
 	applier Applier,
 ) BulkService {
 	return &bulkService{
 		deleters: map[string]Deleter{
-			"service":    kubernetesService,
+			"service":    serviceService,
 			"deployment": deploymentService,
 			"pod":        podService,
 		},

@@ -16,7 +16,7 @@ import (
 // returning false if the payload is malformed.
 func bindJSON(c *gin.Context, req any) bool {
 	if err := c.ShouldBindJSON(req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		util.RespondError(c, http.StatusBadRequest, err.Error())
 		return false
 	}
 	return true

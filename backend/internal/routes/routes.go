@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,6 +19,62 @@ import (
 	"github.com/podforge/backend/internal/services"
 	"github.com/podforge/backend/internal/store"
 )
+
+// handlerSet holds every HTTP handler, wired to its backing service. It keeps
+// Setup focused on the route table rather than dependency construction.
+type handlerSet struct {
+	deployment *handlers.DeploymentHandler
+	pod        *handlers.PodHandler
+	configMap  *handlers.ConfigmapHandler
+	service    *handlers.ServiceHandler
+	secret     *handlers.SecretHandler
+	dashboard  *handlers.DashboardHandler
+	overview   *handlers.OverviewHandler
+	log        *handlers.LogHandler
+	watch      *handlers.WatchHandler
+	namespace  *handlers.NamespaceHandler
+	apply      *handlers.ApplyHandler
+	bulk       *handlers.BulkHandler
+	search     *handlers.SearchHandler
+	auth       *handlers.AuthHandler
+}
+
+func buildHandlers(clientset *kubernetes.Clientset, restConfig *rest.Config, log *zap.Logger, localAuth *auth.LocalAuthenticator, oidcVerifier *auth.OIDCVerifier, userStore *store.Store) (*handlerSet, error) {
+	deploySvc := services.NewDeploymentService(clientset)
+	podSvc := services.NewPodService(clientset)
+	configMapSvc := services.NewConfigmapService(clientset)
+	serviceSvc := services.NewServiceService(clientset)
+	secretSvc := services.NewSecretService(clientset)
+	dashboardSvc := services.NewDashboardService(clientset)
+	overviewSvc := services.NewOverviewService(clientset)
+	logSvc := services.NewLogService(clientset)
+	watchSvc := services.NewWatchService(clientset)
+	namespaceSvc := services.NewNamespaceService(clientset)
+	searchSvc := services.NewSearchService(clientset)
+
+	applySvc, err := services.NewApplyService(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("apply service: %w", err)
+	}
+	bulkSvc := services.NewBulkService(serviceSvc, deploySvc, podSvc, applySvc)
+
+	return &handlerSet{
+		deployment: handlers.NewDeploymentHandler(deploySvc, log),
+		pod:        handlers.NewPodHandler(podSvc, log),
+		configMap:  handlers.NewConfigMapHandler(configMapSvc, log),
+		service:    handlers.NewServiceHandler(serviceSvc, log),
+		secret:     handlers.NewSecretHandler(secretSvc, log),
+		dashboard:  handlers.NewDashboardHandler(dashboardSvc, log),
+		overview:   handlers.NewOverviewHandler(overviewSvc, log),
+		log:        handlers.NewLogHandler(logSvc, log),
+		watch:      handlers.NewWatchHandler(watchSvc, log),
+		namespace:  handlers.NewNamespaceHandler(namespaceSvc, log),
+		apply:      handlers.NewApplyHandler(applySvc, log),
+		bulk:       handlers.NewBulkHandler(bulkSvc, log),
+		search:     handlers.NewSearchHandler(searchSvc, log),
+		auth:       handlers.NewAuthHandler(localAuth, oidcVerifier, userStore, log),
+	}, nil
+}
 
 func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *auth.OIDCVerifier, *store.Store, []auth.Verifier) {
 	if !cfg.Auth.Enabled {
@@ -106,47 +163,19 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 
 	localAuth, oidcVerifier, userStore, verifiers := setupAuth(cfg, log)
 
-	deploySvc := services.NewDeploymentService(clientset)
-	podSvc := services.NewPodService(clientset)
-	configMapSvc := services.NewConfigmapService(clientset)
-	serviceSvc := services.NewKubernetesService(clientset)
-	secretSvc := services.NewSecretService(clientset)
-	dashboardSvc := services.NewDashboardService(clientset)
-	overviewSvc := services.NewOverviewService(clientset)
-	logSvc := services.NewLogService(clientset)
-	watchSvc := services.NewWatchService(clientset)
-	applySvc, err := services.NewApplyService(restConfig)
+	h, err := buildHandlers(clientset, restConfig, log, localAuth, oidcVerifier, userStore)
 	if err != nil {
-		log.Fatal("Failed to create apply service", zap.Error(err))
+		log.Fatal("Failed to build handlers", zap.Error(err))
 	}
-	namespaceSvc := services.NewNamespaceService(clientset)
-	bulkSvc := services.NewBulkService(serviceSvc, deploySvc, podSvc, applySvc)
-	searchSvc := services.NewSearchService(clientset)
-
-	deploymentHandler := handlers.NewDeploymentHandler(deploySvc, log)
-	podHandler := handlers.NewPodHandler(podSvc, log)
-	configMapHandler := handlers.NewConfigMapHandler(configMapSvc, log)
-	serviceHandler := handlers.NewServiceHandler(serviceSvc, log)
-	secretHandler := handlers.NewSecretHandler(secretSvc, log)
-	dashboardHandler := handlers.NewDashboardHandler(dashboardSvc, log)
-	overviewHandler := handlers.NewOverviewHandler(overviewSvc, log)
-	logHandler := handlers.NewLogHandler(logSvc, log)
-	watchHandler := handlers.NewWatchHandler(watchSvc, log)
-	namespaceHandler := handlers.NewNamespaceHandler(namespaceSvc, log)
-	applyHandler := handlers.NewApplyHandler(applySvc, log)
-	bulkHandler := handlers.NewBulkHandler(bulkSvc, log)
-	searchHandler := handlers.NewSearchHandler(searchSvc, log)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	authHandler := handlers.NewAuthHandler(localAuth, oidcVerifier, userStore, log)
-
 	v1 := r.Group("/api/v1")
 	{
-		v1.POST("/auth/login", authHandler.Login)
-		v1.GET("/auth/providers", authHandler.Providers(cfg.Auth.OIDC.Issuer, cfg.Auth.OIDC.ClientID, cfg.Auth.Enabled))
+		v1.POST("/auth/login", h.auth.Login)
+		v1.GET("/auth/providers", h.auth.Providers(cfg.Auth.OIDC.Issuer, cfg.Auth.OIDC.ClientID, cfg.Auth.Enabled))
 
 		adminOnly := gin.HandlerFunc(func(c *gin.Context) { c.Next() })
 		if cfg.Auth.Enabled {
@@ -154,90 +183,90 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 			adminOnly = authn.RequireRole(auth.RoleAdmin)
 		}
 
-		v1.GET("/auth/me", authHandler.Me)
+		v1.GET("/auth/me", h.auth.Me)
 
 		if localAuth != nil {
 			users := v1.Group("auth/users", adminOnly)
 			{
-				users.GET("/", authHandler.ListUsers)
-				users.POST("/", authHandler.CreateUser)
-				users.PUT("/:username", authHandler.UpdateUser)
-				users.DELETE("/:username", authHandler.DeleteUser)
+				users.GET("/", h.auth.ListUsers)
+				users.POST("/", h.auth.CreateUser)
+				users.PUT("/:username", h.auth.UpdateUser)
+				users.DELETE("/:username", h.auth.DeleteUser)
 			}
 		}
 
 		deployment := v1.Group("deployment")
 		{
-			deployment.POST("/", deploymentHandler.Create)
-			deployment.GET("/:namespace", deploymentHandler.List)
-			deployment.GET("/:namespace/:name", deploymentHandler.Get)
-			deployment.GET("/:namespace/:name/overview", overviewHandler.Deployment)
-			deployment.PUT("/:namespace/:name", deploymentHandler.Update)
-			deployment.DELETE("/:namespace/:name", deploymentHandler.Delete)
-			deployment.PATCH("/:namespace/:name/scale", deploymentHandler.Scale)
-			deployment.POST("/:namespace/:name/restart", deploymentHandler.Restart)
+			deployment.POST("/", h.deployment.Create)
+			deployment.GET("/:namespace", h.deployment.List)
+			deployment.GET("/:namespace/:name", h.deployment.Get)
+			deployment.GET("/:namespace/:name/overview", h.overview.Deployment)
+			deployment.PUT("/:namespace/:name", h.deployment.Update)
+			deployment.DELETE("/:namespace/:name", h.deployment.Delete)
+			deployment.PATCH("/:namespace/:name/scale", h.deployment.Scale)
+			deployment.POST("/:namespace/:name/restart", h.deployment.Restart)
 		}
 
 		pod := v1.Group("pod")
 		{
-			pod.POST("/", podHandler.Create)
-			pod.GET("/:namespace", podHandler.List)
-			pod.GET("/:namespace/:name", podHandler.Get)
-			pod.GET("/:namespace/:name/overview", overviewHandler.Pod)
-			pod.GET("/:namespace/:name/logs/stream", logHandler.Stream)
-			pod.PUT("/:namespace/:name", podHandler.Update)
-			pod.DELETE("/:namespace/:name", podHandler.Delete)
+			pod.POST("/", h.pod.Create)
+			pod.GET("/:namespace", h.pod.List)
+			pod.GET("/:namespace/:name", h.pod.Get)
+			pod.GET("/:namespace/:name/overview", h.overview.Pod)
+			pod.GET("/:namespace/:name/logs/stream", h.log.Stream)
+			pod.PUT("/:namespace/:name", h.pod.Update)
+			pod.DELETE("/:namespace/:name", h.pod.Delete)
 		}
 
 		configMap := v1.Group("config-map")
 		{
-			configMap.POST("/", configMapHandler.Create)
-			configMap.GET("/:namespace", configMapHandler.List)
-			configMap.GET("/:namespace/:name", configMapHandler.Get)
-			configMap.PUT("/:namespace/:name", configMapHandler.Update)
-			configMap.DELETE("/:namespace/:name", configMapHandler.Delete)
+			configMap.POST("/", h.configMap.Create)
+			configMap.GET("/:namespace", h.configMap.List)
+			configMap.GET("/:namespace/:name", h.configMap.Get)
+			configMap.PUT("/:namespace/:name", h.configMap.Update)
+			configMap.DELETE("/:namespace/:name", h.configMap.Delete)
 		}
 
 		service := v1.Group("service")
 		{
-			service.POST("/", serviceHandler.Create)
-			service.GET("/:namespace", serviceHandler.List)
-			service.GET("/:namespace/:name", serviceHandler.Get)
-			service.PUT("/:namespace/:name", serviceHandler.Update)
-			service.DELETE("/:namespace/:name", serviceHandler.Delete)
+			service.POST("/", h.service.Create)
+			service.GET("/:namespace", h.service.List)
+			service.GET("/:namespace/:name", h.service.Get)
+			service.PUT("/:namespace/:name", h.service.Update)
+			service.DELETE("/:namespace/:name", h.service.Delete)
 		}
 
 		secret := v1.Group("secret")
 		{
-			secret.POST("/", secretHandler.Create)
-			secret.GET("/:namespace", secretHandler.List)
-			secret.GET("/:namespace/:name", secretHandler.Get)
-			secret.PUT("/:namespace/:name", secretHandler.Update)
-			secret.DELETE("/:namespace/:name", secretHandler.Delete)
+			secret.POST("/", h.secret.Create)
+			secret.GET("/:namespace", h.secret.List)
+			secret.GET("/:namespace/:name", h.secret.Get)
+			secret.PUT("/:namespace/:name", h.secret.Update)
+			secret.DELETE("/:namespace/:name", h.secret.Delete)
 		}
 
 		dashboard := v1.Group("dashboard")
 		{
-			dashboard.GET("/summary", dashboardHandler.Summary)
-			dashboard.GET("/pod-phases", dashboardHandler.PodPhases)
+			dashboard.GET("/summary", h.dashboard.Summary)
+			dashboard.GET("/pod-phases", h.dashboard.PodPhases)
 		}
 
 		bulk := v1.Group("bulk", adminOnly)
 		{
-			bulk.POST("/delete", bulkHandler.Delete)
-			bulk.POST("/apply", bulkHandler.Apply)
+			bulk.POST("/delete", h.bulk.Delete)
+			bulk.POST("/apply", h.bulk.Apply)
 		}
 		namespaces := v1.Group("namespaces")
 		{
-			namespaces.GET("/", namespaceHandler.List)
-			namespaces.POST("/", adminOnly, namespaceHandler.Create)
-			namespaces.DELETE("/:name", adminOnly, namespaceHandler.Delete)
+			namespaces.GET("/", h.namespace.List)
+			namespaces.POST("/", adminOnly, h.namespace.Create)
+			namespaces.DELETE("/:name", adminOnly, h.namespace.Delete)
 		}
 
-		v1.POST("/apply", applyHandler.Apply)
-		v1.GET("/namespace/:namespace/overview", dashboardHandler.NamespaceOverview)
-		v1.GET("/events/stream", watchHandler.Events)
-		v1.GET("/watch/:kind/:namespace", watchHandler.Resource)
-		v1.GET("/search", searchHandler.Search)
+		v1.POST("/apply", h.apply.Apply)
+		v1.GET("/namespace/:namespace/overview", h.dashboard.NamespaceOverview)
+		v1.GET("/events/stream", h.watch.Events)
+		v1.GET("/watch/:kind/:namespace", h.watch.Resource)
+		v1.GET("/search", h.search.Search)
 	}
 }
