@@ -97,7 +97,7 @@ func TestCreateErrorResponse_InternalErrorHidesDetail(t *testing.T) {
 func TestNormalizeList(t *testing.T) {
 	t.Run("nil slice becomes empty non-nil slice", func(t *testing.T) {
 		var s []string
-		normalizeList(&s)
+		NormalizeList(&s)
 		if s == nil {
 			t.Fatal("expected non-nil slice after normalize")
 		}
@@ -108,7 +108,7 @@ func TestNormalizeList(t *testing.T) {
 
 	t.Run("populated slice is left unchanged", func(t *testing.T) {
 		s := []int{1, 2, 3}
-		normalizeList(&s)
+		NormalizeList(&s)
 		if len(s) != 3 {
 			t.Errorf("expected slice unchanged, got %v", s)
 		}
@@ -116,9 +116,9 @@ func TestNormalizeList(t *testing.T) {
 }
 
 func TestNormalizeList_MarshalsToArrayNotNull(t *testing.T) {
-	// The point of normalizeList: JSON-encode [] instead of null for empty lists.
+	// The point of NormalizeList: JSON-encode [] instead of null for empty lists.
 	var s []string
-	normalizeList(&s)
+	NormalizeList(&s)
 	b, err := json.Marshal(s)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)

@@ -46,6 +46,7 @@ const navItems = [
   { label: "Services", icon: Network, path: "/services" },
   { label: "Secrets", icon: KeyRound, path: "/secrets" },
   { label: "Namespaces", icon: FolderClosed, path: "/namespaces" },
+  { label: "Nodes", icon: Server, path: "/nodes" },
   { label: "Events", icon: Activity, path: "/events" }
 ];
 

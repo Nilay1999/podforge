@@ -21,8 +21,7 @@ func NewBulkHandler(svc services.BulkService, log *zap.Logger) *BulkHandler {
 
 func (h *BulkHandler) Delete(c *gin.Context) {
 	var req types.BulkDeleteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !bindJSON(c, &req) {
 		return
 	}
 	result := h.svc.Delete(c.Request.Context(), req)
@@ -31,8 +30,7 @@ func (h *BulkHandler) Delete(c *gin.Context) {
 
 func (h *BulkHandler) Apply(c *gin.Context) {
 	var req types.BulkApplyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if !bindJSON(c, &req) {
 		return
 	}
 	result := h.svc.Apply(c.Request.Context(), req)

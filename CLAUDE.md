@@ -159,6 +159,13 @@ Local users live in a database (`internal/store`): PostgreSQL when `database.pos
 | PUT    | `/api/v1/secret/:namespace/:name` | Update Secret                  |
 | DELETE | `/api/v1/secret/:namespace/:name` | Delete Secret                  |
 
+### Nodes
+
+| Method | Endpoint              | Description                                       |
+| ------ | --------------------- | ------------------------------------------------ |
+| GET    | `/api/v1/node/`       | List nodes (cluster-scoped)                      |
+| GET    | `/api/v1/node/:name`  | Get node detail (capacity, conditions, taints)   |
+
 ### Dashboard
 
 | Method | Endpoint                                | Description                    |
@@ -300,8 +307,8 @@ data: {"name": "nginx", "namespace": "default"}
 | Create / Delete Namespace                               | Lens, Headlamp, Rancher | 📋 Planned | 1     |
 | Per-namespace resource summary                          | Rancher, Headlamp       | ✅ Done    | —     |
 | Namespace switcher in UI nav                            | All                     | 📋 Planned | 1     |
-| List Nodes                                              | All                     | 📋 Planned | 2     |
-| Node detail — capacity, allocatable, taints, conditions | Lens, Headlamp, Rancher | 📋 Planned | 2     |
+| List Nodes                                              | All                     | ✅ Done    | —     |
+| Node detail — capacity, allocatable, taints, conditions | Lens, Headlamp, Rancher | ✅ Done    | —     |
 | Node CPU / Memory usage                                 | Lens, Headlamp          | 📋 Planned | 2     |
 | Cordon / Uncordon Node                                  | k9s, Rancher            | 🚀 Planned | 5     |
 | Drain Node                                              | k9s, Rancher            | 🚀 Planned | 5     |
@@ -348,9 +355,9 @@ data: {"name": "nginx", "namespace": "default"}
 | Monaco YAML editor (editable)              | Podforge          | ✅ Done    | —     |
 | Apply raw YAML from editor                 | Headlamp, Rancher | 📋 Planned | 4     |
 | YAML schema validation (K8s OpenAPI spec)  | Monokle, Rancher  | 📋 Planned | 4     |
-| Download YAML as file                      | Monokle, Headlamp | 📋 Planned | 4     |
+| Download YAML as file                      | Monokle, Headlamp | ✅ Done    | —     |
 | Bulk apply multiple YAML resources         | Rancher, Headlamp | ✅ Done    | —     |
-| YAML diff view — current vs proposed       | Rancher           | 🚀 Planned | 4     |
+| YAML diff view — current vs proposed       | Rancher           | ✅ Done    | —     |
 | Helm chart install from UI                 | Rancher, Lens     | 🚀 Planned | 5     |
 | Helm release list / upgrade / rollback     | Rancher, Lens     | 🚀 Planned | 5     |
 
@@ -436,6 +443,7 @@ data: {"name": "nginx", "namespace": "default"}
 - [x] Generic resource watch (SSE)
 - [x] Global search
 - [x] Namespace CRUD endpoints
+- [x] Node list + detail endpoints (read-only, cluster-scoped)
 - [x] Deployment scale endpoint
 - [x] Deployment restart (rollout) endpoint
 - [x] YAML validate + apply endpoint (`POST /api/v1/apply` — multi-document, `dryRun` server-side validation)
@@ -456,6 +464,7 @@ data: {"name": "nginx", "namespace": "default"}
 - [x] Services list page + form
 - [x] Secrets list page + form
 - [x] Namespaces management page
+- [x] Nodes list page + detail drawer (status, roles, capacity/allocatable, conditions, taints)
 - [x] Deployment detail drawer (scale, restart, ReplicaSet timeline)
 - [x] Log viewer enhancements — follow toggle, container selector, tail-N, search/filter, download
 - [x] SSE integration — live status badges + connection health across all list pages
@@ -493,7 +502,7 @@ Goal: every resource kind has a working list + create + detail flow in the UI.
 Goal: UI reflects real-time cluster state without manual refresh.
 
 - [x] Wire SSE watch endpoint to all list pages — rows update/appear/disappear live
-- [ ] Pod status badge with phase-color pulsing animation when `Pending`
+- [x] Pod status badge with phase-color pulsing animation when `Pending`
 - [x] Cluster events panel (dedicated `/events` page) fed from `/api/v1/events/stream`
 - [x] SSE connection health indicator (connected / reconnecting)
 
@@ -516,8 +525,8 @@ Goal: power users can paste and apply raw YAML without forms.
 
 - [x] "Apply YAML" button in header opens editor drawer (validate + apply, multi-document)
 - [x] Backend validates YAML via server-side dry-run before applying
-- [ ] Diff view: current resource YAML vs. proposed change (read-only left pane)
-- [ ] Download current resource YAML as `.yaml` file
+- [x] Diff view: current resource YAML vs. proposed change (read-only left pane)
+- [x] Download current resource YAML as `.yaml` file
 
 ### Phase 5 — Observability
 
@@ -525,7 +534,7 @@ Goal: surface cluster health without leaving Podforge.
 
 - [ ] Prometheus metrics endpoint (`/metrics`) on backend
 - [ ] ResourceQuota / LimitRange display per namespace
-- [ ] Node list page: status, capacity, allocatable, taints, conditions
+- [x] Node list page: status, capacity, allocatable, taints, conditions
 - [ ] Pod CPU / Memory usage charts (requires metrics-server in cluster)
 - [ ] Basic HPA (HorizontalPodAutoscaler) list and detail view
 

@@ -18,6 +18,7 @@ import {
   IconAlertTriangle,
   IconCheck,
   IconCode,
+  IconDownload,
   IconInfoCircle,
   IconRefresh,
   IconEdit,
@@ -31,6 +32,7 @@ import type { Deployment } from "@src/types";
 import { getDeploymentOverview } from "@src/api/deployments";
 import { useScaleDeployment, useRestartDeployment } from "@src/hooks/useDeployments";
 import { formatAge } from "@src/components/common/ResourceListPage";
+import { downloadTextFile } from "@src/utils/helper";
 
 interface DeploymentDetailDrawerProps {
   deployment: Deployment | null;
@@ -310,6 +312,23 @@ export function DeploymentDetailDrawer({
         </Tabs.Panel>
 
         <Tabs.Panel value="spec" p="lg">
+          <Group justify="flex-end" mb="sm">
+            <Button
+              variant="light"
+              size="xs"
+              leftSection={<IconDownload size={14} />}
+              onClick={() =>
+                downloadTextFile(
+                  `${deployment?.metadata.name ?? "deployment"}.yaml`,
+                  specYaml,
+                  "application/yaml"
+                )
+              }
+              disabled={!specYaml}
+            >
+              Download YAML
+            </Button>
+          </Group>
           <Box
             component="pre"
             style={{

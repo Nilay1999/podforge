@@ -6,6 +6,7 @@ import (
 
 	"github.com/podforge/backend/internal/builders"
 	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -38,9 +39,7 @@ func (s *deploymentService) List(ctx context.Context, namespace string) (*appsv1
 	if err != nil {
 		return &appsv1.DeploymentList{Items: []appsv1.Deployment{}}, err
 	}
-	if list.Items == nil {
-		list.Items = []appsv1.Deployment{}
-	}
+	util.NormalizeList(&list.Items)
 	return list, nil
 }
 

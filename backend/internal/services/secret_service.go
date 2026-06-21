@@ -5,6 +5,7 @@ import (
 
 	"github.com/podforge/backend/internal/builders"
 	"github.com/podforge/backend/internal/types"
+	"github.com/podforge/backend/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -26,8 +27,23 @@ func NewSecretService(clientset *kubernetes.Clientset) SecretService {
 	return &secretService{clientset: clientset}
 }
 
+const redactedValue = "[REDACTED]"
+
+// redactSecret masks Data values so secret contents never leave the server.
+// Keys are preserved so callers can still see which entries exist.
+func redactSecret(secret *corev1.Secret) {
+	for k := range secret.Data {
+		secret.Data[k] = []byte(redactedValue)
+	}
+}
+
 func (s *secretService) Get(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
-	return s.clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+	secret, err := s.clientset.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	redactSecret(secret)
+	return secret, nil
 }
 
 func (s *secretService) List(ctx context.Context, namespace string) (*corev1.SecretList, error) {
@@ -35,8 +51,9 @@ func (s *secretService) List(ctx context.Context, namespace string) (*corev1.Sec
 	if err != nil {
 		return &corev1.SecretList{Items: []corev1.Secret{}}, err
 	}
-	if list.Items == nil {
-		list.Items = []corev1.Secret{}
+	util.NormalizeList(&list.Items)
+	for i := range list.Items {
+		redactSecret(&list.Items[i])
 	}
 	return list, nil
 }
