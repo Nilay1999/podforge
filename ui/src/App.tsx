@@ -8,6 +8,7 @@ import { DeploymentsPage } from "./pages/DeploymentsPage";
 import { EventsPage } from "./pages/EventsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NamespacesPage } from "./pages/NamespacesPage";
+import { NodesPage } from "./pages/NodesPage";
 import { PodsPage } from "./pages/PodsPage";
 import { SecretsPage } from "./pages/SecretsPage";
 import { ServicesPage } from "./pages/ServicesPage";
@@ -37,6 +38,7 @@ function ProtectedRoutes() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/secrets" element={<SecretsPage />} />
         <Route path="/namespaces" element={<NamespacesPage />} />
+        <Route path="/nodes" element={<NodesPage />} />
         <Route path="/events" element={<EventsPage />} />
         {identity?.role === "admin" && <Route path="/users" element={<UsersPage />} />}
       </Routes>

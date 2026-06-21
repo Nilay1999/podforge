@@ -11,7 +11,7 @@ import {
   ThemeIcon
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconBook, IconCode, IconForms, IconX } from "@tabler/icons-react";
+import { IconBook, IconCode, IconForms, IconGitCompare, IconX } from "@tabler/icons-react";
 import jsYaml from "js-yaml";
 import type { ResourceKind } from "@src/types";
 import { useCreateConfigMap } from "@src/hooks/useConfigMaps";
@@ -22,6 +22,7 @@ import { useCreateSecret } from "@src/hooks/useSecrets";
 import { FormDocs } from "@src/components/forms/FormDocs";
 import { ManifestForm } from "@src/components/forms/ManifestForm";
 import { ManifestEditor } from "./ManifestEditor";
+import { ManifestDiff } from "./ManifestDiff";
 import { KIND_STRATEGIES, type AnyPayload } from "./kindStrategies";
 
 interface ManifestDrawerProps {
@@ -76,6 +77,8 @@ export function ManifestDrawer({
 
   const [activeTab, setActiveTab] = useState("form");
   const [editorValue, setEditorValue] = useState("");
+  const [originalYaml, setOriginalYaml] = useState("");
+  const [diffModified, setDiffModified] = useState("");
   const [pendingPayload, setPendingPayload] = useState<AnyPayload>(
     () => initialPayload ?? strategy.initialPayload
   );
@@ -85,8 +88,10 @@ export function ManifestDrawer({
   useEffect(() => {
     if (!opened) return;
     const payload = initialPayload ?? strategy.initialPayload;
+    const yaml = jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 });
     setPendingPayload(payload);
-    setEditorValue(jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }));
+    setEditorValue(yaml);
+    setOriginalYaml(yaml);
     setActiveTab("form");
     setFormKey((k) => k + 1);
   }, [opened]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -117,7 +122,7 @@ export function ManifestDrawer({
   };
 
   const handleApplyClick = () => {
-    if (activeTab === "yaml") {
+    if (activeTab === "yaml" || activeTab === "diff") {
       let parsed: unknown;
       try {
         parsed = jsYaml.load(editorValue);
@@ -142,6 +147,14 @@ export function ManifestDrawer({
     if (tab === "yaml") {
       const payload = getPayloadRef.current?.() ?? pendingPayload;
       setEditorValue(jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 }));
+    } else if (tab === "diff") {
+      let current = editorValue;
+      if (activeTab === "form") {
+        const payload = getPayloadRef.current?.() ?? pendingPayload;
+        current = jsYaml.dump(strategy.toManifest(payload), { lineWidth: -1 });
+        setEditorValue(current);
+      }
+      setDiffModified(current);
     } else if (tab === "form") {
       try {
         const parsed = jsYaml.load(editorValue);
@@ -218,6 +231,11 @@ export function ManifestDrawer({
           <Tabs.Tab value="yaml" leftSection={<IconCode size={14} />}>
             YAML
           </Tabs.Tab>
+          {isEditMode && (
+            <Tabs.Tab value="diff" leftSection={<IconGitCompare size={14} />}>
+              Diff
+            </Tabs.Tab>
+          )}
           <Tabs.Tab value="docs" leftSection={<IconBook size={14} />}>
             Docs
           </Tabs.Tab>
@@ -237,6 +255,12 @@ export function ManifestDrawer({
         <Tabs.Panel value="yaml" style={{ height: "100%", overflow: "hidden" }}>
           <ManifestEditor value={editorValue} onChange={setEditorValue} />
         </Tabs.Panel>
+
+        {isEditMode && (
+          <Tabs.Panel value="diff" style={{ height: "100%", overflow: "hidden" }}>
+            <ManifestDiff original={originalYaml} modified={diffModified} />
+          </Tabs.Panel>
+        )}
 
         <Tabs.Panel value="docs" style={{ height: "100%", overflow: "hidden" }}>
           <FormDocs kind={kind} />

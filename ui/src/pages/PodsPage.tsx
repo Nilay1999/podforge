@@ -1,27 +1,14 @@
 import { useState } from "react";
-import { Badge, Text } from "@mantine/core";
+import { Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { ResourceListPage, formatAge, type Column } from "@src/components/common/ResourceListPage";
 import { useDeletePod, usePods } from "@src/hooks/usePods";
 import { updatePod } from "@src/api/pods";
 import { PodDetailDrawer } from "@src/components/pods/PodDetailDrawer";
+import { PodPhaseBadge } from "@src/components/pods/PodPhaseBadge";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
 import { useEditManifestDrawer } from "@src/hooks/useEditManifestDrawer";
 import type { Pod } from "@src/types";
-
-function phaseColor(phase?: string): string {
-  switch (phase) {
-    case "Running":
-      return "success";
-    case "Pending":
-      return "warning";
-    case "Failed":
-    case "CrashLoopBackOff":
-      return "danger";
-    default:
-      return "gray";
-  }
-}
 
 const columns: Column<Pod>[] = [
   {
@@ -34,11 +21,7 @@ const columns: Column<Pod>[] = [
   },
   {
     header: "Status",
-    render: (p) => (
-      <Badge color={phaseColor(p.status?.phase)} variant="light" size="sm">
-        {p.status?.phase ?? "Unknown"}
-      </Badge>
-    )
+    render: (p) => <PodPhaseBadge phase={p.status?.phase} size="sm" />
   },
   {
     header: "Ready",

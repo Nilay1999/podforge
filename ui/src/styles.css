@@ -25,6 +25,29 @@
   }
 }
 
+/* Pod phase badge — gentle pulse while a pod is Pending */
+.pf-badge-pulse {
+  animation: pf-badge-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pf-badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--mantine-color-warning-5) 55%, transparent);
+  }
+  50% {
+    opacity: 0.65;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--mantine-color-warning-5) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-badge-pulse {
+    animation: none;
+  }
+}
+
 /* Sidebar nav item — subtle tint + left accent bar for the active route */
 .pf-navlink {
   position: relative;

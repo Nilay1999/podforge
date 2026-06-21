@@ -33,14 +33,9 @@ import { useQuery } from "@tanstack/react-query";
 import jsYaml from "js-yaml";
 import type { Pod } from "@src/types";
 import { getPodOverview } from "@src/api/pods";
+import { PodPhaseBadge } from "@src/components/pods/PodPhaseBadge";
+import { downloadTextFile } from "@src/utils/helper";
 import { sseUrl } from "@src/auth/token";
-
-function phaseColor(phase?: string) {
-  if (phase === "Running") return "success";
-  if (phase === "Pending") return "warning";
-  if (phase === "Failed" || phase === "CrashLoopBackOff") return "danger";
-  return "gray";
-}
 
 function podAge(creationTimestamp?: string): string {
   if (!creationTimestamp) return "–";
@@ -126,15 +121,7 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
   );
 
   const handleDownload = () => {
-    const blob = new Blob([logLines.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${pod?.metadata.name ?? "pod"}.log`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadTextFile(`${pod?.metadata.name ?? "pod"}.log`, logLines.join("\n"));
   };
 
   const specYaml = pod
@@ -188,9 +175,7 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
           </ActionIcon>
         </Group>
         <Group gap="xs" wrap="wrap">
-          <Badge color={phaseColor(phase)} variant="light">
-            {phase ?? "Unknown"}
-          </Badge>
+          <PodPhaseBadge phase={phase} />
           <Text size="xs" c="dimmed">
             {pod?.metadata.namespace ?? "default"} · {age}
             {restarts > 0 && ` · ${restarts} restart${restarts !== 1 ? "s" : ""}`}
@@ -372,6 +357,17 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
         </Tabs.Panel>
 
         <Tabs.Panel value="spec" p="lg">
+          <Group justify="flex-end" mb="sm">
+            <Button
+              variant="light"
+              size="xs"
+              leftSection={<IconDownload size={14} />}
+              onClick={() => downloadTextFile(`${pod?.metadata.name ?? "pod"}.yaml`, specYaml, "application/yaml")}
+              disabled={!specYaml}
+            >
+              Download YAML
+            </Button>
+          </Group>
           <Box
             component="pre"
             style={{

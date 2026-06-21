@@ -33,6 +33,7 @@ type handlerSet struct {
 	log        *handlers.LogHandler
 	watch      *handlers.WatchHandler
 	namespace  *handlers.NamespaceHandler
+	node       *handlers.NodeHandler
 	apply      *handlers.ApplyHandler
 	bulk       *handlers.BulkHandler
 	search     *handlers.SearchHandler
@@ -50,6 +51,7 @@ func buildHandlers(clientset *kubernetes.Clientset, restConfig *rest.Config, log
 	logSvc := services.NewLogService(clientset)
 	watchSvc := services.NewWatchService(clientset)
 	namespaceSvc := services.NewNamespaceService(clientset)
+	nodeSvc := services.NewNodeService(clientset)
 	searchSvc := services.NewSearchService(clientset)
 
 	applySvc, err := services.NewApplyService(restConfig)
@@ -69,6 +71,7 @@ func buildHandlers(clientset *kubernetes.Clientset, restConfig *rest.Config, log
 		log:        handlers.NewLogHandler(logSvc, log),
 		watch:      handlers.NewWatchHandler(watchSvc, log),
 		namespace:  handlers.NewNamespaceHandler(namespaceSvc, log),
+		node:       handlers.NewNodeHandler(nodeSvc, log),
 		apply:      handlers.NewApplyHandler(applySvc, log),
 		bulk:       handlers.NewBulkHandler(bulkSvc, log),
 		search:     handlers.NewSearchHandler(searchSvc, log),
@@ -261,6 +264,12 @@ func Setup(r *gin.Engine, cfg config.Config, clientset *kubernetes.Clientset, re
 			namespaces.GET("/", h.namespace.List)
 			namespaces.POST("/", adminOnly, h.namespace.Create)
 			namespaces.DELETE("/:name", adminOnly, h.namespace.Delete)
+		}
+
+		node := v1.Group("node")
+		{
+			node.GET("/", h.node.List)
+			node.GET("/:name", h.node.Get)
 		}
 
 		v1.POST("/apply", h.apply.Apply)
