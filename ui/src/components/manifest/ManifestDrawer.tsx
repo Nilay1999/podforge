@@ -107,7 +107,7 @@ export function ManifestDrawer({
         notifications.show({
           title: isEditMode ? `${kind} updated` : `${kind} created`,
           message: `"${(payload as { name?: string }).name}" was ${isEditMode ? "updated" : "created"} successfully.`,
-          color: "teal"
+          color: "success"
         });
         onClose();
       },
@@ -115,7 +115,7 @@ export function ManifestDrawer({
         notifications.show({
           title: `Failed to ${isEditMode ? "update" : "create"} ${kind}`,
           message: err.message,
-          color: "red"
+          color: "danger"
         });
       }
     });
@@ -130,7 +130,7 @@ export function ManifestDrawer({
         notifications.show({
           title: "Invalid YAML",
           message: "Fix syntax errors before applying.",
-          color: "red"
+          color: "danger"
         });
         return;
       }
@@ -164,7 +164,7 @@ export function ManifestDrawer({
         notifications.show({
           title: "Invalid YAML",
           message: "Fix syntax errors before switching back to the form.",
-          color: "red"
+          color: "danger"
         });
         return;
       }

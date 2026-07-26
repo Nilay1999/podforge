@@ -27,7 +27,7 @@ function FieldTable({ fields }: { fields: FieldDoc[] }) {
                   {f.field}
                 </Code>
                 {f.required && (
-                  <Badge size="xs" color="red" variant="light">
+                  <Badge size="xs" color="danger" variant="light">
                     required
                   </Badge>
                 )}
@@ -716,7 +716,7 @@ export function FormDocs({ kind }: { kind: ResourceKind }) {
       <Stack gap="xs" pb="xl">
         <Text size="xs" c="dimmed">
           Field reference for the {kind} form. Fields marked{" "}
-          <Badge size="xs" color="red" variant="light">
+          <Badge size="xs" color="danger" variant="light">
             required
           </Badge>{" "}
           must be filled before applying.

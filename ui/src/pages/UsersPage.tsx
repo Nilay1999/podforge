@@ -44,7 +44,7 @@ const ROLE_OPTIONS = [
 const roleColor: Record<Role, string> = {
   viewer: "gray",
   editor: "steelBlue",
-  admin: "grape"
+  admin: "accent"
 };
 
 export function UsersPage() {
@@ -84,12 +84,12 @@ export function UsersPage() {
   const handleCreate = (values: CreateUserRequest) => {
     createUser.mutate(values, {
       onSuccess: () => {
-        notifications.show({ title: "User created", message: values.username, color: "teal" });
+        notifications.show({ title: "User created", message: values.username, color: "success" });
         createForm.reset();
         closeCreate();
       },
       onError: (err) =>
-        notifications.show({ title: "Create failed", message: err.message, color: "red" })
+        notifications.show({ title: "Create failed", message: err.message, color: "danger" })
     });
   };
 
@@ -104,27 +104,27 @@ export function UsersPage() {
     if (values.role !== editing.role) payload.role = values.role;
     if (values.password) payload.password = values.password;
     if (!payload.role && !payload.password) {
-      notifications.show({ title: "Nothing to update", message: "No changes made", color: "yellow" });
+      notifications.show({ title: "Nothing to update", message: "No changes made", color: "warning" });
       return;
     }
     updateUser.mutate(
       { username: editing.username, payload },
       {
         onSuccess: () => {
-          notifications.show({ title: "User updated", message: editing.username, color: "teal" });
+          notifications.show({ title: "User updated", message: editing.username, color: "success" });
           setEditing(null);
         },
         onError: (err) =>
-          notifications.show({ title: "Update failed", message: err.message, color: "red" })
+          notifications.show({ title: "Update failed", message: err.message, color: "danger" })
       }
     );
   };
 
   const handleDelete = (username: string) => {
     deleteUser.mutate(username, {
-      onSuccess: () => notifications.show({ title: "User deleted", message: username, color: "teal" }),
+      onSuccess: () => notifications.show({ title: "User deleted", message: username, color: "success" }),
       onError: (err) =>
-        notifications.show({ title: "Delete failed", message: err.message, color: "red" })
+        notifications.show({ title: "Delete failed", message: err.message, color: "danger" })
     });
   };
 
@@ -244,7 +244,7 @@ export function UsersPage() {
         {isLoading && <Loader />}
 
         {error && (
-          <Alert color="red" title="Failed to load users">
+          <Alert color="danger" title="Failed to load users">
             {error.message}
           </Alert>
         )}
@@ -308,7 +308,7 @@ export function UsersPage() {
                               Edit role / password
                             </Menu.Item>
                             <Menu.Item
-                              color="red"
+                              color="danger"
                               disabled={isSelf}
                               leftSection={<IconTrash size={14} />}
                               onClick={() => handleDelete(u.username)}

@@ -257,7 +257,7 @@ export function ServiceManifestForm({
                     )}
                   </SimpleGrid>
                   <ActionIcon
-                    color="red"
+                    color="danger"
                     variant="subtle"
                     size="sm"
                     type="button"

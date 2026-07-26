@@ -82,14 +82,14 @@ export function PodsPage() {
         notifications.show({
           title: "Pod deleted",
           message: `${selectedPod.metadata.name} was deleted`,
-          color: "teal"
+          color: "success"
         });
       },
       onError: (err) =>
         notifications.show({
           title: "Delete failed",
           message: err.message,
-          color: "red"
+          color: "danger"
         })
     });
   };

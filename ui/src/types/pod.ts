@@ -119,6 +119,6 @@ export interface PodEvent {
 }
 
 export interface PodOverview {
+  pod?: Pod;
   events?: PodEvent[];
-  conditions?: PodCondition[];
 }

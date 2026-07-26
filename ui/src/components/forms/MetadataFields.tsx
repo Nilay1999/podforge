@@ -1,6 +1,6 @@
 import { Paper, Select, SimpleGrid, Stack, Text, TextInput } from "@mantine/core";
 import type { UseFormReturnType } from "@mantine/form";
-import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { useNamespaceOptions } from "@src/hooks/useNamespaces";
 import { type KeyValuePair, UncontrolledKeyValuePairs } from "./KeyValuePairsField";
 
 interface MetadataFieldsProps<T extends { name: string; namespace: string }> {
@@ -24,6 +24,8 @@ export function MetadataFields<T extends { name: string; namespace: string }>({
   annotationError,
   namePlaceholder = "my-resource"
 }: MetadataFieldsProps<T>) {
+  const { options: namespaceOptions } = useNamespaceOptions(form.values.namespace);
+
   return (
     <Paper withBorder p="md" radius="md">
       <Stack gap="sm">
@@ -38,7 +40,7 @@ export function MetadataFields<T extends { name: string; namespace: string }>({
           />
           <Select
             label="Namespace"
-            data={DEFAULT_NAMESPACES}
+            data={namespaceOptions}
             searchable
             allowDeselect={false}
             placeholder="default"

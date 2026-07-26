@@ -89,11 +89,11 @@ export function DeploymentDetailDrawer({
       { name, replicas },
       {
         onSuccess: () => {
-          notifications.show({ title: "Scaled", message: `${name} → ${replicas} replicas`, color: "teal" });
+          notifications.show({ title: "Scaled", message: `${name} → ${replicas} replicas`, color: "success" });
           setScaleValue("");
         },
         onError: (err) =>
-          notifications.show({ title: "Scale failed", message: err.message, color: "red" })
+          notifications.show({ title: "Scale failed", message: err.message, color: "danger" })
       }
     );
   };
@@ -101,9 +101,9 @@ export function DeploymentDetailDrawer({
   const handleRestart = () => {
     restartMutation.mutate(name, {
       onSuccess: () =>
-        notifications.show({ title: "Rollout restart triggered", message: name, color: "teal" }),
+        notifications.show({ title: "Rollout restart triggered", message: name, color: "success" }),
       onError: (err) =>
-        notifications.show({ title: "Restart failed", message: err.message, color: "red" })
+        notifications.show({ title: "Restart failed", message: err.message, color: "danger" })
     });
   };
 
@@ -137,7 +137,7 @@ export function DeploymentDetailDrawer({
         </Group>
         <Group gap="xs" wrap="wrap">
           <Badge
-            color={readyReplicas === currentReplicas && currentReplicas > 0 ? "teal" : "orange"}
+            color={readyReplicas === currentReplicas && currentReplicas > 0 ? "success" : "warning"}
             variant="light"
           >
             {readyReplicas}/{currentReplicas} ready
@@ -166,7 +166,7 @@ export function DeploymentDetailDrawer({
           </Button>
           <Button
             variant="outline"
-            color="red"
+            color="danger"
             size="xs"
             leftSection={<IconTrash size={12} />}
             onClick={onDelete}
@@ -262,9 +262,9 @@ export function DeploymentDetailDrawer({
                   {conditions.map((cond: any) => (
                     <Group key={cond.type} gap="xs">
                       {cond.status === "True" ? (
-                        <IconCheck size={14} color="var(--mantine-color-success-6)" />
+                        <IconCheck size={14} color="var(--mantine-color-success-text)" />
                       ) : (
-                        <IconAlertTriangle size={14} color="var(--mantine-color-warning-6)" />
+                        <IconAlertTriangle size={14} color="var(--mantine-color-warning-text)" />
                       )}
                       <Text size="sm" ff="monospace">
                         {cond.type}

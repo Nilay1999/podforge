@@ -1,3 +1,12 @@
+/*
+ * Mantine's light-scheme dimmed is gray-6 (#868e96) — only 3.5:1 on white,
+ * below AA. `c="dimmed"` carries most of the secondary copy in this app,
+ * so deepen it one step. Dark scheme (dark-2 on dark-7) is already 7.2:1.
+ */
+[data-mantine-color-scheme="light"] {
+  --mantine-color-dimmed: var(--mantine-color-gray-7);
+}
+
 /* Connection-status pulse used in the navbar footer */
 .pf-pulse {
   animation: pf-pulse 2s ease-out infinite;
@@ -71,7 +80,7 @@
 }
 
 .pf-navlink[data-active] .mantine-NavLink-section {
-  color: var(--mantine-color-steelBlue-4);
+  color: var(--mantine-color-steelBlue-text);
 }
 
 .pf-navlink[data-active]::before {
@@ -83,10 +92,4 @@
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--mantine-color-steelBlue-5);
-}
-
-/* Light color scheme: deepen the active text so it stays legible on white */
-[data-mantine-color-scheme="light"] .pf-navlink[data-active] .mantine-NavLink-label,
-[data-mantine-color-scheme="light"] .pf-navlink[data-active] .mantine-NavLink-section {
-  color: var(--mantine-color-steelBlue-7);
 }

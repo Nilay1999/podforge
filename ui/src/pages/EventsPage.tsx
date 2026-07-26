@@ -16,7 +16,7 @@ import {
 import { IconPlayerPause, IconPlayerPlay, IconSearch, IconTrash } from "@tabler/icons-react";
 import { useClusterEvents } from "@src/hooks/useClusterEvents";
 import { eventTimestamp, type ClusterEvent, type EventSeverity } from "@src/types";
-import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { useNamespaceOptions } from "@src/hooks/useNamespaces";
 import { formatAge } from "@src/components/common/ResourceListPage";
 
 const ALL_NAMESPACES = "__all__";
@@ -24,8 +24,8 @@ const ALL_NAMESPACES = "__all__";
 type TypeFilter = "all" | EventSeverity;
 
 function severityColor(type?: EventSeverity): string {
-  if (type === "Warning") return "red";
-  return "gray";
+  if (type === "Warning") return "warning";
+  return "cyan";
 }
 
 function involvedLabel(e: ClusterEvent): string {
@@ -41,6 +41,8 @@ export function EventsPage() {
   const [paused, setPaused] = useState(false);
 
   const namespace = namespaceValue === ALL_NAMESPACES ? "" : namespaceValue;
+  const { options: namespaceOptions, isLoading: namespacesLoading } =
+    useNamespaceOptions(namespace);
   const { events, connected, clear } = useClusterEvents(namespace, paused);
 
   const filtered = useMemo(() => {
@@ -69,7 +71,7 @@ export function EventsPage() {
             {filtered.length !== events.length && ` / ${events.length}`}
           </Badge>
           {warningCount > 0 && (
-            <Badge color="red" variant="light">
+            <Badge color="warning" variant="light">
               {warningCount} warning{warningCount !== 1 ? "s" : ""}
             </Badge>
           )}
@@ -78,7 +80,7 @@ export function EventsPage() {
           label={connected ? "Receiving live events" : "Connecting to event stream…"}
           withArrow
         >
-          <Badge color={connected ? "teal" : "gray"} variant="dot" style={{ cursor: "default" }}>
+          <Badge color={connected ? "success" : "gray"} variant="dot" style={{ cursor: "default" }}>
             {connected ? "Live" : "Connecting"}
           </Badge>
         </Tooltip>
@@ -89,7 +91,9 @@ export function EventsPage() {
           label="Namespace"
           value={namespaceValue}
           onChange={(v) => v && setNamespaceValue(v)}
-          data={[{ value: ALL_NAMESPACES, label: "All namespaces" }, ...DEFAULT_NAMESPACES]}
+          data={[{ value: ALL_NAMESPACES, label: "All namespaces" }, ...namespaceOptions]}
+          disabled={namespacesLoading}
+          searchable
           size="xs"
           style={{ minWidth: 160 }}
         />
@@ -141,8 +145,8 @@ export function EventsPage() {
         <Table highlightOnHover style={{ fontSize: 13 }}>
           <Table.Thead style={{ background: "var(--mantine-color-default-hover)" }}>
             <Table.Tr>
-              <Table.Th style={{ width: 90 }}>Type</Table.Th>
-              <Table.Th style={{ width: 160 }}>Reason</Table.Th>
+              <Table.Th style={{ width: 120 }}>Type</Table.Th>
+              <Table.Th style={{ width: 130 }}>Reason</Table.Th>
               <Table.Th style={{ width: 200 }}>Object</Table.Th>
               <Table.Th>Message</Table.Th>
               <Table.Th style={{ width: 60 }}>Count</Table.Th>

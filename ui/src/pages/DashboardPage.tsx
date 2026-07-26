@@ -30,7 +30,7 @@ import { useDeployments } from "@src/hooks/useDeployments";
 import { usePods } from "@src/hooks/usePods";
 import { useConfigMaps } from "@src/hooks/useConfigMaps";
 import type { Pod } from "@src/types";
-import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { useNamespaceOptions } from "@src/hooks/useNamespaces";
 import { sseUrl } from "@src/auth/token";
 
 interface ClusterEvent {
@@ -79,9 +79,9 @@ function PhaseDonut({
   const rPct = (running / total) * 100;
   const pPct = (pending / total) * 100;
   const bg = `conic-gradient(
-    var(--mantine-color-success-5) 0 ${rPct}%,
-    var(--mantine-color-warning-5) ${rPct}% ${rPct + pPct}%,
-    var(--mantine-color-danger-5) ${rPct + pPct}% 100%
+    var(--mantine-color-success-filled) 0 ${rPct}%,
+    var(--mantine-color-warning-filled) ${rPct}% ${rPct + pPct}%,
+    var(--mantine-color-danger-filled) ${rPct + pPct}% 100%
   )`;
   return (
     <div style={{ position: "relative", width: 110, height: 110, flexShrink: 0 }}>
@@ -168,7 +168,7 @@ function EventsFeed({ events }: { events: ClusterEvent[] }) {
                 height: 26,
                 borderRadius: 6,
                 background: "var(--mantine-color-default-hover)",
-                color: isWarning ? "var(--mantine-color-warning-5)" : "var(--mantine-color-dimmed)",
+                color: isWarning ? "var(--mantine-color-warning-text)" : "var(--mantine-color-dimmed)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -206,6 +206,7 @@ function EventsFeed({ events }: { events: ClusterEvent[] }) {
 
 export function DashboardPage() {
   const [namespace, setNamespace] = useState("default");
+  const { options: namespaceOptions, isLoading: namespacesLoading } = useNamespaceOptions(namespace);
   const [drawerKind, setDrawerKind] = useState<ResourceKind>("Deployment");
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
   const [clusterEvents, setClusterEvents] = useState<ClusterEvent[]>([]);
@@ -263,7 +264,9 @@ export function DashboardPage() {
                 size="xs"
                 value={namespace}
                 onChange={(v) => v && setNamespace(v)}
-                data={DEFAULT_NAMESPACES}
+                data={namespaceOptions}
+                disabled={namespacesLoading}
+                searchable
                 style={{ minWidth: 130 }}
               />
             </Group>
@@ -337,17 +340,17 @@ export function DashboardPage() {
                   {
                     label: "Running",
                     count: podCounts.running,
-                    color: "var(--mantine-color-success-5)"
+                    color: "var(--mantine-color-success-filled)"
                   },
                   {
                     label: "Pending",
                     count: podCounts.pending,
-                    color: "var(--mantine-color-warning-5)"
+                    color: "var(--mantine-color-warning-filled)"
                   },
                   {
                     label: "Failed",
                     count: podCounts.failed,
-                    color: "var(--mantine-color-danger-5)"
+                    color: "var(--mantine-color-danger-filled)"
                   }
                 ].map(({ label, count, color }) => (
                   <Group key={label} gap="xs">

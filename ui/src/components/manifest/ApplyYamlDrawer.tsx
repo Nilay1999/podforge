@@ -65,7 +65,7 @@ export function ApplyYamlDrawer({ opened, onClose }: ApplyYamlDrawerProps) {
         notifications.show({
           title: "Manifests applied",
           message: `${data.applied.length} resource${data.applied.length !== 1 ? "s" : ""} applied to the cluster.`,
-          color: "teal"
+          color: "success"
         });
       }
     },
@@ -136,7 +136,7 @@ export function ApplyYamlDrawer({ opened, onClose }: ApplyYamlDrawerProps) {
 
       {error && (
         <Alert
-          color="red"
+          color="danger"
           variant="light"
           m="sm"
           icon={<IconAlertTriangle size={16} />}
@@ -151,7 +151,7 @@ export function ApplyYamlDrawer({ opened, onClose }: ApplyYamlDrawerProps) {
 
       {result && (
         <Alert
-          color="teal"
+          color="success"
           variant="light"
           m="sm"
           icon={<IconCheck size={16} />}
@@ -160,7 +160,7 @@ export function ApplyYamlDrawer({ opened, onClose }: ApplyYamlDrawerProps) {
         >
           <Group gap="xs" wrap="wrap">
             {result.applied.map((r) => (
-              <Badge key={`${r.kind}/${r.namespace ?? ""}/${r.name}`} color="teal" variant="light" radius="sm">
+              <Badge key={`${r.kind}/${r.namespace ?? ""}/${r.name}`} color="success" variant="light" radius="sm">
                 <Text span ff="monospace" size="xs">
                   {r.kind}/{r.name}
                   {r.namespace ? ` · ${r.namespace}` : ""}

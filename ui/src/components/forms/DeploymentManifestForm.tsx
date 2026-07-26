@@ -644,7 +644,7 @@ export function DeploymentManifestForm({
                   }
                 />
                 <ActionIcon
-                  color="red"
+                  color="danger"
                   variant="subtle"
                   type="button"
                   mb={i === 0 ? 2 : 0}
@@ -748,7 +748,7 @@ export function DeploymentManifestForm({
                   }
                 />
                 <ActionIcon
-                  color="red"
+                  color="danger"
                   variant="subtle"
                   type="button"
                   mb={i === 0 ? 2 : 0}
@@ -1090,7 +1090,7 @@ export function DeploymentManifestForm({
                   }
                 />
                 <ActionIcon
-                  color="red"
+                  color="danger"
                   variant="subtle"
                   type="button"
                   mb={i === 0 ? 2 : 0}

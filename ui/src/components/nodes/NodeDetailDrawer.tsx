@@ -87,7 +87,7 @@ export function NodeDetailDrawer({ nodeName, onClose }: NodeDetailDrawerProps) {
       <Stack gap="lg" p="lg">
         {isLoading && <Loader />}
         {error && (
-          <Text c="red" size="sm">
+          <Text c="danger" size="sm">
             {error.message}
           </Text>
         )}

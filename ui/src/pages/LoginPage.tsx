@@ -88,12 +88,12 @@ export function LoginPage() {
   return (
     <Flex h="100vh" w="100%">
       <BrandPanel />
-      <Center flex={1} p="xl" bg="var(--mantine-color-dark-7)">
+      <Center flex={1} p="xl" bg="var(--mantine-color-body)">
         <Paper w={400} maw="100%" p={{ base: "lg", sm: "xl" }} radius="lg" withBorder>
           <Stack gap="lg">
             <Box hiddenFrom="md">
               <Group justify="center" gap="xs">
-                <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-5)" />
+                <IconRocket size={26} stroke={1.5} color="var(--mantine-color-steelBlue-text)" />
                 <Text size="xl" fw={700} style={{ letterSpacing: "-0.01em" }}>
                   podforge
                 </Text>
@@ -110,7 +110,7 @@ export function LoginPage() {
             </Stack>
 
             {error && (
-              <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+              <Alert color="danger" icon={<IconAlertCircle size={16} />} variant="light">
                 {error}
               </Alert>
             )}
@@ -159,7 +159,7 @@ export function LoginPage() {
             )}
 
             {providers && !providers.local && !providers.oidc && (
-              <Alert color="yellow" variant="light">
+              <Alert color="warning" variant="light">
                 No login providers are configured on the server.
               </Alert>
             )}
@@ -174,6 +174,8 @@ export function LoginPage() {
   );
 }
 
+// Paints its own fixed dark gradient in both schemes, so the light-on-dark
+// text below is intentional and must not be swapped for scheme-aware tokens.
 function BrandPanel() {
   return (
     <Box
@@ -227,7 +229,7 @@ function BrandPanel() {
           </List>
         </Stack>
 
-        <Text size="xs" c="gray.6">
+        <Text size="xs" c="gray.5">
           © {new Date().getFullYear()} Podforge
         </Text>
       </Flex>

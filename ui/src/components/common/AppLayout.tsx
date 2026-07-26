@@ -90,7 +90,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
           <Group gap="xs" mr="xs">
-            <Rocket size={24} strokeWidth={1.75} color="var(--mantine-color-steelBlue-5)" />
+            <Rocket size={24} strokeWidth={1.75} color="var(--mantine-color-steelBlue-text)" />
             <Text size="lg" fw={700} style={{ letterSpacing: "-0.01em" }}>
               podforge
             </Text>
@@ -192,7 +192,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   Signed in via {identity.provider === "local" ? "Podforge" : identity.provider}
                 </Menu.Label>
                 <Menu.Item
-                  color="red"
+                  color="danger"
                   leftSection={<LogOut size={16} />}
                   onClick={() => {
                     logout();
@@ -257,7 +257,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50%",
-                  background: "var(--mantine-color-success-5)"
+                  background: "var(--mantine-color-success-filled)"
                 }}
               />
               <Box
@@ -266,7 +266,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50%",
-                  background: "var(--mantine-color-success-5)"
+                  background: "var(--mantine-color-success-filled)"
                 }}
               />
             </Box>

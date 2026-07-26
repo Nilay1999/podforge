@@ -78,12 +78,12 @@ export function DeploymentsPage() {
         notifications.show({
           title: "Deployment deleted",
           message: selectedDeployment.metadata.name,
-          color: "teal"
+          color: "success"
         });
         setSelectedDeployment(null);
       },
       onError: (err) =>
-        notifications.show({ title: "Delete failed", message: err.message, color: "red" })
+        notifications.show({ title: "Delete failed", message: err.message, color: "danger" })
     });
   };
 

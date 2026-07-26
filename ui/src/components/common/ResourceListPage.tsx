@@ -31,7 +31,7 @@ import {
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import type { MutationResponse, ObjectMeta, ResourceKind } from "@src/types";
 import { ManifestDrawer } from "@src/components/manifest/ManifestDrawer";
-import { DEFAULT_NAMESPACES } from "@src/utils/constants";
+import { useNamespaceOptions } from "@src/hooks/useNamespaces";
 import { useWatchResource } from "@src/hooks/useWatchResource";
 
 export interface Column<T> {
@@ -73,6 +73,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
   onEditItem
 }: ResourceListPageProps<T>) {
   const [namespace, setNamespace] = useState("default");
+  const { options: namespaceOptions, isLoading: namespacesLoading } = useNamespaceOptions(namespace);
   const [search, setSearch] = useState("");
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
 
@@ -97,13 +98,13 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
         notifications.show({
           title: `${kind} deleted`,
           message: `${name} removed from ${namespace}`,
-          color: "teal"
+          color: "success"
         }),
       onError: (err) =>
         notifications.show({
           title: "Delete failed",
           message: err.message,
-          color: "red"
+          color: "danger"
         })
     });
   };
@@ -131,7 +132,9 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
             label="Namespace"
             value={namespace}
             onChange={(v) => v && setNamespace(v)}
-            data={DEFAULT_NAMESPACES}
+            data={namespaceOptions}
+            disabled={namespacesLoading}
+            searchable
             size="xs"
             style={{ minWidth: 140 }}
           />
@@ -159,7 +162,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
             withArrow
           >
             <Badge
-              color={connected ? "teal" : "gray"}
+              color={connected ? "success" : "gray"}
               variant="dot"
               size="sm"
               style={{ marginBottom: 1, cursor: "default" }}
@@ -172,7 +175,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
         {isLoading && <Loader />}
 
         {error && (
-          <Alert color="red" title={`Failed to load ${pluralTitle.toLowerCase()}`}>
+          <Alert color="danger" title={`Failed to load ${pluralTitle.toLowerCase()}`}>
             {error.message}
           </Alert>
         )}
@@ -237,7 +240,7 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
                           </Menu.Item>
                           <Menu.Divider />
                           <Menu.Item
-                            color="red"
+                            color="danger"
                             leftSection={<IconTrash size={14} />}
                             onClick={() => handleDelete(item.metadata.name)}
                           >

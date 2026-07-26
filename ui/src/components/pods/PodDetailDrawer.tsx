@@ -137,7 +137,7 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
       )
     : "";
 
-  const conditions = overview?.conditions ?? pod?.status?.conditions ?? [];
+  const conditions = overview?.pod?.status?.conditions ?? pod?.status?.conditions ?? [];
   const events = overview?.events ?? [];
   const labels = pod?.metadata.labels ?? {};
 
@@ -200,7 +200,7 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
           </Button>
           <Button
             variant="outline"
-            color="red"
+            color="danger"
             size="xs"
             leftSection={<IconTrash size={12} />}
             onClick={onDelete}
@@ -333,9 +333,9 @@ export function PodDetailDrawer({ pod, onClose, onDelete, onEdit }: PodDetailDra
                   {conditions.map((cond) => (
                     <Group key={cond.type} gap="xs">
                       {cond.status === "True" ? (
-                        <IconCheck size={14} color="var(--mantine-color-success-6)" />
+                        <IconCheck size={14} color="var(--mantine-color-success-text)" />
                       ) : (
-                        <IconAlertTriangle size={14} color="var(--mantine-color-warning-6)" />
+                        <IconAlertTriangle size={14} color="var(--mantine-color-warning-text)" />
                       )}
                       <Text size="sm" ff="monospace">
                         {cond.type}

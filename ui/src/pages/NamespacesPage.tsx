@@ -53,21 +53,21 @@ export function NamespacesPage() {
   const handleCreate = (values: CreateNamespaceRequest) => {
     createNs.mutate(values, {
       onSuccess: () => {
-        notifications.show({ title: "Namespace created", message: values.name, color: "teal" });
+        notifications.show({ title: "Namespace created", message: values.name, color: "success" });
         form.reset();
         closeModal();
       },
       onError: (err) =>
-        notifications.show({ title: "Create failed", message: err.message, color: "red" })
+        notifications.show({ title: "Create failed", message: err.message, color: "danger" })
     });
   };
 
   const handleDelete = (name: string) => {
     deleteNs.mutate(name, {
       onSuccess: () =>
-        notifications.show({ title: "Namespace deleted", message: name, color: "teal" }),
+        notifications.show({ title: "Namespace deleted", message: name, color: "success" }),
       onError: (err) =>
-        notifications.show({ title: "Delete failed", message: err.message, color: "red" })
+        notifications.show({ title: "Delete failed", message: err.message, color: "danger" })
     });
   };
 
@@ -133,7 +133,7 @@ export function NamespacesPage() {
         {isLoading && <Loader />}
 
         {error && (
-          <Alert color="red" title="Failed to load namespaces">
+          <Alert color="danger" title="Failed to load namespaces">
             {error.message}
           </Alert>
         )}
@@ -165,7 +165,7 @@ export function NamespacesPage() {
                     </Table.Td>
                     <Table.Td>
                       <Badge
-                        color={ns.status?.phase === "Active" ? "teal" : "orange"}
+                        color={ns.status?.phase === "Active" ? "success" : "warning"}
                         variant="light"
                         size="sm"
                       >
@@ -186,7 +186,7 @@ export function NamespacesPage() {
                         </Menu.Target>
                         <Menu.Dropdown>
                           <Menu.Item
-                            color="red"
+                            color="danger"
                             leftSection={<IconTrash size={14} />}
                             onClick={() => handleDelete(ns.metadata.name)}
                           >

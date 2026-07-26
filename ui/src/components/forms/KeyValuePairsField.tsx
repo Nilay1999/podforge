@@ -69,7 +69,7 @@ export function KeyValuePairsField({
       </Group>
 
       {error && (
-        <Text c="red" size="xs">
+        <Text c="danger" size="xs">
           {error}
         </Text>
       )}
@@ -107,7 +107,7 @@ export function KeyValuePairsField({
               <ActionIcon
                 aria-label={`Remove ${label}`}
                 variant="subtle"
-                color="red"
+                color="danger"
                 type="button"
                 onClick={() => onChange(pairs.filter((_, i) => i !== index))}
                 mb={index === 0 ? 2 : 0}

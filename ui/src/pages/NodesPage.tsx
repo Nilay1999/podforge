@@ -71,7 +71,7 @@ export function NodesPage() {
         {isLoading && <Loader />}
 
         {error && (
-          <Alert color="red" title="Failed to load nodes">
+          <Alert color="danger" title="Failed to load nodes">
             {error.message}
           </Alert>
         )}
