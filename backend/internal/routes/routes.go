@@ -79,6 +79,48 @@ func buildHandlers(clientset *kubernetes.Clientset, restConfig *rest.Config, log
 	}, nil
 }
 
+// syncConfigUsers reconciles auth.users with the database. Users declared with a
+// plaintext `password` are kept in sync on every boot (so editing config.yaml
+// actually changes the login); users declared with a bcrypt `password_hash` are
+// inserted only if missing, so runtime password/role changes are preserved.
+func syncConfigUsers(ctx context.Context, userStore *store.Store, users []config.UserConfig, log *zap.Logger) error {
+	seed := make([]store.User, 0, len(users))
+
+	for _, u := range users {
+		if _, err := auth.ParseRole(u.Role); err != nil {
+			return fmt.Errorf("user %s: %w", u.Username, err)
+		}
+		if u.Password != "" && u.PasswordHash != "" {
+			return fmt.Errorf("user %s: set either password or password_hash, not both", u.Username)
+		}
+
+		if u.Password != "" {
+			hash, err := auth.HashPassword(u.Password)
+			if err != nil {
+				return fmt.Errorf("user %s: %w", u.Username, err)
+			}
+			if err := userStore.UpsertUser(ctx, u.Username, hash, u.Role); err != nil {
+				return fmt.Errorf("user %s: %w", u.Username, err)
+			}
+			continue
+		}
+
+		if err := auth.ValidatePasswordHash(u.PasswordHash); err != nil {
+			return fmt.Errorf("user %s: %w", u.Username, err)
+		}
+		seed = append(seed, store.User{Username: u.Username, PasswordHash: u.PasswordHash, Role: u.Role})
+	}
+
+	created, err := userStore.SeedUsers(ctx, seed)
+	if err != nil {
+		return err
+	}
+	if created > 0 {
+		log.Info("Seeded users from config", zap.Int("created", created))
+	}
+	return nil
+}
+
 func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *auth.OIDCVerifier, *store.Store, []auth.Verifier) {
 	if !cfg.Auth.Enabled {
 		log.Warn("authentication is DISABLED; every request has full cluster access")
@@ -89,6 +131,11 @@ func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *a
 	var localAuth *auth.LocalAuthenticator
 	var oidcVerifier *auth.OIDCVerifier
 	var userStore *store.Store
+
+	if cfg.Auth.JWTSecret == "" && cfg.IsDevelopment() {
+		cfg.Auth.JWTSecret = config.DevJWTSecret
+		log.Warn("No auth.jwt.secret configured; using the built-in development secret. Set auth.jwt.secret (or AUTH_JWT_SECRET) before deploying")
+	}
 
 	if cfg.Auth.JWTSecret != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -104,22 +151,18 @@ func setupAuth(cfg config.Config, log *zap.Logger) (*auth.LocalAuthenticator, *a
 		}
 		log.Info("User database ready", zap.String("dialect", userStore.Dialect()))
 
-		seed := make([]store.User, 0, len(cfg.Auth.Users))
-		for _, u := range cfg.Auth.Users {
-			if _, err := auth.ParseRole(u.Role); err != nil {
-				log.Fatal("Invalid auth config", zap.String("user", u.Username), zap.Error(err))
-			}
-			if err := auth.ValidatePasswordHash(u.PasswordHash); err != nil {
-				log.Fatal("Invalid auth config", zap.String("user", u.Username), zap.Error(err))
-			}
-			seed = append(seed, store.User{Username: u.Username, PasswordHash: u.PasswordHash, Role: u.Role})
+		users := cfg.Auth.Users
+		if len(users) == 0 && cfg.IsDevelopment() {
+			users = []config.UserConfig{{
+				Username: config.DevUsername,
+				Password: config.DevPassword,
+				Role:     string(auth.RoleAdmin),
+			}}
+			log.Warn("No auth.users configured; using the default development login",
+				zap.String("username", config.DevUsername), zap.String("password", config.DevPassword))
 		}
-		created, err := userStore.SeedUsers(ctx, seed)
-		if err != nil {
+		if err := syncConfigUsers(ctx, userStore, users, log); err != nil {
 			log.Fatal("Failed to seed users", zap.Error(err))
-		}
-		if created > 0 {
-			log.Info("Seeded users from config", zap.Int("created", created))
 		}
 		if total, err := userStore.CountUsers(ctx); err == nil && total == 0 {
 			log.Warn("User database is empty; local login will reject everyone until users are added via auth.users config or POST /api/v1/auth/users")

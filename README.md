@@ -82,16 +82,68 @@ The search bar queries across all namespaces simultaneously. Results are grouped
 
 ## Quick start
 
+**Prerequisites:** Go 1.25+, Node 20+, pnpm (`corepack enable`), and a reachable
+Kubernetes cluster (e.g. `minikube start` or `k3d cluster create`). `kubectl` is
+optional. Tested on Linux; works on macOS too.
+
 ```bash
-# clone & install
 git clone https://github.com/Nilay1999/k8s-orchestrator.git
 cd k8s-orchestrator
-cp .env.example .env   # set KUBECONFIG if not ~/.kube/config
-pnpm install
 
-# run (backend :8080, UI :5173)
-pnpm dev
+./scripts/setup.sh   # checks tools, seeds config + admin user, installs deps
+./scripts/run.sh     # backend :8080, UI :5173
 ```
+
+`setup.sh` is interactive and asks you to choose an admin password (default
+`admin`). For an unattended install, run `./scripts/setup.sh --yes` — it uses
+`admin` / `admin`. It's safe to re-run; an existing `backend/config.yaml` is kept.
+
+Then open <http://localhost:5173> and log in with `admin` / your password.
+
+<details>
+<summary>What setup.sh does</summary>
+
+- Verifies Go, Node and pnpm are installed (and warns if no kubeconfig is found).
+- Copies `.env.example` → `.env`.
+- Generates `backend/config.yaml` from `backend/config.example.yaml` with a random
+  JWT secret and your admin password. This file is gitignored, so your secret never
+  gets committed.
+- Runs `pnpm install` and `go mod download`.
+
+Change the admin password after first login, or add users via the API / config.
+To run against a non-default cluster, set `KUBECONFIG` or edit `kubernetes.context`
+in `backend/config.yaml`.
+
+</details>
+
+### Manual setup
+
+Prefer to wire it up yourself? `pnpm install && pnpm dev` is enough — with no
+`backend/config.yaml` the backend boots in development mode with a built-in JWT
+secret and an `admin` / `admin` login (it logs a warning for both).
+
+To customise, `cp backend/config.example.yaml backend/config.yaml` and edit
+`auth.users`:
+
+```yaml
+auth:
+  users:
+    - username: admin
+      password: admin   # plaintext, local dev only
+      role: admin
+```
+
+Plaintext `password` entries are hashed on startup and re-synced on every boot, so
+editing the file changes the login immediately.
+
+### Going to production
+
+Set `server.env: production`, a real `auth.jwt.secret` (`openssl rand -hex 32`), and
+replace `password` with `password_hash` (`cd backend && go run ./cmd/hashpw`).
+Hashed users are seeded only if missing, so password and role changes made through
+`/api/v1/auth/users` survive restarts. Outside development the built-in dev secret
+and default admin user are never used — the server refuses to start without a
+configured auth provider.
 
 ---
 

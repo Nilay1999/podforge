@@ -109,3 +109,26 @@ func TestRebind(t *testing.T) {
 		t.Fatalf("sqlite rebind should be a no-op, got %q", got)
 	}
 }
+
+func TestUpsertUser(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	if err := s.UpsertUser(ctx, "carol", "hash1", "viewer"); err != nil {
+		t.Fatalf("UpsertUser (create): %v", err)
+	}
+	if err := s.UpsertUser(ctx, "carol", "hash2", "admin"); err != nil {
+		t.Fatalf("UpsertUser (update): %v", err)
+	}
+
+	u, err := s.GetUser(ctx, "carol")
+	if err != nil {
+		t.Fatalf("GetUser: %v", err)
+	}
+	if u.PasswordHash != "hash2" || u.Role != "admin" {
+		t.Fatalf("upsert did not overwrite: %+v", u)
+	}
+	if n, err := s.CountUsers(ctx); err != nil || n != 1 {
+		t.Fatalf("CountUsers = %d, %v; want 1", n, err)
+	}
+}

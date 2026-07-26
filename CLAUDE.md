@@ -104,7 +104,7 @@ deployments/           K8s manifests for Podforge itself
 
 All other `/api/v1` routes require a Bearer token (Podforge JWT or OIDC ID token; `?token=` query param supported for SSE). Roles: `viewer` (GET), `editor` (mutations), `admin` (namespaces create/delete, bulk ops, user management). Configured via the `auth:` section in `config.yaml` (see `backend/config.yaml`); `auth.enabled: false` disables auth for local dev.
 
-Local users live in a database (`internal/store`): PostgreSQL when `database.postgres` / `DATABASE_URL` is configured, otherwise a SQLite file (`database.sqlite.path`, default `podforge.db`). `auth.users` in config is a startup seed — inserted only if missing, never overwriting runtime changes.
+Local users live in a database (`internal/store`): PostgreSQL when `database.postgres` / `DATABASE_URL` is configured, otherwise a SQLite file (`database.sqlite.path`, default `podforge.db`). `auth.users` entries with `password_hash` (bcrypt) are a startup seed — inserted only if missing, never overwriting runtime changes. Entries with a plaintext `password` (local dev) are hashed and upserted on every boot, so config stays the source of truth. In development (`server.env` empty or `development`) a missing `auth.jwt.secret` falls back to `config.DevJWTSecret` and empty `auth.users` falls back to `admin`/`admin`, both with startup warnings.
 
 ### Pods
 

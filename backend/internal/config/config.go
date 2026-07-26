@@ -53,7 +53,12 @@ type fileConfig struct {
 }
 
 type UserConfig struct {
-	Username     string `yaml:"username" json:"username"`
+	Username string `yaml:"username" json:"username"`
+	// Password is a plaintext password, intended for local development. It is
+	// hashed on startup and kept in sync with the database on every boot.
+	Password string `yaml:"password" json:"password"`
+	// PasswordHash is a bcrypt hash (see cmd/hashpw). Seeded once and never
+	// overwritten, so runtime password changes survive restarts.
 	PasswordHash string `yaml:"password_hash" json:"password_hash"`
 	Role         string `yaml:"role" json:"role"`
 }
@@ -91,6 +96,21 @@ type Config struct {
 	KubeContext string
 	Database    DatabaseConfig
 	Auth        AuthConfig
+}
+
+// DevJWTSecret is used when auth is enabled in a development environment
+// without a configured secret, so `go run ./cmd/server` works with no setup.
+// Never used when server.env is anything other than "development".
+const DevJWTSecret = "podforge-development-only-insecure-jwt-secret"
+
+// Default local-development credentials, seeded when no users are configured.
+const (
+	DevUsername = "admin"
+	DevPassword = "admin"
+)
+
+func (c Config) IsDevelopment() bool {
+	return c.AppEnv == "" || c.AppEnv == "development"
 }
 
 func Load() Config {

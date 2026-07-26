@@ -109,6 +109,17 @@ func (s *Store) CountUsers(ctx context.Context) (int, error) {
 	return n, nil
 }
 
+// UpsertUser creates the user, or overwrites the password hash and role of an
+// existing one. Used for users declared with a plaintext password in config,
+// where the config file is the source of truth.
+func (s *Store) UpsertUser(ctx context.Context, username, passwordHash, role string) error {
+	err := s.CreateUser(ctx, username, passwordHash, role)
+	if !errors.Is(err, ErrUserAlreadyExists) {
+		return err
+	}
+	return s.UpdateUser(ctx, username, &passwordHash, &role)
+}
+
 // SeedUsers inserts users that do not exist yet; existing rows are never modified,
 // so runtime password or role changes survive restarts.
 func (s *Store) SeedUsers(ctx context.Context, users []User) (int, error) {
