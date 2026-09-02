@@ -20,12 +20,15 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
+  IconArrowsSort,
   IconDots,
   IconEdit,
   IconInbox,
   IconPlus,
   IconRefresh,
   IconSearch,
+  IconSortAscending,
+  IconSortDescending,
   IconTrash
 } from "@tabler/icons-react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
@@ -76,6 +79,8 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
   const { options: namespaceOptions, isLoading: namespacesLoading } = useNamespaceOptions(namespace);
   const [search, setSearch] = useState("");
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [sortKey, setSortKey] = useState<"name" | "age" | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // "Pod" → "pods", "ConfigMap" → "configmaps" — matches the key used in createResourceHooks
   const resource = kind.toLowerCase() + "s";
@@ -91,6 +96,35 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
     const q = search.toLowerCase();
     return allItems.filter((item) => item.metadata.name.toLowerCase().includes(q));
   }, [allItems, search]);
+
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      if (sortKey === "name") {
+        return a.metadata.name.localeCompare(b.metadata.name) * dir;
+      }
+      const aTime = a.metadata.creationTimestamp ? new Date(a.metadata.creationTimestamp).getTime() : 0;
+      const bTime = b.metadata.creationTimestamp ? new Date(b.metadata.creationTimestamp).getTime() : 0;
+      return (aTime - bTime) * dir;
+    });
+  }, [filtered, sortKey, sortDir]);
+
+  const toggleSort = (key: "name" | "age") => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortKey(null);
+    }
+  };
+
+  const sortIcon = (key: "name" | "age") => {
+    if (sortKey !== key) return <IconArrowsSort size={12} style={{ opacity: 0.5 }} />;
+    return sortDir === "asc" ? <IconSortAscending size={12} /> : <IconSortDescending size={12} />;
+  };
 
   const handleDelete = (name: string) => {
     deleteMutation.mutate(name, {
@@ -195,26 +229,40 @@ export function ResourceListPage<T extends { metadata: ObjectMeta }>({
                 }}
               >
                 <Table.Tr>
-                  {columns.map((col) => (
-                    <Table.Th
-                      key={col.header}
-                      style={{
-                        ...(col.width ? { width: col.width } : {}),
-                        fontSize: 11,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--mantine-color-dimmed)"
-                      }}
-                    >
-                      {col.header}
-                    </Table.Th>
-                  ))}
+                  {columns.map((col) => {
+                    const sortableKey =
+                      col.header === "Name" ? "name" : col.header === "Age" ? "age" : null;
+                    return (
+                      <Table.Th
+                        key={col.header}
+                        onClick={sortableKey ? () => toggleSort(sortableKey) : undefined}
+                        style={{
+                          ...(col.width ? { width: col.width } : {}),
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          color: "var(--mantine-color-dimmed)",
+                          cursor: sortableKey ? "pointer" : undefined,
+                          userSelect: sortableKey ? "none" : undefined
+                        }}
+                      >
+                        {sortableKey ? (
+                          <Group gap={4} wrap="nowrap">
+                            {col.header}
+                            {sortIcon(sortableKey)}
+                          </Group>
+                        ) : (
+                          col.header
+                        )}
+                      </Table.Th>
+                    );
+                  })}
                   <Table.Th style={{ width: 44 }} />
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {filtered.map((item) => (
+                {sorted.map((item) => (
                   <Table.Tr
                     key={item.metadata.name}
                     onClick={() => onRowClick?.(item)}
